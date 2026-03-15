@@ -1,5 +1,4 @@
-﻿import Image from "next/image";
-import type { PlayerLiveCard } from "@/lib/types";
+﻿import type { PlayerLiveCard } from "@/lib/types";
 
 const statusTone = {
   played: "bg-stone-200 text-stone-700",
@@ -9,38 +8,28 @@ const statusTone = {
 
 export function PlayerChip({ player }: { player: PlayerLiveCard }) {
   return (
-    <div className="flex min-w-0 flex-col rounded-2xl border border-[var(--border)] bg-white p-3 shadow-sm">
-      <div className="flex items-center gap-3">
-        {player.photoUrl ? (
-          <Image
-            src={player.photoUrl}
-            alt={player.webName}
-            width={40}
-            height={50}
-            className="h-[50px] w-10 rounded-xl bg-[var(--surface-strong)] object-cover"
-          />
-        ) : (
-          <div className="flex h-[50px] w-10 items-center justify-center rounded-xl bg-[var(--surface-strong)] text-xs">
-            {player.position}
-          </div>
-        )}
+    <div className="flex min-w-0 flex-col rounded-[1rem] border border-[var(--border)] bg-white px-2.5 py-2 shadow-sm md:px-3 md:py-2.5">
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="truncate text-sm font-semibold md:text-base">{player.webName}</div>
-          <div className="text-xs text-[var(--muted)] md:text-sm">
+          <div className="truncate text-[13px] font-semibold leading-4 md:text-sm">{player.webName}</div>
+          <div className="mt-0.5 text-[10px] leading-4 text-[var(--muted)] md:text-xs">
             {player.teamShortName} · {player.position}
           </div>
         </div>
+        <div className="shrink-0 text-right">
+          <div className="text-[13px] font-semibold tabular-nums md:text-sm">{player.livePoints}</div>
+          <div className="text-[10px] text-[var(--muted)]">pts</div>
+        </div>
       </div>
-      <div className="mt-3 flex items-center justify-between gap-2 text-sm">
-        <span className="font-semibold tabular-nums">{player.livePoints} pts</span>
-        <span className={`rounded-full px-2 py-1 text-[10px] md:text-xs ${statusTone[player.status]}`}>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-1.5 text-[10px] text-[var(--muted)] md:text-xs">
+          {player.isCaptain ? <span className="rounded-full bg-[var(--accent-soft)] px-1.5 py-0.5">C</span> : null}
+          {player.isViceCaptain ? <span className="rounded-full bg-stone-100 px-1.5 py-0.5">VC</span> : null}
+          <span>{player.minutes}'</span>
+        </div>
+        <span className={`rounded-full px-1.5 py-0.5 text-[10px] md:text-xs ${statusTone[player.status]}`}>
           {player.status.replace("_", " ")}
         </span>
-      </div>
-      <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-[var(--muted)] md:text-xs">
-        {player.isCaptain ? <span className="rounded-full bg-[var(--accent-soft)] px-2 py-1">C</span> : null}
-        {player.isViceCaptain ? <span className="rounded-full bg-stone-100 px-2 py-1">VC</span> : null}
-        <span>{player.minutes}'</span>
       </div>
     </div>
   );
