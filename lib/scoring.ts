@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   Chip,
   ElementSummary,
   FixtureSummary,
@@ -257,8 +257,11 @@ export function calculateLiveScore(args: {
   const provisional = args.picks.some((pick) => !getPlayerFixtureState(pick.element, args.context).allFinished);
 
   return {
+    lineupPoints: liveGross,
     gwPoints,
     totalPoints,
     provisional
   };
 }
+
+

@@ -1,4 +1,4 @@
-﻿import {
+import {
   getAllStandings,
   getBootstrapStatic,
   getEntry,
@@ -261,6 +261,8 @@ function buildRow(args: {
     captainName,
     chip: args.picks.active_chip,
     playersPlayed: computePlayersPlayed(picks, args.context),
+    lineupPoints: liveScore.lineupPoints,
+    transferCost: args.picks.entry_history.event_transfers_cost,
     gwPoints: liveScore.gwPoints,
     totalPoints: liveScore.totalPoints,
     projectedTotalPoints: liveScore.totalPoints,
@@ -337,6 +339,8 @@ export async function getLeagueLivePayload({
         captainName: "-",
         chip: null,
         playersPlayed: 0,
+        lineupPoints: 0,
+        transferCost: 0,
         gwPoints: 0,
         totalPoints: standing.total,
         projectedTotalPoints: standing.total,
@@ -363,3 +367,5 @@ export async function getLeagueLivePayload({
     errors
   };
 }
+
+

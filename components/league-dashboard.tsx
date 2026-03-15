@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
@@ -28,8 +28,8 @@ export function LeagueDashboard({ leagueId }: { leagueId: string }) {
   });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-2 py-3 sm:px-4 md:px-6 md:py-8">
-      <div className="mb-4 flex flex-col gap-3 md:mb-6 md:flex-row md:items-center md:justify-between md:gap-4">
+    <main className="mx-auto flex min-h-screen max-w-[1240px] flex-col px-2 py-3 sm:px-3 md:px-4 md:py-6">
+      <div className="mb-4 flex flex-col gap-3 md:mb-5 md:flex-row md:items-center md:justify-between md:gap-4">
         <div className="min-w-0">
           <Link href="/" className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)] md:text-sm">
             Search another league
@@ -87,4 +87,3 @@ export function LeagueDashboard({ leagueId }: { leagueId: string }) {
     </main>
   );
 }
-

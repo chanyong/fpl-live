@@ -1,4 +1,4 @@
-﻿export type FplPosition = "GKP" | "DEF" | "MID" | "FWD";
+export type FplPosition = "GKP" | "DEF" | "MID" | "FWD";
 
 export type PlayerStatus = "played" | "live" | "not_played";
 
@@ -48,6 +48,8 @@ export type LeagueRow = {
   gwPoints: number;
   totalPoints: number;
   projectedTotalPoints: number;
+  lineupPoints: number;
+  transferCost: number;
   squad: SquadSplit;
   calculationStatus: "ok" | "partial";
   provisional: boolean;

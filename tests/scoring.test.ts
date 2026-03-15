@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   calculateLiveScore,
   computePlayersPlayed,
@@ -73,6 +73,7 @@ describe("scoring", () => {
       context: createContext()
     });
 
+    expect(result.lineupPoints).toBe(38);
     expect(result.gwPoints).toBe(34);
     expect(result.totalPoints).toBe(1034);
     expect(result.provisional).toBe(true);
@@ -113,3 +114,5 @@ describe("scoring", () => {
     expect(squad.starters.find((player) => player.webName === "Def B")?.livePoints).toBe(0);
   });
 });
+
+
