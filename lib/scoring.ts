@@ -60,39 +60,6 @@ function getLiveStats(elementId: number, context: ScoringContext) {
   return context.liveByElementId.get(elementId) ?? { minutes: 0, totalPoints: 0 };
 }
 
-function playerCanEnter(
-  benchPick: Pick,
-  activeStarters: EffectivePick[],
-  outgoingPick: Pick,
-  context: ScoringContext
-) {
-  const benchPosition = getPlayerPosition(benchPick.element, context);
-
-  if (benchPosition === "GKP") {
-    return getPlayerPosition(outgoingPick.element, context) === "GKP";
-  }
-
-  const counts: Record<FplPosition, number> = {
-    GKP: 0,
-    DEF: 0,
-    MID: 0,
-    FWD: 0
-  };
-
-  for (const pick of activeStarters) {
-    if (pick.element === outgoingPick.element) {
-      continue;
-    }
-    counts[getPlayerPosition(pick.element, context)] += 1;
-  }
-
-  counts[benchPosition] += 1;
-
-  return Object.entries(MIN_FORMATION).every(
-    ([position, minCount]) => counts[position as FplPosition] >= minCount
-  );
-}
-
 function applyAutomaticSubs(
   picks: Pick[],
   automaticSubs: Array<{ elementIn: number; elementOut: number }> | undefined,
@@ -122,7 +89,6 @@ function applyAutomaticSubs(
         };
       }
     }
-    return starters;
   }
 
   return starters;
@@ -164,6 +130,24 @@ function resolveCaptaincy(activePicks: EffectivePick[], chip: Chip, context: Sco
   });
 }
 
+function getEffectivePicks(args: {
+  picks: Pick[];
+  automaticSubs?: Array<{ elementIn: number; elementOut: number }>;
+  chip: Chip;
+  context: ScoringContext;
+}) {
+  const effectiveStarters = applyAutomaticSubs(args.picks, args.automaticSubs, args.chip, args.context);
+  const effectivePicks = resolveCaptaincy(effectiveStarters, args.chip, args.context);
+  const benchBoostExtras =
+    args.chip === "bboost"
+      ? args.picks
+          .filter((pick) => pick.position > 11)
+          .map((pick) => ({ ...pick, effectiveMultiplier: 1 }))
+      : [];
+
+  return [...effectivePicks, ...benchBoostExtras];
+}
+
 export function computePlayersPlayed(picks: Pick[], context: ScoringContext) {
   return picks
     .filter((pick) => pick.position <= 11)
@@ -197,8 +181,18 @@ export function computeProjectedRanks<T extends { rank: number; totalPoints: num
   }));
 }
 
-export function splitSquad(picks: Pick[], chip: Chip, context: ScoringContext): SquadSplit {
+export function splitSquad(
+  picks: Pick[],
+  chip: Chip,
+  context: ScoringContext,
+  automaticSubs?: Array<{ elementIn: number; elementOut: number }>
+): SquadSplit {
   const sorted = [...picks].sort((a, b) => a.position - b.position);
+  const multiplierByElementId = new Map<number, number>();
+
+  for (const pick of getEffectivePicks({ picks, automaticSubs, chip, context })) {
+    multiplierByElementId.set(pick.element, pick.effectiveMultiplier);
+  }
 
   const toCard = (pick: Pick): PlayerLiveCard => {
     const element = context.elementsById.get(pick.element);
@@ -213,13 +207,15 @@ export function splitSquad(picks: Pick[], chip: Chip, context: ScoringContext): 
         : fixtureState.hasStarted
           ? "live"
           : "not_played";
+    const effectiveMultiplier = multiplierByElementId.get(pick.element) ?? (pick.position > 11 && chip !== "bboost" ? 0 : 1);
+    const displayPoints = effectiveMultiplier > 0 ? live.totalPoints * effectiveMultiplier : live.totalPoints;
 
     return {
       elementId: pick.element,
       webName: element?.webName ?? `Player ${pick.element}`,
       teamShortName: team?.shortName ?? "-",
       position: getPlayerPosition(pick.element, context),
-      livePoints: live.totalPoints,
+      livePoints: displayPoints,
       minutes: live.minutes,
       status,
       isCaptain: pick.isCaptain,
@@ -244,14 +240,13 @@ export function calculateLiveScore(args: {
   officialTotalBeforeLive: number;
   context: ScoringContext;
 }) {
-  const effectiveStarters = applyAutomaticSubs(args.picks, args.automaticSubs, args.chip, args.context);
-  const effectivePicks = resolveCaptaincy(effectiveStarters, args.chip, args.context);
-  const benchBoostExtras =
-    args.chip === "bboost"
-      ? args.picks.filter((pick) => pick.position > 11).map((pick) => ({ ...pick, effectiveMultiplier: 1 }))
-      : [];
+  const allEffective = getEffectivePicks({
+    picks: args.picks,
+    automaticSubs: args.automaticSubs,
+    chip: args.chip,
+    context: args.context
+  });
 
-  const allEffective = [...effectivePicks, ...benchBoostExtras];
   const liveGross = allEffective.reduce((sum, pick) => {
     const live = getLiveStats(pick.element, args.context);
     return sum + live.totalPoints * pick.effectiveMultiplier;
@@ -267,4 +262,3 @@ export function calculateLiveScore(args: {
     provisional
   };
 }
-

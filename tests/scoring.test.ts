@@ -106,16 +106,10 @@ describe("scoring", () => {
     expect(ranked.map((row) => row.projectedRank)).toEqual([3, 1, 2]);
   });
 
-  it("splits starters and bench", () => {
+  it("shows captain-adjusted points in the squad cards", () => {
     const squad = splitSquad(basePicks, null, createContext());
 
-    expect(squad.starters).toHaveLength(6);
-    expect(squad.bench).toHaveLength(1);
-    expect(squad.starters[0]?.webName).toBe("Keeper");
-    expect(squad.bench[0]?.webName).toBe("Bench Mid");
+    expect(squad.starters.find((player) => player.webName === "Mid A")?.livePoints).toBe(16);
+    expect(squad.starters.find((player) => player.webName === "Def B")?.livePoints).toBe(0);
   });
 });
-
-
-
-

@@ -190,7 +190,15 @@ function buildRow(args: {
     gwPoints: args.picks.entry_history.points,
     totalPoints: args.standing.total,
     projectedTotalPoints: liveScore.totalPoints,
-    squad: splitSquad(picks, args.picks.active_chip, args.context),
+    squad: splitSquad(
+      picks,
+      args.picks.active_chip,
+      args.context,
+      args.picks.automatic_subs.map((item) => ({
+        elementIn: item.element_in,
+        elementOut: item.element_out
+      }))
+    ),
     calculationStatus: "ok",
     provisional: liveScore.provisional
   };
@@ -289,3 +297,5 @@ export async function getLeagueLivePayload({
     errors
   };
 }
+
+
