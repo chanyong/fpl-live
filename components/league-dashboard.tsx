@@ -46,7 +46,6 @@ export function LeagueDashboard({ leagueId }: { leagueId: string }) {
         <RefreshIndicator
           lastUpdated={query.data?.league.lastUpdated ?? null}
           isFetching={query.isFetching}
-          onRefresh={() => query.refetch({ cancelRefetch: false })}
         />
       </div>
 

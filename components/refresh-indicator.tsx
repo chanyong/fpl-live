@@ -1,18 +1,21 @@
-﻿"use client";
+"use client";
 
+import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 
 type RefreshIndicatorProps = {
   lastUpdated: string | null;
   isFetching: boolean;
-  onRefresh: () => void;
 };
 
-export function RefreshIndicator({
-  lastUpdated,
-  isFetching,
-  onRefresh
-}: RefreshIndicatorProps) {
+export function RefreshIndicator({ lastUpdated, isFetching }: RefreshIndicatorProps) {
+  const [isReloading, setIsReloading] = useState(false);
+
+  const handleRefresh = () => {
+    setIsReloading(true);
+    window.location.reload();
+  };
+
   return (
     <div className="w-full rounded-[1.25rem] border border-[var(--border)] bg-[var(--surface)] px-3 py-3 shadow-sm md:w-auto md:min-w-[220px] md:px-4 md:text-right">
       <div className="flex items-center justify-between gap-3 md:block">
@@ -30,10 +33,10 @@ export function RefreshIndicator({
         </div>
         <button
           type="button"
-          onClick={onRefresh}
+          onClick={handleRefresh}
           className="shrink-0 rounded-full bg-[var(--text)] px-4 py-2 text-xs font-semibold text-white md:mt-3 md:w-full md:text-sm"
         >
-          {isFetching ? "Refreshing..." : "Refresh"}
+          {isReloading || isFetching ? "Refreshing..." : "Refresh"}
         </button>
       </div>
     </div>
