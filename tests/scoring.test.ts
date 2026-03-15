@@ -74,7 +74,7 @@ describe("scoring", () => {
     });
 
     expect(result.lineupPoints).toBe(38);
-    expect(result.gwPoints).toBe(34);
+    expect(result.gwPoints).toBe(38);
     expect(result.totalPoints).toBe(1034);
     expect(result.provisional).toBe(true);
   });
@@ -114,5 +114,6 @@ describe("scoring", () => {
     expect(squad.starters.find((player) => player.webName === "Def B")?.livePoints).toBe(0);
   });
 });
+
 
 

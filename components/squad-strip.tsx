@@ -16,7 +16,7 @@ export function SquadStrip({
     <div className="rounded-[1.1rem] border border-[var(--border)] bg-[var(--surface)] p-2.5 md:rounded-[1.35rem] md:p-3.5">
       <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl bg-[var(--surface-strong)]/55 px-2.5 py-2 text-[11px] text-[var(--muted)] md:mb-3 md:justify-end md:text-[12px]">
         <span className="font-medium text-stone-700">Lineup {lineupPoints}</span>
-        {transferCost > 0 ? <span className="font-medium text-rose-700">Hit -{transferCost}</span> : null}
+        {transferCost > 0 ? <span className="font-medium text-rose-700">Start hit -{transferCost}</span> : null}
         <span className="font-semibold text-stone-900">GW total {gwPoints}</span>
       </div>
       <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--muted)] md:text-[11px]">
@@ -42,3 +42,4 @@ export function SquadStrip({
     </div>
   );
 }
+
