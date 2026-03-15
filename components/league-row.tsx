@@ -33,12 +33,5 @@ export function LeagueRow({ row }: { row: LeagueRowType }) {
 }
 
 export function LeagueRowExpanded({ row }: { row: LeagueRowType }) {
-  return (
-    <SquadStrip
-      squad={row.squad}
-      lineupPoints={row.lineupPoints}
-      transferCost={row.transferCost}
-      gwPoints={row.gwPoints}
-    />
-  );
+  return <SquadStrip squad={row.squad} />;
 }
