@@ -37,7 +37,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
           <h1 className="mt-1 text-[2rem] font-semibold leading-none md:mt-2 md:text-[2rem]">
             {query.data?.league.name ?? `League ${leagueId}`}
           </h1>
-          <p className="mt-1 text-xs text-[var(--muted)] md:text-sm">
+          <p className="mt-1 text-[16px] text-[var(--muted)] md:text-base">
             {query.data
               ? `Gameweek ${query.data.league.currentGw} live dashboard`
               : "Loading official FPL data"}
