@@ -23,7 +23,7 @@ async function fetchLeagueLive(leagueId: string, refresh = false) {
 export function LeagueDashboard({ leagueId }: { leagueId: string }) {
   const query = useQuery({
     queryKey: ["league-live", leagueId],
-    queryFn: () => fetchLeagueLive(leagueId),
+    queryFn: () => fetchLeagueLive(leagueId, true),
     refetchInterval: 30_000
   });
 
@@ -87,3 +87,4 @@ export function LeagueDashboard({ leagueId }: { leagueId: string }) {
     </main>
   );
 }
+

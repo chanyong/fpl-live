@@ -187,8 +187,8 @@ function buildRow(args: {
     captainName,
     chip: args.picks.active_chip,
     playersPlayed: computePlayersPlayed(picks, args.context),
-    gwPoints: args.picks.entry_history.points,
-    totalPoints: args.standing.total,
+    gwPoints: liveScore.gwPoints,
+    totalPoints: liveScore.totalPoints,
     projectedTotalPoints: liveScore.totalPoints,
     squad: splitSquad(
       picks,
@@ -297,5 +297,6 @@ export async function getLeagueLivePayload({
     errors
   };
 }
+
 
 

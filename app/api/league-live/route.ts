@@ -1,5 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { getLeagueLivePayload } from "@/lib/league-aggregator";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   const leagueId = request.nextUrl.searchParams.get("leagueId");
@@ -22,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(payload, {
       headers: {
-        "Cache-Control": "s-maxage=30, stale-while-revalidate=30"
+        "Cache-Control": "no-store"
       }
     });
   } catch (error) {
