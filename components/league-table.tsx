@@ -23,8 +23,7 @@ const columns = [
   columnHelper.accessor("chip", { header: "Chip" }),
   columnHelper.accessor("playersPlayed", { header: "Players Played" }),
   columnHelper.accessor("gwPoints", { header: "GW Points" }),
-  columnHelper.accessor("totalPoints", { header: "Total" }),
-  columnHelper.accessor("projectedRank", { header: "Projected Rank" })
+  columnHelper.accessor("totalPoints", { header: "Total" })
 ];
 
 function chipLabel(chip: LeagueRowType["chip"]) {
@@ -192,7 +191,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                   </tr>
                   {isExpanded ? (
                     <tr className="bg-[var(--surface-strong)]/40">
-                      <td colSpan={9} className="px-4 py-4">
+                      <td colSpan={8} className="px-4 py-4">
                         <LeagueRowExpanded row={tableRow.original} />
                       </td>
                     </tr>

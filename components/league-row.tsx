@@ -28,14 +28,6 @@ export function LeagueRow({ row }: { row: LeagueRowType }) {
       <td className="px-4 py-4 text-right tabular-nums">{row.playersPlayed}</td>
       <td className="px-4 py-4 text-right tabular-nums">{row.gwPoints}</td>
       <td className="px-4 py-4 text-right tabular-nums">{row.totalPoints}</td>
-      <td className="px-4 py-4 text-right tabular-nums">
-        {row.projectedRank}
-        {row.provisional ? (
-          <span className="ml-2 rounded-full bg-amber-100 px-2 py-1 text-xs text-[var(--warning)]">
-            provisional
-          </span>
-        ) : null}
-      </td>
     </>
   );
 }
