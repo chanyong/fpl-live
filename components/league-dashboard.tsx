@@ -43,10 +43,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
               : "Loading official FPL data"}
           </p>
         </div>
-        <RefreshIndicator
-          lastUpdated={query.data?.league.lastUpdated ?? null}
-          buildId={buildId}
-        />
+        <RefreshIndicator buildId={buildId} />
       </div>
 
       {query.isLoading ? (
