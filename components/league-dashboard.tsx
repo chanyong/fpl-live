@@ -20,7 +20,7 @@ async function fetchLeagueLive(leagueId: string, refresh = false) {
   return (await response.json()) as LeagueLiveResponse;
 }
 
-export function LeagueDashboard({ leagueId }: { leagueId: string }) {
+export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; buildId: string }) {
   const query = useQuery({
     queryKey: ["league-live", leagueId],
     queryFn: () => fetchLeagueLive(leagueId, true),
@@ -46,6 +46,7 @@ export function LeagueDashboard({ leagueId }: { leagueId: string }) {
         <RefreshIndicator
           lastUpdated={query.data?.league.lastUpdated ?? null}
           isFetching={query.isFetching}
+          buildId={buildId}
         />
       </div>
 

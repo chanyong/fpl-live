@@ -6,14 +6,17 @@ import { formatDistanceToNow } from "date-fns";
 type RefreshIndicatorProps = {
   lastUpdated: string | null;
   isFetching: boolean;
+  buildId: string;
 };
 
-export function RefreshIndicator({ lastUpdated, isFetching }: RefreshIndicatorProps) {
+export function RefreshIndicator({ lastUpdated, isFetching, buildId }: RefreshIndicatorProps) {
   const [isReloading, setIsReloading] = useState(false);
 
   const handleRefresh = () => {
     setIsReloading(true);
-    window.location.reload();
+    const url = new URL(window.location.href);
+    url.searchParams.set("reload", Date.now().toString());
+    window.location.href = url.toString();
   };
 
   return (
@@ -29,6 +32,9 @@ export function RefreshIndicator({ lastUpdated, isFetching }: RefreshIndicatorPr
                   addSuffix: true
                 })}`
               : "Waiting for first sync"}
+          </div>
+          <div className="mt-1 text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]/80">
+            Build {buildId}
           </div>
         </div>
         <button
