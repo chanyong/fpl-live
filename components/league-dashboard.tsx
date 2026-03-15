@@ -28,13 +28,13 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
   });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[1240px] flex-col px-2 py-3 sm:px-3 md:px-4 md:py-6">
-      <div className="mb-4 flex flex-col gap-3 md:mb-5 md:flex-row md:items-center md:justify-between md:gap-4">
+    <main className="mx-auto flex min-h-screen max-w-[1080px] flex-col px-2 py-3 sm:px-3 md:px-3 md:py-5 lg:max-w-[1120px]">
+      <div className="mb-4 flex flex-col gap-3 md:mb-5 md:flex-row md:items-center md:justify-between md:gap-3">
         <div className="min-w-0">
-          <Link href="/" className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)] md:text-sm">
+          <Link href="/" className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)] md:text-xs">
             Search another league
           </Link>
-          <h1 className="mt-1 text-[2rem] font-semibold leading-none md:mt-2 md:text-3xl">
+          <h1 className="mt-1 text-[2rem] font-semibold leading-none md:mt-2 md:text-[2rem]">
             {query.data?.league.name ?? `League ${leagueId}`}
           </h1>
           <p className="mt-1 text-xs text-[var(--muted)] md:text-sm">

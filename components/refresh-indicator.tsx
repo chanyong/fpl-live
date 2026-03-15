@@ -20,13 +20,13 @@ export function RefreshIndicator({ lastUpdated, isFetching, buildId }: RefreshIn
   };
 
   return (
-    <div className="w-full rounded-[1.25rem] border border-[var(--border)] bg-[var(--surface)] px-3 py-3 shadow-sm md:w-auto md:min-w-[220px] md:px-4 md:text-right">
+    <div className="w-full rounded-[1.1rem] border border-[var(--border)] bg-[var(--surface)] px-3 py-3 shadow-sm md:w-auto md:min-w-[200px] md:px-3.5 md:text-right">
       <div className="flex items-center justify-between gap-3 md:block">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--muted)] md:text-xs">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--muted)] md:text-[11px]">
             Auto refresh 30s
           </div>
-          <div className="mt-1 text-xs text-[var(--muted)] md:mt-2 md:text-sm">
+          <div className="mt-1 text-xs text-[var(--muted)] md:text-sm">
             {lastUpdated
               ? `Updated ${formatDistanceToNow(new Date(lastUpdated), {
                   addSuffix: true

@@ -64,9 +64,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
   const table = useReactTable({
     data: filteredRows,
     columns,
-    state: {
-      sorting
-    },
+    state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel()
@@ -104,13 +102,11 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                   <Fragment key={row.entryId}>
                     <tr
                       className="cursor-pointer border-b border-[var(--border)] bg-white align-top"
-                      onClick={() =>
-                        setExpandedId((current) => (current === row.entryId ? null : row.entryId))
-                      }
+                      onClick={() => setExpandedId((current) => (current === row.entryId ? null : row.entryId))}
                     >
                       <td className="px-2 py-2.5 align-top">
                         <div className="flex items-center gap-1.5 font-semibold tabular-nums">
-                          <span className="text-[10px] text-[var(--muted)]">{isExpanded ? "?" : "?"}</span>
+                          <span className="text-[10px] text-[var(--muted)]">{isExpanded ? "v" : ">"}</span>
                           <span>{row.rank}</span>
                         </div>
                       </td>
@@ -142,30 +138,21 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
         </div>
       </div>
 
-      <div className="hidden overflow-x-auto rounded-[1.4rem] border border-[var(--border)] bg-[var(--surface)] shadow-[0_16px_48px_rgba(55,40,20,0.08)] md:block">
-        <table className="min-w-full border-collapse">
+      <div className="hidden overflow-x-auto rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:block">
+        <table className="min-w-full border-collapse text-[14px]">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr
-                key={headerGroup.id}
-                className="border-b border-[var(--border)] bg-[var(--surface-strong)]/50"
-              >
+              <tr key={headerGroup.id} className="border-b border-[var(--border)] bg-[var(--surface-strong)]/50">
                 {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-3 py-3.5 text-left text-[13px] font-semibold"
-                  >
+                  <th key={header.id} className="px-2.5 py-3 text-left text-[12px] font-semibold">
                     {header.isPlaceholder ? null : (
                       <button
                         type="button"
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-1.5"
                         onClick={header.column.getToggleSortingHandler()}
                       >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {{ asc: "¡è", desc: "¡é" }[header.column.getIsSorted() as string] ?? "¢Õ"}
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {{ asc: "â†‘", desc: "â†“" }[header.column.getIsSorted() as string] ?? "â†•"}
                       </button>
                     )}
                   </th>
@@ -191,7 +178,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                   </tr>
                   {isExpanded ? (
                     <tr className="bg-[var(--surface-strong)]/40">
-                      <td colSpan={8} className="px-3 py-3">
+                      <td colSpan={8} className="px-2.5 py-2.5">
                         <LeagueRowExpanded row={tableRow.original} />
                       </td>
                     </tr>

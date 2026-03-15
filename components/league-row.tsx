@@ -20,14 +20,14 @@ function chipLabel(chip: LeagueRowType["chip"]) {
 export function LeagueRow({ row }: { row: LeagueRowType }) {
   return (
     <>
-      <td className="px-3 py-3.5 text-center">{row.rank}</td>
-      <td className="px-3 py-3.5 font-semibold">{row.teamName}</td>
-      <td className="px-3 py-3.5">{row.managerName}</td>
-      <td className="px-3 py-3.5">{row.captainName}</td>
-      <td className="px-3 py-3.5">{chipLabel(row.chip)}</td>
-      <td className="px-3 py-3.5 text-right tabular-nums">{row.playersPlayed}</td>
-      <td className="px-3 py-3.5 text-right tabular-nums">{row.gwPoints}</td>
-      <td className="px-3 py-3.5 text-right tabular-nums">{row.totalPoints}</td>
+      <td className="px-2.5 py-3 text-center">{row.rank}</td>
+      <td className="px-2.5 py-3 font-semibold">{row.teamName}</td>
+      <td className="px-2.5 py-3">{row.managerName}</td>
+      <td className="px-2.5 py-3">{row.captainName}</td>
+      <td className="px-2.5 py-3">{chipLabel(row.chip)}</td>
+      <td className="px-2.5 py-3 text-right tabular-nums">{row.playersPlayed}</td>
+      <td className="px-2.5 py-3 text-right tabular-nums">{row.gwPoints}</td>
+      <td className="px-2.5 py-3 text-right tabular-nums">{row.totalPoints}</td>
     </>
   );
 }
