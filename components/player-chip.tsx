@@ -43,11 +43,9 @@ export function PlayerChip({ player }: { player: PlayerLiveCard }) {
             {player.teamShortName} · {player.position}
           </div>
         </div>
-        <div className="shrink-0 text-right">
-          <div className={`text-[17px] font-semibold leading-none tabular-nums md:text-[22px] ${scoreTone(player.livePoints, player.status)}`}>
-            {pointsLabel}
-          </div>
-          <div className="mt-1 text-[10px] leading-none text-[var(--muted)] md:text-xs">pts</div>
+        <div className={`shrink-0 text-[17px] font-semibold leading-none tabular-nums md:text-[22px] ${scoreTone(player.livePoints, player.status)}`}>
+          {pointsLabel}
+          <span className="ml-1 text-[11px] font-medium text-[var(--muted)] md:text-[13px]">pts</span>
         </div>
       </div>
       <div className="mt-2 flex items-center justify-between gap-2">
