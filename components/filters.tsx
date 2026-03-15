@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 type FiltersProps = {
   search: string;
@@ -23,10 +23,10 @@ export function Filters({
         value={search}
         onChange={(event) => setSearch(event.target.value)}
         placeholder="Search manager or team"
-        className="min-h-10 w-full flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-sm outline-none focus:border-[var(--accent)] md:min-h-11"
+        className="min-h-11 w-full flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-[15px] outline-none focus:border-[var(--accent)] md:min-h-11 md:text-sm"
       />
       <div className="flex items-center justify-between gap-3 md:justify-start">
-        <label className="flex items-center gap-2 text-xs text-[var(--muted)] md:text-sm">
+        <label className="flex items-center gap-2 text-[13px] text-[var(--muted)] md:text-sm">
           <input
             type="checkbox"
             checked={chipOnly}
@@ -37,7 +37,7 @@ export function Filters({
         <select
           value={topN}
           onChange={(event) => setTopN(event.target.value)}
-          className="min-h-10 rounded-full border border-[var(--border)] bg-white px-4 text-sm outline-none focus:border-[var(--accent)] md:min-h-11"
+          className="min-h-11 rounded-full border border-[var(--border)] bg-white px-4 text-[15px] outline-none focus:border-[var(--accent)] md:min-h-11 md:text-sm"
         >
           <option value="all">ALL</option>
           <option value="10">Top 10</option>

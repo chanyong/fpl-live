@@ -45,7 +45,6 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
         </div>
         <RefreshIndicator
           lastUpdated={query.data?.league.lastUpdated ?? null}
-          isFetching={query.isFetching}
           buildId={buildId}
         />
       </div>
