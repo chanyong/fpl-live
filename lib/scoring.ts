@@ -253,7 +253,7 @@ export function calculateLiveScore(args: {
   }, 0);
 
   const gwPoints = liveGross;
-  const totalPoints = args.officialTotalBeforeLive - args.transferCost + liveGross;
+  const totalPoints = args.officialTotalBeforeLive + liveGross;
   const provisional = args.picks.some((pick) => !getPlayerFixtureState(pick.element, args.context).allFinished);
 
   return {

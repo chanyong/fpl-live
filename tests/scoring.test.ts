@@ -75,7 +75,7 @@ describe("scoring", () => {
 
     expect(result.lineupPoints).toBe(38);
     expect(result.gwPoints).toBe(38);
-    expect(result.totalPoints).toBe(1034);
+    expect(result.totalPoints).toBe(1038);
     expect(result.provisional).toBe(true);
   });
 
