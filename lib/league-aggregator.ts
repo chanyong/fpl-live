@@ -31,6 +31,21 @@ type LeagueLiveArgs = {
   forceRefresh?: boolean;
 };
 
+type FixtureWithStats = {
+  id: number;
+  event: number | null;
+  team_h: number;
+  team_a: number;
+  started: boolean | null;
+  finished: boolean;
+  finished_provisional: boolean;
+  stats: Array<{
+    identifier: string;
+    h: Array<{ value: number; element: number }>;
+    a: Array<{ value: number; element: number }>;
+  }>;
+};
+
 function getCurrentGw(events: Array<{ id: number; is_current: boolean; finished: boolean }>) {
   const current = events.find((event) => event.is_current);
   if (current) {
@@ -46,20 +61,77 @@ function getPlayerPhoto(photo: string | undefined) {
     : null;
 }
 
+function assignProvisionalBonus(values: Array<{ value: number; element: number }>) {
+  const sorted = [...values].sort((left, right) => right.value - left.value);
+  if (sorted.length === 0) {
+    return [] as Array<{ element: number; bonus: number }>;
+  }
+
+  const top = sorted[0]?.value;
+  const firstGroup = sorted.filter((item) => item.value === top);
+  if (firstGroup.length >= 3) {
+    return firstGroup.map((item) => ({ element: item.element, bonus: 3 }));
+  }
+
+  if (firstGroup.length === 2) {
+    const next = sorted.find((item) => item.value < top);
+    return [
+      ...firstGroup.map((item) => ({ element: item.element, bonus: 3 })),
+      ...(next ? [{ element: next.element, bonus: 1 }] : [])
+    ];
+  }
+
+  const secondValue = sorted.find((item) => item.value < top)?.value;
+  if (secondValue === undefined) {
+    return [{ element: sorted[0].element, bonus: 3 }];
+  }
+
+  const secondGroup = sorted.filter((item) => item.value === secondValue);
+  if (secondGroup.length >= 2) {
+    return [
+      { element: sorted[0].element, bonus: 3 },
+      ...secondGroup.map((item) => ({ element: item.element, bonus: 2 }))
+    ];
+  }
+
+  const third = sorted.find((item) => item.value < secondValue);
+  return [
+    { element: sorted[0].element, bonus: 3 },
+    { element: secondGroup[0].element, bonus: 2 },
+    ...(third ? [{ element: third.element, bonus: 1 }] : [])
+  ];
+}
+
+function buildProvisionalBonusByElement(fixtures: FixtureWithStats[]) {
+  const bonusMap = new Map<number, number>();
+
+  for (const fixture of fixtures) {
+    if (!fixture.started || fixture.finished_provisional) {
+      continue;
+    }
+
+    const bpsStat = fixture.stats.find((stat) => stat.identifier === "bps");
+    if (!bpsStat) {
+      continue;
+    }
+
+    const provisional = assignProvisionalBonus([...bpsStat.h, ...bpsStat.a]);
+    for (const item of provisional) {
+      bonusMap.set(item.element, (bonusMap.get(item.element) ?? 0) + item.bonus);
+    }
+  }
+
+  return bonusMap;
+}
+
 function toScoringContext(args: {
   elements: ElementSummary[];
   teams: TeamSummary[];
-  liveElements: Array<{ id: number; stats: { minutes: number; total_points: number } }>;
-  fixtures: Array<{
-    id: number;
-    event: number | null;
-    team_h: number;
-    team_a: number;
-    started: boolean | null;
-    finished: boolean;
-    finished_provisional: boolean;
-  }>;
+  liveElements: Array<{ id: number; stats: { minutes: number; total_points: number; bonus: number; bps: number } }>;
+  fixtures: FixtureWithStats[];
 }): ScoringContext {
+  const provisionalBonusByElement = buildProvisionalBonusByElement(args.fixtures);
+
   return {
     elementsById: new Map(args.elements.map((element) => [element.id, element])),
     teamsById: new Map(args.teams.map((team) => [team.id, team])),
@@ -68,7 +140,7 @@ function toScoringContext(args: {
         element.id,
         {
           minutes: element.stats.minutes,
-          totalPoints: element.stats.total_points
+          totalPoints: element.stats.total_points + (provisionalBonusByElement.get(element.id) ?? 0)
         }
       ])
     ),
@@ -166,12 +238,14 @@ function buildRow(args: {
     ? args.context.elementsById.get(captainPick.element)?.webName ?? "Unknown"
     : "Unknown";
 
+  const automaticSubs = args.picks.automatic_subs.map((item) => ({
+    elementIn: item.element_in,
+    elementOut: item.element_out
+  }));
+
   const liveScore = calculateLiveScore({
     picks,
-    automaticSubs: args.picks.automatic_subs.map((item) => ({
-      elementIn: item.element_in,
-      elementOut: item.element_out
-    })),
+    automaticSubs,
     chip: args.picks.active_chip,
     transferCost: args.picks.entry_history.event_transfers_cost,
     officialTotalBeforeLive: args.standing.total - args.picks.entry_history.points,
@@ -190,15 +264,7 @@ function buildRow(args: {
     gwPoints: liveScore.gwPoints,
     totalPoints: liveScore.totalPoints,
     projectedTotalPoints: liveScore.totalPoints,
-    squad: splitSquad(
-      picks,
-      args.picks.active_chip,
-      args.context,
-      args.picks.automatic_subs.map((item) => ({
-        elementIn: item.element_in,
-        elementOut: item.element_out
-      }))
-    ),
+    squad: splitSquad(picks, args.picks.active_chip, args.context, automaticSubs),
     calculationStatus: "ok",
     provisional: liveScore.provisional
   };
@@ -297,6 +363,3 @@ export async function getLeagueLivePayload({
     errors
   };
 }
-
-
-

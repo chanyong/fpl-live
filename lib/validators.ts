@@ -95,10 +95,17 @@ export const liveSchema = z.object({
       id: z.number(),
       stats: z.object({
         minutes: z.number(),
-        total_points: z.number()
+        total_points: z.number(),
+        bonus: z.number().optional().default(0),
+        bps: z.number().optional().default(0)
       })
     })
   )
+});
+
+const fixtureStatValueSchema = z.object({
+  value: z.number(),
+  element: z.number()
 });
 
 export const fixturesSchema = z.array(
@@ -109,6 +116,16 @@ export const fixturesSchema = z.array(
     team_a: z.number(),
     started: z.boolean().nullable(),
     finished: z.boolean(),
-    finished_provisional: z.boolean()
+    finished_provisional: z.boolean(),
+    stats: z
+      .array(
+        z.object({
+          identifier: z.string(),
+          h: z.array(fixtureStatValueSchema),
+          a: z.array(fixtureStatValueSchema)
+        })
+      )
+      .optional()
+      .default([])
   })
 );
