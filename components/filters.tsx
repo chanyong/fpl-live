@@ -18,15 +18,15 @@ export function Filters({
   setTopN
 }: FiltersProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] p-3 md:flex-row md:items-center md:p-4">
+    <div className="flex flex-col gap-2 rounded-[1.25rem] border border-[var(--border)] bg-[var(--surface)] p-2.5 md:flex-row md:items-center md:gap-3 md:rounded-[1.75rem] md:p-4">
       <input
         value={search}
         onChange={(event) => setSearch(event.target.value)}
         placeholder="Search manager or team"
-        className="min-h-11 w-full flex-1 rounded-full border border-[var(--border)] bg-white px-4 outline-none focus:border-[var(--accent)]"
+        className="min-h-10 w-full flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-sm outline-none focus:border-[var(--accent)] md:min-h-11"
       />
       <div className="flex items-center justify-between gap-3 md:justify-start">
-        <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
+        <label className="flex items-center gap-2 text-xs text-[var(--muted)] md:text-sm">
           <input
             type="checkbox"
             checked={chipOnly}
@@ -37,7 +37,7 @@ export function Filters({
         <select
           value={topN}
           onChange={(event) => setTopN(event.target.value)}
-          className="min-h-11 rounded-full border border-[var(--border)] bg-white px-4 outline-none focus:border-[var(--accent)]"
+          className="min-h-10 rounded-full border border-[var(--border)] bg-white px-4 text-sm outline-none focus:border-[var(--accent)] md:min-h-11"
         >
           <option value="all">ALL</option>
           <option value="10">Top 10</option>

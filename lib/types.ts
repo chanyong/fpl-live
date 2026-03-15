@@ -28,6 +28,14 @@ export type SquadSplit = {
   bench: PlayerLiveCard[];
 };
 
+export type CaptainStat = {
+  elementId: number;
+  webName: string;
+  photoUrl: string | null;
+  managerCount: number;
+  percentage: number;
+};
+
 export type LeagueRow = {
   entryId: number;
   rank: number;
@@ -53,6 +61,7 @@ export type LeagueLiveResponse = {
     lastUpdated: string;
     isProvisional: boolean;
   };
+  captainStats: CaptainStat[];
   rows: LeagueRow[];
   errors: string[];
 };

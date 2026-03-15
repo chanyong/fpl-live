@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import type { LeagueLiveResponse } from "@/lib/types";
+import { CaptainStats } from "@/components/captain-stats";
 import { LeagueTable } from "@/components/league-table";
 import { RefreshIndicator } from "@/components/refresh-indicator";
 
@@ -27,16 +28,16 @@ export function LeagueDashboard({ leagueId }: { leagueId: string }) {
   });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-3 py-5 sm:px-4 md:px-6 md:py-8">
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-2 py-3 sm:px-4 md:px-6 md:py-8">
+      <div className="mb-4 flex flex-col gap-3 md:mb-6 md:flex-row md:items-center md:justify-between md:gap-4">
         <div className="min-w-0">
-          <Link href="/" className="text-xs uppercase tracking-[0.2em] text-[var(--muted)] md:text-sm">
+          <Link href="/" className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)] md:text-sm">
             Search another league
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold md:text-3xl">
+          <h1 className="mt-1 text-[2rem] font-semibold leading-none md:mt-2 md:text-3xl">
             {query.data?.league.name ?? `League ${leagueId}`}
           </h1>
-          <p className="mt-1 text-sm text-[var(--muted)]">
+          <p className="mt-1 text-xs text-[var(--muted)] md:text-sm">
             {query.data
               ? `Gameweek ${query.data.league.currentGw} live dashboard`
               : "Loading official FPL data"}
@@ -79,6 +80,7 @@ export function LeagueDashboard({ leagueId }: { leagueId: string }) {
               Some managers could not be fully hydrated from the FPL API. Partial rows are still shown.
             </div>
           ) : null}
+          <CaptainStats stats={query.data.captainStats} />
           <LeagueTable data={query.data} />
         </>
       ) : null}

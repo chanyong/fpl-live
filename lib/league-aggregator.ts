@@ -14,6 +14,7 @@ import {
   type ScoringContext
 } from "@/lib/scoring";
 import type {
+  CaptainStat,
   Chip,
   ElementSummary,
   EntryHistory,
@@ -37,6 +38,12 @@ function getCurrentGw(events: Array<{ id: number; is_current: boolean; finished:
   }
 
   return events.find((event) => !event.finished)?.id ?? events[events.length - 1]?.id ?? 1;
+}
+
+function getPlayerPhoto(photo: string | undefined) {
+  return photo
+    ? `https://resources.premierleague.com/premierleague/photos/players/110x140/p${photo.replace(".jpg", "")}.png`
+    : null;
 }
 
 function toScoringContext(args: {
@@ -87,6 +94,35 @@ function toScoringContext(args: {
       return map;
     }, new Map())
   };
+}
+
+function buildCaptainStats(rows: LeagueRow[], elementsById: Map<number, ElementSummary>): CaptainStat[] {
+  const counts = new Map<number, number>();
+
+  for (const row of rows) {
+    const captain = row.squad.starters.find((player) => player.isCaptain);
+    if (!captain) {
+      continue;
+    }
+
+    counts.set(captain.elementId, (counts.get(captain.elementId) ?? 0) + 1);
+  }
+
+  const totalManagers = rows.length || 1;
+
+  return [...counts.entries()]
+    .sort((left, right) => right[1] - left[1])
+    .slice(0, 3)
+    .map(([elementId, managerCount]) => {
+      const element = elementsById.get(elementId);
+      return {
+        elementId,
+        webName: element?.webName ?? "Unknown",
+        photoUrl: getPlayerPhoto(element?.photo),
+        managerCount,
+        percentage: Number(((managerCount / totalManagers) * 100).toFixed(1))
+      };
+    });
 }
 
 function buildRow(args: {
@@ -173,14 +209,15 @@ export async function getLeagueLivePayload({
 
   const currentGw = gw === "current" ? getCurrentGw(bootstrap.events) : Number(gw);
   const live = await getEventLive(currentGw, { forceRefresh });
+  const elements = bootstrap.elements.map((element) => ({
+    id: element.id,
+    webName: element.web_name,
+    teamId: element.team,
+    elementType: element.element_type,
+    photo: element.photo
+  }));
   const context = toScoringContext({
-    elements: bootstrap.elements.map((element) => ({
-      id: element.id,
-      webName: element.web_name,
-      teamId: element.team,
-      elementType: element.element_type,
-      photo: element.photo
-    })),
+    elements,
     teams: bootstrap.teams.map((team) => ({
       id: team.id,
       shortName: team.short_name
@@ -247,6 +284,7 @@ export async function getLeagueLivePayload({
       lastUpdated: new Date().toISOString(),
       isProvisional: true
     },
+    captainStats: buildCaptainStats(rows, context.elementsById),
     rows: computeProjectedRanks(rows),
     errors
   };

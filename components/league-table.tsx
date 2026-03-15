@@ -74,7 +74,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 md:space-y-4">
       <Filters
         search={search}
         setSearch={setSearch}
@@ -84,17 +84,16 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
         setTopN={setTopN}
       />
 
-      <div className="overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] shadow-[0_18px_40px_rgba(55,40,20,0.08)] md:hidden">
+      <div className="overflow-hidden rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] shadow-[0_14px_32px_rgba(55,40,20,0.08)] md:hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-[13px]">
+          <table className="min-w-full border-collapse text-[12px]">
             <thead>
-              <tr className="border-b border-[var(--border)] bg-[var(--surface-strong)]/45 text-[11px] uppercase tracking-[0.08em] text-[var(--muted)]">
-                <th className="w-8 px-2 py-3 text-center"></th>
-                <th className="px-2 py-3 text-left">Rank</th>
-                <th className="px-2 py-3 text-left">Team</th>
-                <th className="px-2 py-3 text-left">Captain</th>
-                <th className="px-2 py-3 text-right">GW</th>
-                <th className="px-2 py-3 text-right">Total</th>
+              <tr className="border-b border-[var(--border)] bg-[var(--surface-strong)]/40 text-[10px] uppercase tracking-[0.08em] text-[var(--muted)]">
+                <th className="w-[44px] px-2 py-2 text-left">Rank</th>
+                <th className="px-2 py-2 text-left">Team</th>
+                <th className="px-2 py-2 text-left">Captain</th>
+                <th className="w-[52px] px-2 py-2 text-right">GW</th>
+                <th className="w-[58px] px-2 py-2 text-right">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -110,31 +109,28 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                         setExpandedId((current) => (current === row.entryId ? null : row.entryId))
                       }
                     >
-                      <td className="px-2 py-3 text-center text-[var(--muted)]">{isExpanded ? "▾" : "▸"}</td>
-                      <td className="px-2 py-3 text-left font-semibold tabular-nums">{row.rank}</td>
-                      <td className="px-2 py-3">
-                        <div className="truncate font-semibold leading-5">{row.teamName}</div>
-                        <div className="truncate text-[11px] text-[var(--muted)]">{row.managerName}</div>
-                      </td>
-                      <td className="px-2 py-3">
-                        <div className="truncate font-semibold leading-5">{row.captainName}</div>
-                        <div className="text-[11px] text-[var(--muted)]">
-                          {row.chip ? chipLabel(row.chip) : row.playersPlayed + " played"}
+                      <td className="px-2 py-2.5 align-top">
+                        <div className="flex items-center gap-1.5 font-semibold tabular-nums">
+                          <span className="text-[10px] text-[var(--muted)]">{isExpanded ? "▾" : "▸"}</span>
+                          <span>{row.rank}</span>
                         </div>
                       </td>
-                      <td className="px-2 py-3 text-right font-semibold tabular-nums">
-                        {row.gwPoints}
-                        {row.provisional ? (
-                          <div className="mt-1 text-[10px] font-normal uppercase tracking-[0.08em] text-[var(--warning)]">
-                            prov
-                          </div>
-                        ) : null}
+                      <td className="px-2 py-2.5 align-top">
+                        <div className="truncate text-[13px] font-semibold leading-4">{row.teamName}</div>
+                        <div className="mt-1 truncate text-[10px] leading-4 text-[var(--muted)]">{row.managerName}</div>
                       </td>
-                      <td className="px-2 py-3 text-right font-semibold tabular-nums">{row.totalPoints}</td>
+                      <td className="px-2 py-2.5 align-top">
+                        <div className="truncate text-[13px] font-semibold leading-4">{row.captainName}</div>
+                        <div className="mt-1 truncate text-[10px] leading-4 text-[var(--muted)]">
+                          {row.chip ? chipLabel(row.chip) : `${row.playersPlayed} played`}
+                        </div>
+                      </td>
+                      <td className="px-2 py-2.5 text-right align-top font-semibold tabular-nums">{row.gwPoints}</td>
+                      <td className="px-2 py-2.5 text-right align-top font-semibold tabular-nums">{row.totalPoints}</td>
                     </tr>
                     {isExpanded ? (
-                      <tr className="bg-[var(--surface-strong)]/35">
-                        <td colSpan={6} className="px-3 py-3">
+                      <tr className="bg-[var(--surface-strong)]/30">
+                        <td colSpan={5} className="px-2 py-2.5">
                           <LeagueRowExpanded row={row} />
                         </td>
                       </tr>
