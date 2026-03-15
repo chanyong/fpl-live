@@ -84,66 +84,67 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
         setTopN={setTopN}
       />
 
-      <div className="grid gap-3 md:hidden">
-        {table.getRowModel().rows.map((tableRow) => {
-          const row = tableRow.original;
-          const isExpanded = expandedId === row.entryId;
+      <div className="overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] shadow-[0_18px_40px_rgba(55,40,20,0.08)] md:hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse text-[13px]">
+            <thead>
+              <tr className="border-b border-[var(--border)] bg-[var(--surface-strong)]/45 text-[11px] uppercase tracking-[0.08em] text-[var(--muted)]">
+                <th className="w-8 px-2 py-3 text-center"></th>
+                <th className="px-2 py-3 text-left">Rank</th>
+                <th className="px-2 py-3 text-left">Team</th>
+                <th className="px-2 py-3 text-left">Captain</th>
+                <th className="px-2 py-3 text-right">GW</th>
+                <th className="px-2 py-3 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map((tableRow) => {
+                const row = tableRow.original;
+                const isExpanded = expandedId === row.entryId;
 
-          return (
-            <div
-              key={row.entryId}
-              className="overflow-hidden rounded-[1.5rem] border border-[var(--border)] bg-[var(--surface)] shadow-[0_18px_40px_rgba(55,40,20,0.08)]"
-            >
-              <button
-                type="button"
-                className="w-full px-4 py-4 text-left"
-                onClick={() => setExpandedId((current) => (current === row.entryId ? null : row.entryId))}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
-                      <span>Rank {row.rank}</span>
-                      <span>Proj {row.projectedRank}</span>
-                      {row.chip ? <span className="rounded-full bg-[var(--accent-soft)] px-2 py-1 text-[var(--accent)]">{chipLabel(row.chip)}</span> : null}
-                    </div>
-                    <div className="mt-2 truncate text-lg font-semibold">{row.teamName}</div>
-                    <div className="truncate text-sm text-[var(--muted)]">{row.managerName}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-semibold tabular-nums">{row.gwPoints}</div>
-                    <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">GW pts</div>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
-                  <div className="rounded-2xl bg-white px-3 py-2">
-                    <div className="text-[var(--muted)]">Played</div>
-                    <div className="mt-1 font-semibold tabular-nums">{row.playersPlayed}</div>
-                  </div>
-                  <div className="rounded-2xl bg-white px-3 py-2">
-                    <div className="text-[var(--muted)]">Total</div>
-                    <div className="mt-1 font-semibold tabular-nums">{row.totalPoints}</div>
-                  </div>
-                  <div className="rounded-2xl bg-white px-3 py-2">
-                    <div className="text-[var(--muted)]">Captain</div>
-                    <div className="mt-1 truncate font-semibold">{row.captainName}</div>
-                  </div>
-                </div>
-
-                {row.provisional ? (
-                  <div className="mt-3 text-xs uppercase tracking-[0.18em] text-[var(--warning)]">
-                    Provisional live score
-                  </div>
-                ) : null}
-              </button>
-              {isExpanded ? (
-                <div className="border-t border-[var(--border)] bg-[var(--surface-strong)]/35 px-4 py-4">
-                  <LeagueRowExpanded row={row} />
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
+                return (
+                  <Fragment key={row.entryId}>
+                    <tr
+                      className="cursor-pointer border-b border-[var(--border)] bg-white align-top"
+                      onClick={() =>
+                        setExpandedId((current) => (current === row.entryId ? null : row.entryId))
+                      }
+                    >
+                      <td className="px-2 py-3 text-center text-[var(--muted)]">{isExpanded ? "▾" : "▸"}</td>
+                      <td className="px-2 py-3 text-left font-semibold tabular-nums">{row.rank}</td>
+                      <td className="px-2 py-3">
+                        <div className="truncate font-semibold leading-5">{row.teamName}</div>
+                        <div className="truncate text-[11px] text-[var(--muted)]">{row.managerName}</div>
+                      </td>
+                      <td className="px-2 py-3">
+                        <div className="truncate font-semibold leading-5">{row.captainName}</div>
+                        <div className="text-[11px] text-[var(--muted)]">
+                          {row.chip ? chipLabel(row.chip) : row.playersPlayed + " played"}
+                        </div>
+                      </td>
+                      <td className="px-2 py-3 text-right font-semibold tabular-nums">
+                        {row.gwPoints}
+                        {row.provisional ? (
+                          <div className="mt-1 text-[10px] font-normal uppercase tracking-[0.08em] text-[var(--warning)]">
+                            prov
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="px-2 py-3 text-right font-semibold tabular-nums">{row.totalPoints}</td>
+                    </tr>
+                    {isExpanded ? (
+                      <tr className="bg-[var(--surface-strong)]/35">
+                        <td colSpan={6} className="px-3 py-3">
+                          <LeagueRowExpanded row={row} />
+                        </td>
+                      </tr>
+                    ) : null}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="hidden overflow-x-auto rounded-[1.75rem] border border-[var(--border)] bg-[var(--surface)] shadow-[0_20px_80px_rgba(55,40,20,0.08)] md:block">
