@@ -83,14 +83,14 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
 
       <div className="overflow-hidden rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] shadow-[0_14px_32px_rgba(55,40,20,0.08)] md:hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-[13px]">
+          <table className="min-w-full border-collapse text-[12px]">
             <thead>
-              <tr className="border-b border-[var(--border)] bg-[var(--surface-strong)]/40 text-[11px] uppercase tracking-[0.08em] text-[var(--muted)]">
-                <th className="w-[46px] px-2.5 py-2.5 text-left">Rank</th>
-                <th className="px-2.5 py-2.5 text-left">Team</th>
-                <th className="px-2.5 py-2.5 text-left">Captain</th>
-                <th className="w-[58px] px-2.5 py-2.5 text-right">GW</th>
-                <th className="w-[64px] px-2.5 py-2.5 text-right">Total</th>
+              <tr className="border-b border-[var(--border)] bg-[var(--surface-strong)]/40 text-[10px] uppercase tracking-[0.08em] text-[var(--muted)]">
+                <th className="w-[36px] px-1.5 py-2 text-left">Rank</th>
+                <th className="px-1.5 py-2 text-left">Team</th>
+                <th className="px-1.5 py-2 text-left">Captain</th>
+                <th className="w-[46px] px-1.5 py-2 text-right">GW</th>
+                <th className="w-[54px] px-1.5 py-2 text-right">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -104,28 +104,28 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                       className="cursor-pointer border-b border-[var(--border)] bg-white align-top"
                       onClick={() => setExpandedId((current) => (current === row.entryId ? null : row.entryId))}
                     >
-                      <td className="px-2.5 py-3 align-top">
-                        <div className="flex items-center gap-1.5 font-semibold tabular-nums">
-                          <span className="text-[11px] text-[var(--muted)]">{isExpanded ? "v" : ">"}</span>
+                      <td className="px-1.5 py-2.5 align-top">
+                        <div className="flex items-center gap-1 font-semibold tabular-nums">
+                          <span className="text-[10px] text-[var(--muted)]">{isExpanded ? "v" : ">"}</span>
                           <span>{row.rank}</span>
                         </div>
                       </td>
-                      <td className="px-2.5 py-3 align-top">
-                        <div className="truncate text-[14px] font-semibold leading-4">{row.teamName}</div>
-                        <div className="mt-1 truncate text-[11px] leading-4 text-[var(--muted)]">{row.managerName}</div>
+                      <td className="px-1.5 py-2.5 align-top">
+                        <div className="truncate text-[13px] font-semibold leading-4">{row.teamName}</div>
+                        <div className="mt-0.5 truncate text-[10px] leading-4 text-[var(--muted)]">{row.managerName}</div>
                       </td>
-                      <td className="px-2.5 py-3 align-top">
-                        <div className="truncate text-[14px] font-semibold leading-4">{row.captainName}</div>
-                        <div className="mt-1 truncate text-[11px] leading-4 text-[var(--muted)]">
+                      <td className="px-1.5 py-2.5 align-top">
+                        <div className="truncate text-[13px] font-semibold leading-4">{row.captainName}</div>
+                        <div className="mt-0.5 truncate text-[10px] leading-4 text-[var(--muted)]">
                           {row.chip ? chipLabel(row.chip) : `${row.playersPlayed} played`}
                         </div>
                       </td>
-                      <td className="px-2.5 py-3 text-right align-top font-semibold tabular-nums">{row.gwPoints}</td>
-                      <td className="px-2.5 py-3 text-right align-top font-semibold tabular-nums">{row.totalPoints}</td>
+                      <td className="px-1.5 py-2.5 text-right align-top font-semibold tabular-nums">{row.gwPoints}</td>
+                      <td className="px-1.5 py-2.5 text-right align-top font-semibold tabular-nums">{row.totalPoints}</td>
                     </tr>
                     {isExpanded ? (
                       <tr className="bg-[var(--surface-strong)]/30">
-                        <td colSpan={5} className="px-2.5 py-2.5">
+                        <td colSpan={5} className="px-1.5 py-2">
                           <LeagueRowExpanded row={row} />
                         </td>
                       </tr>
