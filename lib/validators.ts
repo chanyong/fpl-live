@@ -1,16 +1,18 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 
 export const bootstrapStaticSchema = z.object({
   events: z.array(
     z.object({
       id: z.number(),
       is_current: z.boolean(),
-      finished: z.boolean()
+      finished: z.boolean(),
+      deadline_time: z.string().nullable().optional().default(null)
     })
   ),
   teams: z.array(
     z.object({
       id: z.number(),
+      name: z.string(),
       short_name: z.string()
     })
   ),
@@ -112,8 +114,11 @@ export const fixturesSchema = z.array(
   z.object({
     id: z.number(),
     event: z.number().nullable(),
+    kickoff_time: z.string().nullable().optional().default(null),
     team_h: z.number(),
     team_a: z.number(),
+    team_h_score: z.number().nullable().optional().default(null),
+    team_a_score: z.number().nullable().optional().default(null),
     started: z.boolean().nullable(),
     finished: z.boolean(),
     finished_provisional: z.boolean(),

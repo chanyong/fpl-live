@@ -36,6 +36,35 @@ export type CaptainStat = {
   percentage: number;
 };
 
+export type FixtureStatPlayer = {
+  elementId: number;
+  playerName: string;
+  teamShortName: string;
+  value: number;
+};
+
+export type LeagueFixtureStat = {
+  key: string;
+  label: string;
+  home: FixtureStatPlayer[];
+  away: FixtureStatPlayer[];
+};
+
+export type LeagueFixture = {
+  id: number;
+  kickoffTime: string | null;
+  homeTeam: string;
+  awayTeam: string;
+  homeShortName: string;
+  awayShortName: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  started: boolean;
+  finished: boolean;
+  finishedProvisional: boolean;
+  stats: LeagueFixtureStat[];
+};
+
 export type LeagueRow = {
   entryId: number;
   rank: number;
@@ -64,6 +93,7 @@ export type LeagueLiveResponse = {
     isProvisional: boolean;
   };
   captainStats: CaptainStat[];
+  fixtures: LeagueFixture[];
   rows: LeagueRow[];
   errors: string[];
 };
@@ -78,6 +108,7 @@ export type ElementSummary = {
 
 export type TeamSummary = {
   id: number;
+  name: string;
   shortName: string;
 };
 

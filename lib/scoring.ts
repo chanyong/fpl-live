@@ -40,6 +40,11 @@ type EffectivePick = Pick & {
   effectiveMultiplier: number;
 };
 
+type EffectiveLineup = {
+  starters: EffectivePick[];
+  bench: Pick[];
+};
+
 function getPlayerPosition(elementId: number, context: ScoringContext): FplPosition {
   const element = context.elementsById.get(elementId);
   return POSITION_MAP[element?.elementType ?? 3] ?? "MID";
@@ -60,38 +65,121 @@ function getLiveStats(elementId: number, context: ScoringContext) {
   return context.liveByElementId.get(elementId) ?? { minutes: 0, totalPoints: 0 };
 }
 
-function applyAutomaticSubs(
-  picks: Pick[],
-  automaticSubs: Array<{ elementIn: number; elementOut: number }> | undefined,
-  chip: Chip,
-  context: ScoringContext
-) {
-  const starters = picks
-    .filter((pick) => pick.position <= 11)
-    .map((pick) => ({ ...pick, effectiveMultiplier: pick.multiplier }));
-  const bench = picks
-    .filter((pick) => pick.position > 11)
-    .sort((a, b) => a.position - b.position);
+function hasPlayed(elementId: number, context: ScoringContext) {
+  return getLiveStats(elementId, context).minutes > 0;
+}
 
-  if (chip === "bboost") {
-    return starters;
+function allFixturesFinished(picks: Pick[], context: ScoringContext) {
+  return picks.every((pick) => getPlayerFixtureState(pick.element, context).allFinished);
+}
+
+function buildFallbackAutomaticSubs(picks: Pick[], context: ScoringContext) {
+  if (!allFixturesFinished(picks, context)) {
+    return [] as Array<{ elementIn: number; elementOut: number }>;
   }
 
-  if (automaticSubs && automaticSubs.length > 0) {
-    for (const automaticSub of automaticSubs) {
-      const starterIndex = starters.findIndex((pick) => pick.element === automaticSub.elementOut);
-      const benchPick = bench.find((pick) => pick.element === automaticSub.elementIn);
-      if (starterIndex >= 0 && benchPick) {
-        starters[starterIndex] = {
-          ...benchPick,
-          position: starters[starterIndex].position,
-          effectiveMultiplier: 1
-        };
-      }
+  const starters = picks.filter((pick) => pick.position <= 11);
+  const bench = picks.filter((pick) => pick.position > 11).sort((a, b) => a.position - b.position);
+  const substitutions: Array<{ elementIn: number; elementOut: number }> = [];
+  const counts: Record<FplPosition, number> = { GKP: 0, DEF: 0, MID: 0, FWD: 0 };
+
+  for (const starter of starters) {
+    const position = getPlayerPosition(starter.element, context);
+    if (hasPlayed(starter.element, context)) {
+      counts[position] += 1;
     }
   }
 
-  return starters;
+  const startingGkp = starters.find((pick) => getPlayerPosition(pick.element, context) === "GKP");
+  const benchGkp = bench.find((pick) => getPlayerPosition(pick.element, context) === "GKP");
+
+  if (startingGkp && !hasPlayed(startingGkp.element, context) && benchGkp && hasPlayed(benchGkp.element, context)) {
+    substitutions.push({ elementIn: benchGkp.element, elementOut: startingGkp.element });
+    counts.GKP = 1;
+  }
+
+  const missingOutfield = starters.filter(
+    (pick) => getPlayerPosition(pick.element, context) !== "GKP" && !hasPlayed(pick.element, context)
+  );
+  const benchOutfield = bench.filter(
+    (pick) => getPlayerPosition(pick.element, context) !== "GKP" && hasPlayed(pick.element, context)
+  );
+
+  let remainingSlots = missingOutfield.length;
+
+  for (const benchPick of benchOutfield) {
+    if (remainingSlots === 0) {
+      break;
+    }
+
+    const benchPosition = getPlayerPosition(benchPick.element, context);
+    const nextCounts = {
+      ...counts,
+      [benchPosition]: counts[benchPosition] + 1
+    };
+    const nextRemaining = remainingSlots - 1;
+    const requiredAfter = (Object.keys(MIN_FORMATION) as FplPosition[])
+      .filter((position) => position !== "GKP")
+      .reduce((sum, position) => sum + Math.max(0, MIN_FORMATION[position] - nextCounts[position]), 0);
+
+    if (requiredAfter > nextRemaining) {
+      continue;
+    }
+
+    const outgoing = missingOutfield.shift();
+    if (!outgoing) {
+      break;
+    }
+
+    substitutions.push({ elementIn: benchPick.element, elementOut: outgoing.element });
+    counts[benchPosition] = nextCounts[benchPosition];
+    remainingSlots = nextRemaining;
+  }
+
+  return substitutions;
+}
+
+function buildEffectiveLineup(args: {
+  picks: Pick[];
+  automaticSubs?: Array<{ elementIn: number; elementOut: number }>;
+  chip: Chip;
+  context: ScoringContext;
+}): EffectiveLineup {
+  const starters = args.picks
+    .filter((pick) => pick.position <= 11)
+    .sort((a, b) => a.position - b.position)
+    .map((pick) => ({ ...pick, effectiveMultiplier: pick.multiplier }));
+  const bench = args.picks
+    .filter((pick) => pick.position > 11)
+    .sort((a, b) => a.position - b.position);
+
+  if (args.chip === "bboost") {
+    return { starters, bench: [] };
+  }
+
+  const substitutions =
+    args.automaticSubs && args.automaticSubs.length > 0
+      ? args.automaticSubs
+      : buildFallbackAutomaticSubs(args.picks, args.context);
+  const usedBenchIds = new Set<number>();
+
+  for (const substitution of substitutions) {
+    const starterIndex = starters.findIndex((pick) => pick.element === substitution.elementOut);
+    const benchPick = bench.find((pick) => pick.element === substitution.elementIn);
+    if (starterIndex >= 0 && benchPick && !usedBenchIds.has(benchPick.element)) {
+      starters[starterIndex] = {
+        ...benchPick,
+        position: starters[starterIndex].position,
+        effectiveMultiplier: 1
+      };
+      usedBenchIds.add(benchPick.element);
+    }
+  }
+
+  return {
+    starters,
+    bench: bench.filter((pick) => !usedBenchIds.has(pick.element))
+  };
 }
 
 function resolveCaptaincy(activePicks: EffectivePick[], chip: Chip, context: ScoringContext) {
@@ -136,8 +224,8 @@ function getEffectivePicks(args: {
   chip: Chip;
   context: ScoringContext;
 }) {
-  const effectiveStarters = applyAutomaticSubs(args.picks, args.automaticSubs, args.chip, args.context);
-  const effectivePicks = resolveCaptaincy(effectiveStarters, args.chip, args.context);
+  const lineup = buildEffectiveLineup(args);
+  const effectivePicks = resolveCaptaincy(lineup.starters, args.chip, args.context);
   const benchBoostExtras =
     args.chip === "bboost"
       ? args.picks
@@ -145,17 +233,26 @@ function getEffectivePicks(args: {
           .map((pick) => ({ ...pick, effectiveMultiplier: 1 }))
       : [];
 
-  return [...effectivePicks, ...benchBoostExtras];
+  return {
+    starters: effectivePicks,
+    bench: lineup.bench,
+    all: [...effectivePicks, ...benchBoostExtras]
+  };
 }
 
-export function computePlayersPlayed(picks: Pick[], context: ScoringContext) {
-  return picks
-    .filter((pick) => pick.position <= 11)
-    .filter((pick) => {
-      const live = getLiveStats(pick.element, context);
-      const fixtureState = getPlayerFixtureState(pick.element, context);
-      return live.minutes > 0 || (fixtureState.hasStarted && !fixtureState.allFinished);
-    }).length;
+export function computePlayersPlayed(args: {
+  picks: Pick[];
+  automaticSubs?: Array<{ elementIn: number; elementOut: number }>;
+  chip: Chip;
+  context: ScoringContext;
+}) {
+  const effective = getEffectivePicks(args).starters;
+
+  return effective.filter((pick) => {
+    const live = getLiveStats(pick.element, args.context);
+    const fixtureState = getPlayerFixtureState(pick.element, args.context);
+    return live.minutes > 0 || (fixtureState.hasStarted && !fixtureState.allFinished);
+  }).length;
 }
 
 export function computeProjectedRanks<T extends { rank: number; totalPoints: number; projectedTotalPoints?: number }>(rows: T[]) {
@@ -187,14 +284,8 @@ export function splitSquad(
   context: ScoringContext,
   automaticSubs?: Array<{ elementIn: number; elementOut: number }>
 ): SquadSplit {
-  const sorted = [...picks].sort((a, b) => a.position - b.position);
-  const multiplierByElementId = new Map<number, number>();
-
-  for (const pick of getEffectivePicks({ picks, automaticSubs, chip, context })) {
-    multiplierByElementId.set(pick.element, pick.effectiveMultiplier);
-  }
-
-  const toCard = (pick: Pick): PlayerLiveCard => {
+  const effective = getEffectivePicks({ picks, automaticSubs, chip, context });
+  const toCard = (pick: Pick | EffectivePick, forceBench = false): PlayerLiveCard => {
     const element = context.elementsById.get(pick.element);
     const team = element ? context.teamsById.get(element.teamId) : undefined;
     const live = getLiveStats(pick.element, context);
@@ -207,7 +298,7 @@ export function splitSquad(
         : fixtureState.hasStarted
           ? "live"
           : "not_played";
-    const effectiveMultiplier = multiplierByElementId.get(pick.element) ?? (pick.position > 11 && chip !== "bboost" ? 0 : 1);
+    const effectiveMultiplier = "effectiveMultiplier" in pick ? pick.effectiveMultiplier : forceBench || chip === "bboost" ? 1 : 0;
     const displayPoints = effectiveMultiplier > 0 ? live.totalPoints * effectiveMultiplier : live.totalPoints;
 
     return {
@@ -227,8 +318,8 @@ export function splitSquad(
   };
 
   return {
-    starters: sorted.filter((pick) => pick.position <= 11).map(toCard),
-    bench: chip === "bboost" ? [] : sorted.filter((pick) => pick.position > 11).map(toCard)
+    starters: effective.starters.sort((a, b) => a.position - b.position).map((pick) => toCard(pick)),
+    bench: chip === "bboost" ? [] : effective.bench.map((pick) => toCard(pick, true))
   };
 }
 
@@ -240,14 +331,14 @@ export function calculateLiveScore(args: {
   officialTotalBeforeLive: number;
   context: ScoringContext;
 }) {
-  const allEffective = getEffectivePicks({
+  const effective = getEffectivePicks({
     picks: args.picks,
     automaticSubs: args.automaticSubs,
     chip: args.chip,
     context: args.context
   });
 
-  const liveGross = allEffective.reduce((sum, pick) => {
+  const liveGross = effective.all.reduce((sum, pick) => {
     const live = getLiveStats(pick.element, args.context);
     return sum + live.totalPoints * pick.effectiveMultiplier;
   }, 0);
@@ -263,6 +354,3 @@ export function calculateLiveScore(args: {
     provisional
   };
 }
-
-
-

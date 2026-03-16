@@ -1,9 +1,11 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import type { LeagueLiveResponse } from "@/lib/types";
 import { CaptainStats } from "@/components/captain-stats";
+import { FixturesPanel } from "@/components/fixtures-panel";
 import { LeagueTable } from "@/components/league-table";
 import { RefreshIndicator } from "@/components/refresh-indicator";
 
@@ -21,11 +23,20 @@ async function fetchLeagueLive(leagueId: string, refresh = false) {
 }
 
 export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; buildId: string }) {
+  const [tab, setTab] = useState<"standings" | "fixtures">("standings");
   const query = useQuery({
     queryKey: ["league-live", leagueId],
     queryFn: () => fetchLeagueLive(leagueId, true),
     refetchInterval: 30_000
   });
+
+  const tabs = useMemo(
+    () => [
+      { id: "standings", label: "Standings" },
+      { id: "fixtures", label: "Fixtures" }
+    ] as const,
+    []
+  );
 
   return (
     <main className="mx-auto flex min-h-screen max-w-[1080px] flex-col px-2 py-3 sm:px-3 md:px-3 md:py-5 lg:max-w-[1120px]">
@@ -76,8 +87,33 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
               Some managers could not be fully hydrated from the FPL API. Partial rows are still shown.
             </div>
           ) : null}
-          <CaptainStats stats={query.data.captainStats} />
-          <LeagueTable data={query.data} />
+
+          <div className="mb-3 inline-flex w-full rounded-[1rem] border border-[var(--border)] bg-[var(--surface)] p-1 md:mb-4 md:w-auto">
+            {tabs.map((item) => {
+              const active = tab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setTab(item.id)}
+                  className={`flex-1 rounded-[0.8rem] px-4 py-2 text-sm font-semibold md:flex-none ${
+                    active ? "bg-[var(--text)] text-white" : "text-[var(--muted)]"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {tab === "standings" ? (
+            <>
+              <CaptainStats stats={query.data.captainStats} />
+              <LeagueTable data={query.data} />
+            </>
+          ) : (
+            <FixturesPanel fixtures={query.data.fixtures} currentGw={query.data.league.currentGw} />
+          )}
         </>
       ) : null}
     </main>

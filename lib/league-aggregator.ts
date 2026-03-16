@@ -19,6 +19,8 @@ import type {
   ElementSummary,
   EntryHistory,
   FixtureSummary,
+  LeagueFixture,
+  LeagueFixtureStat,
   LeagueLiveResponse,
   LeagueRow,
   Pick,
@@ -34,8 +36,11 @@ type LeagueLiveArgs = {
 type FixtureWithStats = {
   id: number;
   event: number | null;
+  kickoff_time: string | null;
   team_h: number;
   team_a: number;
+  team_h_score: number | null;
+  team_a_score: number | null;
   started: boolean | null;
   finished: boolean;
   finished_provisional: boolean;
@@ -44,6 +49,19 @@ type FixtureWithStats = {
     h: Array<{ value: number; element: number }>;
     a: Array<{ value: number; element: number }>;
   }>;
+};
+
+const STAT_LABELS: Record<string, string> = {
+  goals_scored: "Goals scored",
+  assists: "Assists",
+  own_goals: "Own goals",
+  penalties_saved: "Penalties saved",
+  penalties_missed: "Penalties missed",
+  yellow_cards: "Yellow cards",
+  red_cards: "Red cards",
+  saves: "Saves",
+  bonus: "Bonus",
+  bps: "Bonus Points System"
 };
 
 function getCurrentGw(events: Array<{ id: number; is_current: boolean; finished: boolean }>) {
@@ -197,6 +215,77 @@ function buildCaptainStats(rows: LeagueRow[], elementsById: Map<number, ElementS
     });
 }
 
+function buildFixtureStats(
+  fixture: FixtureWithStats,
+  elementsById: Map<number, ElementSummary>,
+  teamsById: Map<number, TeamSummary>
+): LeagueFixtureStat[] {
+  return fixture.stats
+    .map((stat) => ({
+      key: stat.identifier,
+      label: STAT_LABELS[stat.identifier] ?? stat.identifier.replace(/_/g, " "),
+      home: stat.h
+        .map((item) => {
+          const element = elementsById.get(item.element);
+          const team = element ? teamsById.get(element.teamId) : undefined;
+          return {
+            elementId: item.element,
+            playerName: element?.webName ?? `Player ${item.element}`,
+            teamShortName: team?.shortName ?? "-",
+            value: item.value
+          };
+        })
+        .sort((left, right) => right.value - left.value),
+      away: stat.a
+        .map((item) => {
+          const element = elementsById.get(item.element);
+          const team = element ? teamsById.get(element.teamId) : undefined;
+          return {
+            elementId: item.element,
+            playerName: element?.webName ?? `Player ${item.element}`,
+            teamShortName: team?.shortName ?? "-",
+            value: item.value
+          };
+        })
+        .sort((left, right) => right.value - left.value)
+    }))
+    .filter((stat) => stat.home.length > 0 || stat.away.length > 0);
+}
+
+function buildFixturesPayload(
+  fixtures: FixtureWithStats[],
+  teamsById: Map<number, TeamSummary>,
+  elementsById: Map<number, ElementSummary>
+): LeagueFixture[] {
+  return fixtures
+    .map((fixture) => {
+      const homeTeam = teamsById.get(fixture.team_h);
+      const awayTeam = teamsById.get(fixture.team_a);
+
+      return {
+        id: fixture.id,
+        kickoffTime: fixture.kickoff_time,
+        homeTeam: homeTeam?.name ?? "Home",
+        awayTeam: awayTeam?.name ?? "Away",
+        homeShortName: homeTeam?.shortName ?? "-",
+        awayShortName: awayTeam?.shortName ?? "-",
+        homeScore: fixture.team_h_score,
+        awayScore: fixture.team_a_score,
+        started: Boolean(fixture.started),
+        finished: fixture.finished,
+        finishedProvisional: fixture.finished_provisional,
+        stats: buildFixtureStats(fixture, elementsById, teamsById)
+      };
+    })
+    .sort((left, right) => {
+      if (left.kickoffTime && right.kickoffTime) {
+        return left.kickoffTime.localeCompare(right.kickoffTime);
+      }
+
+      return left.id - right.id;
+    });
+}
+
 function buildRow(args: {
   standing: {
     entry: number;
@@ -260,7 +349,12 @@ function buildRow(args: {
     managerName: args.standing.player_name,
     captainName,
     chip: args.picks.active_chip,
-    playersPlayed: computePlayersPlayed(picks, args.context),
+    playersPlayed: computePlayersPlayed({
+      picks,
+      automaticSubs,
+      chip: args.picks.active_chip,
+      context: args.context
+    }),
     lineupPoints: liveScore.lineupPoints,
     transferCost: args.picks.entry_history.event_transfers_cost,
     gwPoints: liveScore.gwPoints,
@@ -284,6 +378,7 @@ export async function getLeagueLivePayload({
   ]);
 
   const currentGw = gw === "current" ? getCurrentGw(bootstrap.events) : Number(gw);
+  const currentGwFixtures = fixtures.filter((fixture) => fixture.event === currentGw);
   const live = await getEventLive(currentGw, { forceRefresh });
   const elements = bootstrap.elements.map((element) => ({
     id: element.id,
@@ -292,14 +387,17 @@ export async function getLeagueLivePayload({
     elementType: element.element_type,
     photo: element.photo
   }));
+  const teams = bootstrap.teams.map((team) => ({
+    id: team.id,
+    name: team.name,
+    shortName: team.short_name
+  }));
+  const teamsById = new Map(teams.map((team) => [team.id, team]));
   const context = toScoringContext({
     elements,
-    teams: bootstrap.teams.map((team) => ({
-      id: team.id,
-      shortName: team.short_name
-    })),
+    teams,
     liveElements: live.elements,
-    fixtures: fixtures.filter((fixture) => fixture.event === currentGw)
+    fixtures: currentGwFixtures
   });
 
   const rowResults = await Promise.allSettled(
@@ -363,9 +461,8 @@ export async function getLeagueLivePayload({
       isProvisional: true
     },
     captainStats: buildCaptainStats(rows, context.elementsById),
+    fixtures: buildFixturesPayload(currentGwFixtures, teamsById, context.elementsById),
     rows: computeProjectedRanks(rows),
     errors
   };
 }
-
-
