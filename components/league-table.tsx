@@ -42,6 +42,30 @@ function chipLabel(chip: LeagueRowType["chip"]) {
   );
 }
 
+function buildRankTone(rows: LeagueRowType[]) {
+  if (rows.length === 0) {
+    return { lowCut: 0, highCut: 0 };
+  }
+
+  const scores = rows.map((row) => row.gwPoints).sort((a, b) => a - b);
+  const lowCut = scores[Math.floor((scores.length - 1) / 3)] ?? scores[0] ?? 0;
+  const highCut = scores[Math.floor(((scores.length - 1) * 2) / 3)] ?? scores[scores.length - 1] ?? 0;
+
+  return { lowCut, highCut };
+}
+
+function rankClassName(row: LeagueRowType, lowCut: number, highCut: number) {
+  if (row.gwPoints >= highCut) {
+    return "text-emerald-700";
+  }
+
+  if (row.gwPoints <= lowCut) {
+    return "text-rose-700";
+  }
+
+  return "text-amber-700";
+}
+
 export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
   const [sorting, setSorting] = useState<SortingState>([{ id: "rank", desc: false }]);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -60,6 +84,8 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
       return matchesSearch && matchesChip && matchesTopN;
     });
   }, [chipOnly, data.rows, search, topN]);
+
+  const rankTone = useMemo(() => buildRankTone(data.rows), [data.rows]);
 
   const table = useReactTable({
     data: filteredRows,
@@ -86,17 +112,18 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
           <table className="min-w-full border-collapse text-[12px]">
             <thead>
               <tr className="border-b border-[var(--border)] bg-[var(--surface-strong)]/40 text-[10px] uppercase tracking-[0.08em] text-[var(--muted)]">
-                <th className="w-[36px] px-1.5 py-2 text-left">Rank</th>
-                <th className="px-1.5 py-2 text-left">Team</th>
-                <th className="px-1.5 py-2 text-left">Captain</th>
-                <th className="w-[46px] px-1.5 py-2 text-right">GW</th>
-                <th className="w-[54px] px-1.5 py-2 text-right">Total</th>
+                <th className="w-[32px] px-1 py-2 text-left">Rank</th>
+                <th className="px-1 py-2 text-left">Team</th>
+                <th className="px-1 py-2 text-left">Captain</th>
+                <th className="w-[44px] px-1 py-2 text-right">GW</th>
+                <th className="w-[50px] px-1 py-2 text-right">Total</th>
               </tr>
             </thead>
             <tbody>
               {table.getRowModel().rows.map((tableRow) => {
                 const row = tableRow.original;
                 const isExpanded = expandedId === row.entryId;
+                const tone = rankClassName(row, rankTone.lowCut, rankTone.highCut);
 
                 return (
                   <Fragment key={row.entryId}>
@@ -104,28 +131,28 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                       className="cursor-pointer border-b border-[var(--border)] bg-white align-top"
                       onClick={() => setExpandedId((current) => (current === row.entryId ? null : row.entryId))}
                     >
-                      <td className="px-1.5 py-2.5 align-top">
-                        <div className="flex items-center gap-1 font-semibold tabular-nums">
+                      <td className="px-1 py-2.5 align-top">
+                        <div className={`flex items-center gap-1 font-semibold tabular-nums ${tone}`}>
                           <span className="text-[10px] text-[var(--muted)]">{isExpanded ? "v" : ">"}</span>
                           <span>{row.rank}</span>
                         </div>
                       </td>
-                      <td className="px-1.5 py-2.5 align-top">
+                      <td className="px-1 py-2.5 align-top">
                         <div className="truncate text-[13px] font-semibold leading-4">{row.teamName}</div>
                         <div className="mt-0.5 truncate text-[10px] leading-4 text-[var(--muted)]">{row.managerName}</div>
                       </td>
-                      <td className="px-1.5 py-2.5 align-top">
+                      <td className="px-1 py-2.5 align-top">
                         <div className="truncate text-[13px] font-semibold leading-4">{row.captainName}</div>
                         <div className="mt-0.5 truncate text-[10px] leading-4 text-[var(--muted)]">
                           {row.chip ? chipLabel(row.chip) : `${row.playersPlayed} played`}
                         </div>
                       </td>
-                      <td className="px-1.5 py-2.5 text-right align-top font-semibold tabular-nums">{row.gwPoints}</td>
-                      <td className="px-1.5 py-2.5 text-right align-top font-semibold tabular-nums">{row.totalPoints}</td>
+                      <td className="px-1 py-2.5 text-right align-top font-semibold tabular-nums">{row.gwPoints}</td>
+                      <td className="px-1 py-2.5 text-right align-top font-semibold tabular-nums">{row.totalPoints}</td>
                     </tr>
                     {isExpanded ? (
                       <tr className="bg-[var(--surface-strong)]/30">
-                        <td colSpan={5} className="px-1.5 py-2">
+                        <td colSpan={5} className="px-1 py-2">
                           <LeagueRowExpanded row={row} />
                         </td>
                       </tr>
@@ -163,6 +190,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
           <tbody>
             {table.getRowModel().rows.map((tableRow) => {
               const isExpanded = expandedId === tableRow.original.entryId;
+              const tone = rankClassName(tableRow.original, rankTone.lowCut, rankTone.highCut);
 
               return (
                 <Fragment key={tableRow.original.entryId}>
@@ -174,7 +202,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                       )
                     }
                   >
-                    <LeagueRow row={tableRow.original} />
+                    <LeagueRow row={tableRow.original} rankClassName={tone} />
                   </tr>
                   {isExpanded ? (
                     <tr className="bg-[var(--surface-strong)]/40">

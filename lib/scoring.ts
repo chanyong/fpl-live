@@ -284,7 +284,9 @@ export function splitSquad(
   context: ScoringContext,
   automaticSubs?: Array<{ elementIn: number; elementOut: number }>
 ): SquadSplit {
+  const sorted = [...picks].sort((a, b) => a.position - b.position);
   const effective = getEffectivePicks({ picks, automaticSubs, chip, context });
+  const multiplierByElement = new Map<number, number>(effective.all.map((pick) => [pick.element, pick.effectiveMultiplier]));
   const toCard = (pick: Pick | EffectivePick, forceBench = false): PlayerLiveCard => {
     const element = context.elementsById.get(pick.element);
     const team = element ? context.teamsById.get(element.teamId) : undefined;
@@ -298,8 +300,11 @@ export function splitSquad(
         : fixtureState.hasStarted
           ? "live"
           : "not_played";
-    const effectiveMultiplier = "effectiveMultiplier" in pick ? pick.effectiveMultiplier : forceBench || chip === "bboost" ? 1 : 0;
-    const displayPoints = effectiveMultiplier > 0 ? live.totalPoints * effectiveMultiplier : live.totalPoints;
+    const effectiveMultiplier =
+      multiplierByElement.get(pick.element) ??
+      ("effectiveMultiplier" in pick ? pick.effectiveMultiplier : forceBench || chip === "bboost" ? 1 : 0);
+    const displayPoints =
+      status === "not_played" && effectiveMultiplier <= 1 ? 0 : live.totalPoints * Math.max(effectiveMultiplier, 1);
 
     return {
       elementId: pick.element,
@@ -318,8 +323,8 @@ export function splitSquad(
   };
 
   return {
-    starters: effective.starters.sort((a, b) => a.position - b.position).map((pick) => toCard(pick)),
-    bench: chip === "bboost" ? [] : effective.bench.map((pick) => toCard(pick, true))
+    starters: sorted.filter((pick) => pick.position <= 11).map((pick) => toCard(pick)),
+    bench: chip === "bboost" ? [] : sorted.filter((pick) => pick.position > 11).map((pick) => toCard(pick, true))
   };
 }
 

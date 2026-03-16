@@ -17,10 +17,12 @@ function chipLabel(chip: LeagueRowType["chip"]) {
   );
 }
 
-export function LeagueRow({ row }: { row: LeagueRowType }) {
+export function LeagueRow({ row, rankClassName }: { row: LeagueRowType; rankClassName?: string }) {
   return (
     <>
-      <td className="px-2.5 py-3 text-center">{row.rank}</td>
+      <td className="px-2.5 py-3 text-center">
+        <span className={`font-semibold tabular-nums ${rankClassName ?? "text-stone-800"}`}>{row.rank}</span>
+      </td>
       <td className="px-2.5 py-3 font-semibold">{row.teamName}</td>
       <td className="px-2.5 py-3">{row.managerName}</td>
       <td className="px-2.5 py-3">{row.captainName}</td>

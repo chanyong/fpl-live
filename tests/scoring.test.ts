@@ -182,4 +182,25 @@ describe("scoring", () => {
 
     expect(result.gwPoints).toBe(60);
   });
+
+
+  it("keeps original starters and bench in squad display while totals use autosubs", () => {
+    const finishedContext = {
+      ...createContext(),
+      fixturesByTeamId: new Map(
+        [...createContext().fixturesByTeamId.entries()].map(([teamId, fixtures]) => [
+          teamId,
+          fixtures.map((fixture) => ({ ...fixture, finished: true, finishedProvisional: true }))
+        ])
+      )
+    };
+
+    const squad = splitSquad(basePicks, null, finishedContext, []);
+
+    expect(squad.starters.some((player) => player.webName === "Bench Mid")).toBe(false);
+    expect(squad.starters.find((player) => player.webName === "Def B")?.livePoints).toBe(0);
+    expect(squad.bench.find((player) => player.webName === "Bench Mid")?.livePoints).toBe(4);
+    expect(squad.bench.find((player) => player.webName === "Bench Keeper")?.livePoints).toBe(8);
+  });
+
 });
