@@ -3,29 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { LeagueFixture } from "@/lib/types";
 
-const DATE_GROUP_FORMATTER = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "Asia/Seoul",
-  weekday: "short",
-  month: "short",
-  day: "numeric"
-});
-
-const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "Asia/Seoul",
-  weekday: "short",
-  month: "short",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false
-});
-
-const TIME_FORMATTER = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "Asia/Seoul",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false
-});
+const WEEKDAY_LABELS = ["?", "?", "?", "?", "?", "?", "?"];
 
 function fixtureStatus(fixture: LeagueFixture) {
   if (fixture.finished) {
@@ -63,28 +41,40 @@ function scoreLabel(fixture: LeagueFixture) {
   return `${fixture.homeScore} - ${fixture.awayScore}`;
 }
 
-function kickoffDateLabel(kickoffTime: string | null) {
+function toKstDate(kickoffTime: string | null) {
   if (!kickoffTime) {
-    return "TBD";
+    return null;
   }
 
-  return DATE_GROUP_FORMATTER.format(new Date(kickoffTime));
+  const asKst = new Date(new Date(kickoffTime).toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+  return asKst;
+}
+
+function kickoffDateLabel(kickoffTime: string | null) {
+  const date = toKstDate(kickoffTime);
+  if (!date) {
+    return "?? ??";
+  }
+
+  return `${date.getMonth() + 1}? ${date.getDate()}?(${WEEKDAY_LABELS[date.getDay()]})`;
 }
 
 function kickoffTimeLabel(kickoffTime: string | null) {
-  if (!kickoffTime) {
-    return "TBD";
+  const date = toKstDate(kickoffTime);
+  if (!date) {
+    return "?? ??";
   }
 
-  return `${TIME_FORMATTER.format(new Date(kickoffTime))} KST`;
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")} KST`;
 }
 
 function kickoffDateTimeLabel(kickoffTime: string | null) {
-  if (!kickoffTime) {
-    return "Kickoff time TBD";
+  const date = toKstDate(kickoffTime);
+  if (!date) {
+    return "?? ??";
   }
 
-  return `${DATE_TIME_FORMATTER.format(new Date(kickoffTime))} KST`;
+  return `${kickoffDateLabel(kickoffTime)} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")} KST`;
 }
 
 export function FixturesPanel({ fixtures, currentGw }: { fixtures: LeagueFixture[]; currentGw: number }) {
@@ -124,7 +114,7 @@ export function FixturesPanel({ fixtures, currentGw }: { fixtures: LeagueFixture
       <div className="space-y-4">
         {groupedFixtures.map((group) => (
           <div key={group.label} className="space-y-2">
-            <div className="px-2 text-[12px] font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">{group.label}</div>
+            <div className="px-2 text-[12px] font-semibold text-[var(--muted)]">{group.label}</div>
             <div className="grid gap-2 md:grid-cols-2">
               {group.items.map((fixture) => {
                 const isSelected = fixture.id === selectedId;
@@ -143,9 +133,8 @@ export function FixturesPanel({ fixtures, currentGw }: { fixtures: LeagueFixture
                       onClick={() => setSelectedId((current) => (current === fixture.id ? null : fixture.id))}
                       className="w-full px-3 py-3 text-left"
                     >
-                      <div className="flex items-center justify-between gap-3 text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">
+                      <div className="flex items-center justify-start gap-3 text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">
                         <span className={`rounded-full px-2 py-1 font-semibold ${fixtureStatusClass(fixture)}`}>{fixtureStatus(fixture)}</span>
-                        <span>{kickoffTimeLabel(fixture.kickoffTime)}</span>
                       </div>
                       <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-[14px] font-semibold md:text-[15px]">
                         <span className="min-w-0 truncate">{fixture.homeTeam}</span>

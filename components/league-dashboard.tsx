@@ -7,7 +7,6 @@ import type { LeagueLiveResponse } from "@/lib/types";
 import { CaptainStats } from "@/components/captain-stats";
 import { FixturesPanel } from "@/components/fixtures-panel";
 import { LeagueTable } from "@/components/league-table";
-import { RefreshIndicator } from "@/components/refresh-indicator";
 
 async function fetchLeagueLive(leagueId: string, refresh = false) {
   const response = await fetch(
@@ -56,7 +55,6 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
               : "Loading official FPL data"}
           </p>
         </div>
-        <RefreshIndicator buildId={buildId} />
       </div>
 
       {query.isLoading ? (
