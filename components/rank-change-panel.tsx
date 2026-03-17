@@ -336,7 +336,9 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
                   checked={active}
                   onChange={(event) => {
                     setSelectedEntries((current) =>
-                      event.target.checked ? Array.from(new Set([...current, manager.entry])) : current.filter((value) => value !== manager.entry)
+                      event.target.checked
+                        ? Array.from(new Set([...current, manager.entry]))
+                        : current.filter((value) => value !== manager.entry)
                     );
                   }}
                 />
