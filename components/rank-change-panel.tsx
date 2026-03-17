@@ -203,13 +203,13 @@ function StatCard({
   );
 }
 
-function TrendChart({ managers, gameweeks }: { managers: TrendManager[]; gameweeks: number[] }) {
+function TrendChart({ managers, gameweeks, totalManagers }: { managers: TrendManager[]; gameweeks: number[]; totalManagers: number }) {
   const width = Math.max(980, 140 + gameweeks.length * 30);
-  const height = Math.max(420, 140 + managers.length * 18);
+  const height = Math.max(420, 140 + totalManagers * 18);
   const padding = { top: 24, right: 120, bottom: 42, left: 48 };
   const innerWidth = width - padding.left - padding.right;
   const innerHeight = height - padding.top - padding.bottom;
-  const maxRank = Math.max(managers.length, 1);
+  const maxRank = Math.max(totalManagers, 1);
   const stepX = gameweeks.length > 1 ? innerWidth / (gameweeks.length - 1) : 0;
   const getX = (index: number) => padding.left + stepX * index;
   const getY = (rank: number) => padding.top + ((rank - 1) / Math.max(maxRank - 1, 1)) * innerHeight;
@@ -294,7 +294,7 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
   return (
     <section className="space-y-4">
       {selectedManagers.length ? (
-        <TrendChart managers={selectedManagers} gameweeks={trend.gameweeks} />
+        <TrendChart managers={selectedManagers} gameweeks={trend.gameweeks} totalManagers={trend.managers.length} />
       ) : (
         <section className="grid min-h-[280px] place-items-center rounded-[1.2rem] border border-[var(--border)] bg-[#171c23] p-4 text-center text-[14px] text-[rgba(206,212,218,0.82)]">
           매니저를 하나 이상 선택해 주세요.
