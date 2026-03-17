@@ -196,7 +196,7 @@ function StatCard({
             </div>
           ))
         ) : (
-          <div className="text-[12px] text-[var(--muted)]">???? ????.</div>
+          <div className="text-[12px] text-[var(--muted)]">데이터가 없습니다.</div>
         )}
       </div>
     </article>
@@ -217,9 +217,9 @@ function TrendChart({ managers, gameweeks }: { managers: TrendManager[]; gamewee
   return (
     <section className="rounded-[1.2rem] bg-[#171c23] p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
       <div className="mb-3">
-        <div className="text-[1.3rem] font-semibold text-[#f5f7fa]">??? ?? ??</div>
+        <div className="text-[1.3rem] font-semibold text-[#f5f7fa]">개인별 순위 변화</div>
         <div className="text-[12px] leading-5 text-[rgba(206,212,218,0.74)]">
-          GW1?? ?? GW?? ???? ?? ?? ?? ?????.
+          GW1부터 현재 GW까지 누적점수 기준 리그 등수 변화입니다.
         </div>
       </div>
       <div className="overflow-x-auto px-1 pb-1">
@@ -297,14 +297,14 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
         <TrendChart managers={selectedManagers} gameweeks={trend.gameweeks} />
       ) : (
         <section className="grid min-h-[280px] place-items-center rounded-[1.2rem] border border-[var(--border)] bg-[#171c23] p-4 text-center text-[14px] text-[rgba(206,212,218,0.82)]">
-          ???? ?? ?? ??? ???.
+          매니저를 하나 이상 선택해 주세요.
         </section>
       )}
 
       <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
         <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="text-[1rem] font-semibold">??? ??</div>
+            <div className="text-[1rem] font-semibold">매니저 선택</div>
           </div>
           <div className="flex gap-2">
             <button
@@ -312,14 +312,14 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
               className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[12px] font-semibold"
               onClick={() => setSelectedEntries(data.managers.map((manager) => manager.entry))}
             >
-              ?? ??
+              전체 선택
             </button>
             <button
               type="button"
               className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[12px] font-semibold"
               onClick={() => setSelectedEntries([])}
             >
-              ?? ??
+              전체 해제
             </button>
           </div>
         </div>
@@ -355,20 +355,20 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
 
       <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
         <div className="mb-3">
-          <div className="text-[1rem] font-semibold">GW ??</div>
-          <div className="text-[12px] text-[var(--muted)]">GW1?? ???? {stats.trackedGameweeks}? ????? ???? ??????.</div>
+          <div className="text-[1rem] font-semibold">GW 통계</div>
+          <div className="text-[12px] text-[var(--muted)]">GW1부터 현재까지 {stats.trackedGameweeks}개 게임위크를 기준으로 계산했습니다.</div>
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard title="?? GW 1? ??" subtitle="? GW ?? ?? 1? ?? Top 5" items={stats.firstPlaceTop} formatter={(item) => `${item.value}?`} />
-          <StatCard title="?? GW 2? ??" subtitle="? GW ?? ?? 2? ?? Top 5" items={stats.secondPlaceTop} formatter={(item) => `${item.value}?`} />
-          <StatCard title="?? 1? ?? ??" subtitle="???? ?? ??? 1? ?? Top 5" items={stats.cumulativeLeaderTop} formatter={(item) => `${item.value}?`} />
-          <StatCard title="??? ??" subtitle="??? 3? ?? ?? ?? Top 5" items={stats.podiumTop} formatter={(item) => `${item.value}?`} />
-          <StatCard title="Top5 ?? ??" subtitle="??? 5? ?? ?? ?? Top 5" items={stats.topFiveTop} formatter={(item) => `${item.value}?`} />
-          <StatCard title="???? ??" subtitle="?? ???? Top 5" items={stats.bestTotalPointsTop} formatter={(item) => `${item.value}?`} />
-          <StatCard title="?? GW ????" subtitle="?? GW ?? ?? Top 5" items={stats.weeklyHighScoresTop} formatter={(item) => `GW${item.gw} ? ${item.value}?`} />
-          <StatCard title="?? ????" subtitle="GW ?? ?? Top 5" items={stats.averageEventPointsTop} formatter={(item) => `${item.value}?`} />
-          <StatCard title="?? ?? ??" subtitle="?? ?? ?? ?? Top 5" items={stats.averageRankTop} formatter={(item) => `${item.value}?`} />
-          <StatCard title="?? ?? ??" subtitle="?? GW ?? ??? Top 5" items={stats.rankJumpTop} formatter={(item) => `GW${item.gw} ? +${item.value}`} />
+          <StatCard title="개별 GW 1위 최다" subtitle="각 GW 종료 시점 1등 횟수 Top 5" items={stats.firstPlaceTop} formatter={(item) => `${item.value}회`} />
+          <StatCard title="개별 GW 2위 최다" subtitle="각 GW 종료 시점 2등 횟수 Top 5" items={stats.secondPlaceTop} formatter={(item) => `${item.value}회`} />
+          <StatCard title="누적 1위 유지 최다" subtitle="누적점수 기준 주차별 1위 횟수 Top 5" items={stats.cumulativeLeaderTop} formatter={(item) => `${item.value}회`} />
+          <StatCard title="포디움 최다" subtitle="주차별 3위 이내 진입 횟수 Top 5" items={stats.podiumTop} formatter={(item) => `${item.value}회`} />
+          <StatCard title="Top5 유지 최다" subtitle="주차별 5위 이내 유지 횟수 Top 5" items={stats.topFiveTop} formatter={(item) => `${item.value}회`} />
+          <StatCard title="누적점수 최고" subtitle="현재 누적점수 Top 5" items={stats.bestTotalPointsTop} formatter={(item) => `${item.value}점`} />
+          <StatCard title="개별 GW 최고득점" subtitle="단일 GW 득점 기록 Top 5" items={stats.weeklyHighScoresTop} formatter={(item) => `GW${item.gw} · ${item.value}점`} />
+          <StatCard title="주간 평균점수" subtitle="GW 평균 득점 Top 5" items={stats.averageEventPointsTop} formatter={(item) => `${item.value}점`} />
+          <StatCard title="평균 순위 최고" subtitle="시즌 평균 리그 순위 Top 5" items={stats.averageRankTop} formatter={(item) => `${item.value}위`} />
+          <StatCard title="최대 순위 점프" subtitle="직전 GW 대비 상승폭 Top 5" items={stats.rankJumpTop} formatter={(item) => `GW${item.gw} · +${item.value}`} />
         </div>
       </section>
     </section>
