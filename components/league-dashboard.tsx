@@ -33,7 +33,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
   const tabs = useMemo(
     () => [
-      { id: "standings", label: "Standings" },
+      { id: "standings", label: "League" },
       { id: "fixtures", label: "Fixtures" }
     ] as const,
     []

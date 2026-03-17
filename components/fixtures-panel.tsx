@@ -6,7 +6,11 @@ import type { LeagueFixture } from "@/lib/types";
 const KOREAN_DATE_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   timeZone: "Asia/Seoul",
   month: "long",
-  day: "numeric",
+  day: "numeric"
+});
+
+const KOREAN_WEEKDAY_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul",
   weekday: "short"
 });
 
@@ -53,15 +57,6 @@ function scoreLabel(fixture: LeagueFixture) {
   return `${fixture.homeScore} - ${fixture.awayScore}`;
 }
 
-function formatKoreanDate(date: Date) {
-  const parts = KOREAN_DATE_FORMATTER.formatToParts(date);
-  const month = parts.find((part) => part.type === "month")?.value ?? "";
-  const day = parts.find((part) => part.type === "day")?.value ?? "";
-  const weekday = parts.find((part) => part.type === "weekday")?.value ?? "";
-
-  return `${month} ${day}?(${weekday})`;
-}
-
 function toKstDate(kickoffTime: string | null) {
   if (!kickoffTime) {
     return null;
@@ -70,10 +65,17 @@ function toKstDate(kickoffTime: string | null) {
   return new Date(kickoffTime);
 }
 
+function formatKoreanDate(date: Date) {
+  const dateLabel = KOREAN_DATE_FORMATTER.format(date).replace(/\s+/g, " ").trim();
+  const weekdayLabel = KOREAN_WEEKDAY_FORMATTER.format(date).replace(/\s+/g, "").trim();
+
+  return `${dateLabel}(${weekdayLabel})`;
+}
+
 function kickoffDateLabel(kickoffTime: string | null) {
   const date = toKstDate(kickoffTime);
   if (!date) {
-    return "?? ??";
+    return "일정 미정";
   }
 
   return formatKoreanDate(date);
@@ -82,7 +84,7 @@ function kickoffDateLabel(kickoffTime: string | null) {
 function kickoffDateTimeLabel(kickoffTime: string | null) {
   const date = toKstDate(kickoffTime);
   if (!date) {
-    return "?? ??";
+    return "일정 미정";
   }
 
   return `${formatKoreanDate(date)} ${KOREAN_TIME_FORMATTER.format(date)} KST`;
@@ -125,7 +127,7 @@ export function FixturesPanel({ fixtures, currentGw }: { fixtures: LeagueFixture
       <div className="space-y-4">
         {groupedFixtures.map((group) => (
           <div key={group.label} className="space-y-2">
-            <div className="px-2 text-[12px] font-semibold text-[var(--muted)]">{group.label}</div>
+            <div className="px-2 text-[16px] font-semibold text-[var(--muted)] md:text-[17px]">{group.label}</div>
             <div className="grid gap-2 md:grid-cols-2">
               {group.items.map((fixture) => {
                 const isSelected = fixture.id === selectedId;
