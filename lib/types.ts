@@ -136,3 +136,47 @@ export type EntryHistory = {
   total_points: number;
   event_transfers_cost: number;
 };
+
+
+export type EntryHistoryRow = {
+  event: number;
+  points: number;
+  total_points: number;
+};
+
+export type EntryHistoryPayload = {
+  current: EntryHistoryRow[];
+};
+
+export type RankChangePoint = {
+  gw: number;
+  totalPoints: number;
+  eventPoints: number;
+  rank: number;
+};
+
+export type RankChangeManager = {
+  entry: number;
+  playerName: string;
+  entryName: string;
+  overallRank: number | null;
+  totalPoints: number;
+  latestRank: number | null;
+  gwPoints: number;
+  color: string;
+  previousRank: number | null;
+  trend: Array<RankChangePoint | null>;
+};
+
+export type RankChangeResponse = {
+  league: {
+    id: number;
+    name: string;
+    currentGw: number;
+    lastUpdated: string;
+  };
+  trend: {
+    gameweeks: number[];
+  };
+  managers: RankChangeManager[];
+};

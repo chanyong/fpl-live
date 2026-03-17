@@ -46,6 +46,17 @@ export const standingsPageSchema = z.object({
   })
 });
 
+
+export const entryHistorySchema = z.object({
+  current: z.array(
+    z.object({
+      event: z.number(),
+      points: z.number(),
+      total_points: z.number()
+    })
+  )
+});
+
 export const entrySchema = z.object({
   id: z.number(),
   summary_overall_points: z.number()

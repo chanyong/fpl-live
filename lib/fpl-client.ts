@@ -1,5 +1,6 @@
 ﻿import {
   bootstrapStaticSchema,
+  entryHistorySchema,
   entrySchema,
   fixturesSchema,
   liveSchema,
@@ -67,6 +68,10 @@ export async function getAllStandings(leagueId: number, options?: FetchOptions) 
     league: firstPage.league,
     results
   };
+}
+
+export function getEntryHistory(entryId: number, options?: FetchOptions) {
+  return fetchJson(`/entry/${entryId}/history/`, entryHistorySchema, options);
 }
 
 export function getEntry(entryId: number, options?: FetchOptions) {

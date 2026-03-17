@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import type { LeagueLiveResponse } from "@/lib/types";
+import type { LeagueLiveResponse, RankChangeResponse } from "@/lib/types";
 import { CaptainStats } from "@/components/captain-stats";
 import { FixturesPanel } from "@/components/fixtures-panel";
 import { LeagueTable } from "@/components/league-table";
+import { RankChangePanel } from "@/components/rank-change-panel";
 
 async function fetchLeagueLive(leagueId: string, refresh = false) {
   const response = await fetch(
@@ -21,8 +22,19 @@ async function fetchLeagueLive(leagueId: string, refresh = false) {
   return (await response.json()) as LeagueLiveResponse;
 }
 
+async function fetchRankChange(leagueId: string, refresh = false) {
+  const response = await fetch(`/api/league-rank-change?leagueId=${leagueId}${refresh ? "&refresh=1" : ""}`);
+
+  if (!response.ok) {
+    const payload = (await response.json()) as { error?: string };
+    throw new Error(payload.error ?? "Failed to fetch rank change data");
+  }
+
+  return (await response.json()) as RankChangeResponse;
+}
+
 export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; buildId: string }) {
-  const [tab, setTab] = useState<"standings" | "fixtures">("standings");
+  const [tab, setTab] = useState<"standings" | "fixtures" | "rank-change">("standings");
   const query = useQuery({
     queryKey: ["league-live", leagueId],
     queryFn: () => fetchLeagueLive(leagueId, true),
@@ -30,11 +42,20 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
     refetchOnReconnect: false,
     refetchOnMount: false
   });
+  const rankChangeQuery = useQuery({
+    queryKey: ["league-rank-change", leagueId],
+    queryFn: () => fetchRankChange(leagueId, true),
+    enabled: tab === "rank-change",
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false
+  });
 
   const tabs = useMemo(
     () => [
-      { id: "standings", label: "League" },
-      { id: "fixtures", label: "Fixtures" }
+      { id: "standings", label: "Weekly Rank" },
+      { id: "fixtures", label: "Fixtures" },
+      { id: "rank-change", label: "Rank Change" }
     ] as const,
     []
   );
@@ -47,17 +68,19 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
             Search another league
           </Link>
           <h1 className="mt-1 text-[2rem] font-semibold leading-none md:mt-2 md:text-[2rem]">
-            {query.data?.league.name ?? `League ${leagueId}`}
+            {query.data?.league.name ?? rankChangeQuery.data?.league.name ?? `League ${leagueId}`}
           </h1>
           <p className="mt-1 text-[16px] text-[var(--muted)] md:text-base">
             {query.data
               ? `Gameweek ${query.data.league.currentGw} live dashboard`
-              : "Loading official FPL data"}
+              : rankChangeQuery.data
+                ? `Gameweek ${rankChangeQuery.data.league.currentGw} rank history`
+                : "Loading official FPL data"}
           </p>
         </div>
       </div>
 
-      {query.isLoading ? (
+      {query.isLoading && tab !== "rank-change" ? (
         <div className="grid gap-3">
           {Array.from({ length: 8 }).map((_, index) => (
             <div
@@ -68,9 +91,26 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
         </div>
       ) : null}
 
-      {query.isError ? (
+      {rankChangeQuery.isLoading && tab === "rank-change" ? (
+        <div className="grid gap-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-24 animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80"
+            />
+          ))}
+        </div>
+      ) : null}
+
+      {query.isError && tab !== "rank-change" ? (
         <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-[var(--danger)]">
           {(query.error as Error).message}
+        </div>
+      ) : null}
+
+      {rankChangeQuery.isError && tab === "rank-change" ? (
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-[var(--danger)]">
+          {(rankChangeQuery.error as Error).message}
         </div>
       ) : null}
 
@@ -80,9 +120,9 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
         </div>
       ) : null}
 
-      {query.data ? (
+      {(query.data || rankChangeQuery.data) ? (
         <>
-          {query.data.errors.length > 0 ? (
+          {query.data && query.data.errors.length > 0 && tab !== "rank-change" ? (
             <div className="mb-4 rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-[var(--warning)]">
               Some managers could not be fully hydrated from the FPL API. Partial rows are still shown.
             </div>
@@ -106,14 +146,18 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
             })}
           </div>
 
-          {tab === "standings" ? (
+          {tab === "standings" && query.data ? (
             <>
               <CaptainStats stats={query.data.captainStats} />
               <LeagueTable data={query.data} />
             </>
-          ) : (
+          ) : null}
+
+          {tab === "fixtures" && query.data ? (
             <FixturesPanel fixtures={query.data.fixtures} currentGw={query.data.league.currentGw} />
-          )}
+          ) : null}
+
+          {tab === "rank-change" && rankChangeQuery.data ? <RankChangePanel data={rankChangeQuery.data} /> : null}
         </>
       ) : null}
     </main>
