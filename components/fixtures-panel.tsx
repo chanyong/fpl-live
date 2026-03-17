@@ -75,7 +75,7 @@ function formatKoreanDate(date: Date) {
 function kickoffDateLabel(kickoffTime: string | null) {
   const date = toKstDate(kickoffTime);
   if (!date) {
-    return "일정 미정";
+    return "\uc77c\uc815 \ubbf8\uc815";
   }
 
   return formatKoreanDate(date);
@@ -84,7 +84,7 @@ function kickoffDateLabel(kickoffTime: string | null) {
 function kickoffDateTimeLabel(kickoffTime: string | null) {
   const date = toKstDate(kickoffTime);
   if (!date) {
-    return "일정 미정";
+    return "\uc77c\uc815 \ubbf8\uc815";
   }
 
   return `${formatKoreanDate(date)} ${KOREAN_TIME_FORMATTER.format(date)} KST`;
