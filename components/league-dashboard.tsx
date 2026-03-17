@@ -27,7 +27,9 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
   const query = useQuery({
     queryKey: ["league-live", leagueId],
     queryFn: () => fetchLeagueLive(leagueId, true),
-    refetchInterval: 30_000
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false
   });
 
   const tabs = useMemo(
