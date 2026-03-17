@@ -3,7 +3,19 @@
 import { useEffect, useMemo, useState } from "react";
 import type { LeagueFixture } from "@/lib/types";
 
-const WEEKDAY_LABELS = ["?", "?", "?", "?", "?", "?", "?"];
+const KOREAN_DATE_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul",
+  month: "long",
+  day: "numeric",
+  weekday: "short"
+});
+
+const KOREAN_TIME_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false
+});
 
 function fixtureStatus(fixture: LeagueFixture) {
   if (fixture.finished) {
@@ -41,13 +53,21 @@ function scoreLabel(fixture: LeagueFixture) {
   return `${fixture.homeScore} - ${fixture.awayScore}`;
 }
 
+function formatKoreanDate(date: Date) {
+  const parts = KOREAN_DATE_FORMATTER.formatToParts(date);
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+  const weekday = parts.find((part) => part.type === "weekday")?.value ?? "";
+
+  return `${month} ${day}?(${weekday})`;
+}
+
 function toKstDate(kickoffTime: string | null) {
   if (!kickoffTime) {
     return null;
   }
 
-  const asKst = new Date(new Date(kickoffTime).toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
-  return asKst;
+  return new Date(kickoffTime);
 }
 
 function kickoffDateLabel(kickoffTime: string | null) {
@@ -56,16 +76,7 @@ function kickoffDateLabel(kickoffTime: string | null) {
     return "?? ??";
   }
 
-  return `${date.getMonth() + 1}? ${date.getDate()}?(${WEEKDAY_LABELS[date.getDay()]})`;
-}
-
-function kickoffTimeLabel(kickoffTime: string | null) {
-  const date = toKstDate(kickoffTime);
-  if (!date) {
-    return "?? ??";
-  }
-
-  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")} KST`;
+  return formatKoreanDate(date);
 }
 
 function kickoffDateTimeLabel(kickoffTime: string | null) {
@@ -74,7 +85,7 @@ function kickoffDateTimeLabel(kickoffTime: string | null) {
     return "?? ??";
   }
 
-  return `${kickoffDateLabel(kickoffTime)} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")} KST`;
+  return `${formatKoreanDate(date)} ${KOREAN_TIME_FORMATTER.format(date)} KST`;
 }
 
 export function FixturesPanel({ fixtures, currentGw }: { fixtures: LeagueFixture[]; currentGw: number }) {
