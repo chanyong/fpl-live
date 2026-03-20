@@ -36,10 +36,19 @@ export function PlayerChip({ player }: { player: PlayerLiveCard }) {
     <div
       className={`flex min-w-0 flex-col rounded-[1rem] border border-[var(--border)] border-l-4 bg-white px-3 py-2.5 shadow-sm md:px-3.5 md:py-3 ${positionTone[player.position]}`}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 truncate text-[16px] font-semibold leading-5 md:text-[18px]">
           {player.webName}
         </div>
+        {player.isCaptain ? (
+          <span className="shrink-0 rounded-full bg-rose-600 px-2 py-0.5 text-[12px] font-bold leading-none text-white">
+            C
+          </span>
+        ) : player.isViceCaptain ? (
+          <span className="shrink-0 rounded-full bg-sky-600 px-2 py-0.5 text-[12px] font-bold leading-none text-white">
+            VC
+          </span>
+        ) : null}
         <div className={`shrink-0 text-[18px] font-semibold leading-none tabular-nums md:text-[22px] ${scoreTone(player.livePoints, player.status)}`}>
           {pointsLabel}
           <span className="ml-1 text-[12px] font-medium text-[var(--muted)] md:text-[13px]">pts</span>
@@ -48,17 +57,7 @@ export function PlayerChip({ player }: { player: PlayerLiveCard }) {
       <div className="mt-2 flex items-center justify-between gap-2">
         <div className="min-w-0 truncate text-[12px] leading-4 text-[var(--muted)] md:text-[13px]">
           {player.teamShortName} · {player.position}
-          {player.isCaptain ? (
-            <span className="ml-1.5 rounded-full border border-rose-300 bg-rose-50 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-rose-700 md:text-[11px]">
-              C
-            </span>
-          ) : null}
-          {player.isViceCaptain ? (
-            <span className="ml-1.5 rounded-full border border-rose-300 bg-rose-50 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-rose-700 md:text-[11px]">
-              VC
-            </span>
-          ) : null}
-          <span className="ml-1.5">{player.minutes}'</span>
+          {player.minutes > 0 ? <span className="ml-1">{player.minutes}'</span> : null}
         </div>
         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium md:text-xs ${statusTone[player.status]}`}>
           {player.status.replace("_", " ")}
