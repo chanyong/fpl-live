@@ -124,7 +124,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
         <>
           {query.data && query.data.errors.length > 0 && tab !== "rank-change" ? (
             <div className="mb-4 rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-[var(--warning)]">
-              Some managers could not be fully hydrated from the FPL API. Partial rows are still shown.
+              일부 매니저의 데이터를 FPL에서 불러오지 못했습니다. 데드라인 전이면 정상이며, 킥오프 후 자동으로 반영됩니다.
             </div>
           ) : null}
 
