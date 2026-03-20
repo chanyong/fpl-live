@@ -343,7 +343,7 @@ function buildRow(args: {
     automaticSubs,
     chip: args.picks.active_chip,
     transferCost: args.picks.entry_history.event_transfers_cost,
-    officialTotalBeforeLive: args.picks.entry_history.total_points - args.picks.entry_history.points,
+    officialTotalBeforeLive: args.picks.entry_history.total_points,
     context: args.context
   });
 
