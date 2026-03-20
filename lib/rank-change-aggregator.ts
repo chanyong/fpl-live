@@ -26,11 +26,17 @@ type ManagerBase = {
 
 function getCurrentGw(events: Array<{ id: number; is_current: boolean; finished: boolean }>) {
   const current = events.find((event) => event.is_current);
-  if (current) {
+
+  if (current && !current.finished) {
     return current.id;
   }
 
-  return events.find((event) => !event.finished)?.id ?? events[events.length - 1]?.id ?? 1;
+  const next = events.find((event) => !event.finished);
+  if (next) {
+    return next.id;
+  }
+
+  return current?.id ?? events[events.length - 1]?.id ?? 1;
 }
 
 function getTrackedGameweeks(
