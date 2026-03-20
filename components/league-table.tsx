@@ -16,7 +16,7 @@ import { LeagueRow, LeagueRowExpanded } from "@/components/league-row";
 const columnHelper = createColumnHelper<LeagueRowType>();
 
 const columns = [
-  columnHelper.accessor("rank", { header: "Rank" }),
+  columnHelper.accessor("projectedRank", { header: "Rank" }),
   columnHelper.accessor("teamName", { header: "Team" }),
   columnHelper.accessor("managerName", { header: "Manager" }),
   columnHelper.accessor("captainName", { header: "Captain" }),
@@ -67,7 +67,7 @@ function rankClassName(row: LeagueRowType, lowCut: number, highCut: number) {
 }
 
 export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
-  const [sorting, setSorting] = useState<SortingState>([{ id: "rank", desc: false }]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: "projectedRank", desc: false }]);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [chipOnly, setChipOnly] = useState(false);
@@ -79,7 +79,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
         row.managerName.toLowerCase().includes(search.toLowerCase()) ||
         row.teamName.toLowerCase().includes(search.toLowerCase());
       const matchesChip = chipOnly ? Boolean(row.chip) : true;
-      const matchesTopN = topN === "all" ? true : row.rank <= Number(topN);
+      const matchesTopN = topN === "all" ? true : row.projectedRank <= Number(topN);
 
       return matchesSearch && matchesChip && matchesTopN;
     });
@@ -134,7 +134,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                       <td className="px-1 py-2.5 align-top">
                         <div className={`flex items-center gap-1 font-semibold tabular-nums ${tone}`}>
                           <span className="text-[10px] text-[var(--muted)]">{isExpanded ? "v" : ">"}</span>
-                          <span>{row.rank}</span>
+                          <span>{row.projectedRank}</span>
                         </div>
                       </td>
                       <td className="px-1 py-2.5 align-top">

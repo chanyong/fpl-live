@@ -21,7 +21,7 @@ export function LeagueRow({ row, rankClassName }: { row: LeagueRowType; rankClas
   return (
     <>
       <td className="px-2.5 py-3 text-center">
-        <span className={`font-semibold tabular-nums ${rankClassName ?? "text-stone-800"}`}>{row.rank}</span>
+        <span className={`font-semibold tabular-nums ${rankClassName ?? "text-stone-800"}`}>{row.projectedRank}</span>
       </td>
       <td className="px-2.5 py-3 font-semibold">{row.teamName}</td>
       <td className="px-2.5 py-3">{row.managerName}</td>
