@@ -54,7 +54,7 @@ function buildRankTone(rows: LeagueRowType[]) {
   return { lowCut, highCut };
 }
 
-function rankClassName(row: LeagueRowType, lowCut: number, highCut: number) {
+function gwClassName(row: LeagueRowType, lowCut: number, highCut: number) {
   if (row.gwPoints >= highCut) {
     return "text-emerald-700";
   }
@@ -85,7 +85,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
     });
   }, [chipOnly, data.rows, search, topN]);
 
-  const rankTone = useMemo(() => buildRankTone(data.rows), [data.rows]);
+  const gwTone = useMemo(() => buildRankTone(data.rows), [data.rows]);
 
   const table = useReactTable({
     data: filteredRows,
@@ -123,7 +123,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
               {table.getRowModel().rows.map((tableRow) => {
                 const row = tableRow.original;
                 const isExpanded = expandedId === row.entryId;
-                const tone = rankClassName(row, rankTone.lowCut, rankTone.highCut);
+                const tone = gwClassName(row, gwTone.lowCut, gwTone.highCut);
 
                 return (
                   <Fragment key={row.entryId}>
@@ -132,7 +132,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                       onClick={() => setExpandedId((current) => (current === row.entryId ? null : row.entryId))}
                     >
                       <td className="px-1 py-2.5 align-top">
-                        <div className={`flex items-center gap-1 font-semibold tabular-nums ${tone}`}>
+                        <div className="flex items-center gap-1 font-semibold tabular-nums text-stone-800">
                           <span className="text-[10px] text-[var(--muted)]">{isExpanded ? "v" : ">"}</span>
                           <span>{row.projectedRank}</span>
                         </div>
@@ -147,7 +147,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                           {row.chip ? chipLabel(row.chip) : `${row.playersPlayed} played`}
                         </div>
                       </td>
-                      <td className="px-1 py-2.5 text-right align-top font-semibold tabular-nums">{row.gwPoints}</td>
+                      <td className={`px-1 py-2.5 text-right align-top font-semibold tabular-nums ${tone}`}>{row.gwPoints}</td>
                       <td className="px-1 py-2.5 text-right align-top font-semibold tabular-nums">{row.totalPoints}</td>
                     </tr>
                     {isExpanded ? (
@@ -190,7 +190,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
           <tbody>
             {table.getRowModel().rows.map((tableRow) => {
               const isExpanded = expandedId === tableRow.original.entryId;
-              const tone = rankClassName(tableRow.original, rankTone.lowCut, rankTone.highCut);
+              const tone = gwClassName(tableRow.original, gwTone.lowCut, gwTone.highCut);
 
               return (
                 <Fragment key={tableRow.original.entryId}>
@@ -202,7 +202,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                       )
                     }
                   >
-                    <LeagueRow row={tableRow.original} rankClassName={tone} />
+                    <LeagueRow row={tableRow.original} gwClassName={tone} />
                   </tr>
                   {isExpanded ? (
                     <tr className="bg-[var(--surface-strong)]/40">

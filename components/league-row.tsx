@@ -17,18 +17,18 @@ function chipLabel(chip: LeagueRowType["chip"]) {
   );
 }
 
-export function LeagueRow({ row, rankClassName }: { row: LeagueRowType; rankClassName?: string }) {
+export function LeagueRow({ row, gwClassName }: { row: LeagueRowType; gwClassName?: string }) {
   return (
     <>
       <td className="px-2.5 py-3 text-center">
-        <span className={`font-semibold tabular-nums ${rankClassName ?? "text-stone-800"}`}>{row.projectedRank}</span>
+        <span className="font-semibold tabular-nums text-stone-800">{row.projectedRank}</span>
       </td>
       <td className="px-2.5 py-3 font-semibold">{row.teamName}</td>
       <td className="px-2.5 py-3">{row.managerName}</td>
       <td className="px-2.5 py-3">{row.captainName}</td>
       <td className="px-2.5 py-3">{chipLabel(row.chip)}</td>
       <td className="px-2.5 py-3 text-right tabular-nums">{row.playersPlayed}</td>
-      <td className="px-2.5 py-3 text-right tabular-nums">{row.gwPoints}</td>
+      <td className={`px-2.5 py-3 text-right tabular-nums font-semibold ${gwClassName ?? "text-stone-800"}`}>{row.gwPoints}</td>
       <td className="px-2.5 py-3 text-right tabular-nums">{row.totalPoints}</td>
     </>
   );
