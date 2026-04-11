@@ -37,14 +37,15 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
   const [tab, setTab] = useState<"standings" | "fixtures" | "rank-change">("standings");
   const query = useQuery({
     queryKey: ["league-live", leagueId],
-    queryFn: () => fetchLeagueLive(leagueId, true),
+    queryFn: () => fetchLeagueLive(leagueId),
+    refetchInterval: 60_000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false
   });
   const rankChangeQuery = useQuery({
     queryKey: ["league-rank-change", leagueId],
-    queryFn: () => fetchRankChange(leagueId, true),
+    queryFn: () => fetchRankChange(leagueId),
     enabled: tab === "rank-change",
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,

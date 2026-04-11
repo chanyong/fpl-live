@@ -1,7 +1,6 @@
 import {
   getAllStandings,
   getBootstrapStatic,
-  getEntry,
   getEntryPicks,
   getEventLive,
   getFixtures
@@ -32,6 +31,9 @@ type LeagueLiveArgs = {
   gw: string;
   forceRefresh?: boolean;
 };
+
+const CACHE_TTL_MS = 30_000;
+const leagueLiveCache = new Map<string, { data: LeagueLiveResponse; expiresAt: number }>();
 
 type FixtureWithStats = {
   id: number;
@@ -317,7 +319,6 @@ function buildRow(args: {
     }>;
     entry_history: EntryHistory;
   };
-  entry: { id: number; summary_overall_points: number };
   context: ScoringContext;
 }): LeagueRow {
   const picks: Pick[] = args.picks.picks.map((pick) => ({
@@ -377,6 +378,15 @@ export async function getLeagueLivePayload({
   gw,
   forceRefresh
 }: LeagueLiveArgs): Promise<LeagueLiveResponse> {
+  const cacheKey = `${leagueId}:${gw}`;
+
+  if (!forceRefresh) {
+    const cached = leagueLiveCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+  }
+
   const [bootstrap, standings, fixtures] = await Promise.all([
     getBootstrapStatic({ forceRefresh }),
     getAllStandings(leagueId, { forceRefresh }),
@@ -408,17 +418,9 @@ export async function getLeagueLivePayload({
 
   const rowResults = await Promise.allSettled(
     standings.results.map(async (standing) => {
-      const [entry, picks] = await Promise.all([
-        getEntry(standing.entry, { forceRefresh }),
-        getEntryPicks(standing.entry, currentGw, { forceRefresh })
-      ]);
+      const picks = await getEntryPicks(standing.entry, currentGw, { forceRefresh });
 
-      return buildRow({
-        standing,
-        entry,
-        picks,
-        context
-      });
+      return buildRow({ standing, picks, context });
     })
   );
 
@@ -458,7 +460,7 @@ export async function getLeagueLivePayload({
     ];
   });
 
-  return {
+  const result: LeagueLiveResponse = {
     league: {
       id: standings.league.id,
       name: standings.league.name,
@@ -471,4 +473,8 @@ export async function getLeagueLivePayload({
     rows: computeProjectedRanks(rows),
     errors
   };
+
+  leagueLiveCache.set(cacheKey, { data: result, expiresAt: Date.now() + CACHE_TTL_MS });
+
+  return result;
 }
