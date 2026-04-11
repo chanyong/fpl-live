@@ -24,8 +24,9 @@ async function fetchJson<T>(
     headers: {
       Accept: "application/json"
     },
-    next: options.forceRefresh ? undefined : { revalidate: 30 },
-    cache: options.forceRefresh ? "no-store" : "force-cache"
+    ...(options.forceRefresh
+      ? { cache: "no-store" as const }
+      : { next: { revalidate: 30 } })
   });
 
   if (!response.ok) {

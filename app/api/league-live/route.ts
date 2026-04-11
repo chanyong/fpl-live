@@ -31,12 +31,8 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to load league data";
-    const cause =
-      error instanceof Error && error.cause instanceof Error
-        ? error.cause.message
-        : String((error as { cause?: unknown } | null)?.cause ?? "");
 
-    console.error("[league-live] error:", message, "cause:", cause, error);
-    return NextResponse.json({ error: message, cause }, { status: 500 });
+    console.error("[league-live]", error);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
