@@ -69,16 +69,12 @@ const STAT_LABELS: Record<string, string> = {
 function getCurrentGw(events: Array<{ id: number; is_current: boolean; finished: boolean }>) {
   const current = events.find((event) => event.is_current);
 
-  if (current && !current.finished) {
+  if (current) {
     return current.id;
   }
 
-  const next = events.find((event) => !event.finished);
-  if (next) {
-    return next.id;
-  }
-
-  return current?.id ?? events[events.length - 1]?.id ?? 1;
+  const lastFinished = [...events].reverse().find((event) => event.finished);
+  return lastFinished?.id ?? events[events.length - 1]?.id ?? 1;
 }
 
 function getPlayerPhoto(photo: string | undefined) {
