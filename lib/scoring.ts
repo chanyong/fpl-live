@@ -324,7 +324,7 @@ export function splitSquad(
 
   return {
     starters: sorted.filter((pick) => pick.position <= 11).map((pick) => toCard(pick)),
-    bench: chip === "bboost" ? [] : sorted.filter((pick) => pick.position > 11).map((pick) => toCard(pick, true))
+    bench: sorted.filter((pick) => pick.position > 11).map((pick) => toCard(pick, true))
   };
 }
 
