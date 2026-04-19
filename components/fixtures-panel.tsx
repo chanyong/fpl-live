@@ -144,19 +144,19 @@ export function FixturesPanel({ fixtures, currentGw }: { fixtures: LeagueFixture
                     <button
                       type="button"
                       onClick={() => setSelectedId((current) => (current === fixture.id ? null : fixture.id))}
-                      className="w-full px-3 py-3 text-left"
+                      className="w-full px-3 py-2 text-left"
                     >
-                      <div className="flex items-center justify-start gap-3 text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">
-                        <span className={`rounded-full px-2 py-1 font-semibold ${fixtureStatusClass(fixture)}`}>{fixtureStatus(fixture)}</span>
+                      <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">
+                        <span>{kickoffDateTimeLabel(fixture.kickoffTime)}</span>
+                        <span className={`rounded-full px-2 py-0.5 font-semibold ${fixtureStatusClass(fixture)}`}>{fixtureStatus(fixture)}</span>
                       </div>
-                      <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-[14px] font-semibold md:text-[15px]">
+                      <div className="mt-1 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-[14px] font-semibold md:text-[15px]">
                         <span className="min-w-0 truncate">{fixture.homeTeam}</span>
                         <span className="shrink-0 rounded-full bg-[var(--accent)]/10 px-3 py-1 text-[13px] text-[var(--accent)]">
                           {scoreLabel(fixture)}
                         </span>
                         <span className="min-w-0 truncate text-right">{fixture.awayTeam}</span>
                       </div>
-                      <div className="mt-2 text-[12px] text-[var(--muted)]">{kickoffDateTimeLabel(fixture.kickoffTime)}</div>
                     </button>
 
                     {isSelected ? (
