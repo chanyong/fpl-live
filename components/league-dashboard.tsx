@@ -38,10 +38,10 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
   const query = useQuery({
     queryKey: ["league-live", leagueId],
     queryFn: () => fetchLeagueLive(leagueId),
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: false
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: true
   });
   const rankChangeQuery = useQuery({
     queryKey: ["league-rank-change", leagueId],
