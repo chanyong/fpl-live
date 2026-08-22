@@ -10,15 +10,15 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "FPL Live Mini-League",
-  description: "Live classic mini-league dashboard using official FPL data."
+  title: "FPL Live 미니리그",
+  description: "공식 FPL 데이터로 보는 클래식 미니리그 라이브 대시보드."
 };
 
 export default function RootLayout({
   children
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={manrope.variable}>
+    <html lang="ko" className={manrope.variable}>
       <body>
         <QueryProvider>{children}</QueryProvider>
       </body>

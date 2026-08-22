@@ -87,7 +87,8 @@ const STAT_LABELS: Record<string, string> = {
   red_cards: "Red cards",
   saves: "Saves",
   bonus: "Bonus",
-  bps: "Bonus Points System"
+  bps: "Bonus Points System",
+  defensive_contribution: "Defensive contribution"
 };
 
 function getPlayerPhoto(photo: string | undefined) {
@@ -286,6 +287,8 @@ function buildFixturesPayload(
         awayTeam: awayTeam?.name ?? "Away",
         homeShortName: homeTeam?.shortName ?? "-",
         awayShortName: awayTeam?.shortName ?? "-",
+        homeCode: homeTeam?.code ?? 0,
+        awayCode: awayTeam?.code ?? 0,
         homeScore: fixture.team_h_score,
         awayScore: fixture.team_a_score,
         started: Boolean(fixture.started),
@@ -415,7 +418,8 @@ export async function getLeagueLivePayload({
   const teams = bootstrap.teams.map((team) => ({
     id: team.id,
     name: team.name,
-    shortName: team.short_name
+    shortName: team.short_name,
+    code: team.code
   }));
   const teamsById = new Map(teams.map((team) => [team.id, team]));
   const context = toScoringContext({

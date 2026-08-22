@@ -14,6 +14,7 @@ export type PlayerLiveCard = {
   elementId: number;
   webName: string;
   teamShortName: string;
+  teamCode: number;
   position: FplPosition;
   livePoints: number;
   minutes: number;
@@ -57,6 +58,8 @@ export type LeagueFixture = {
   awayTeam: string;
   homeShortName: string;
   awayShortName: string;
+  homeCode: number;
+  awayCode: number;
   homeScore: number | null;
   awayScore: number | null;
   started: boolean;
@@ -110,6 +113,7 @@ export type TeamSummary = {
   id: number;
   name: string;
   shortName: string;
+  code: number;
 };
 
 export type FixtureSummary = {
@@ -165,6 +169,10 @@ export type RankChangeManager = {
   gwPoints: number;
   color: string;
   previousRank: number | null;
+  /** Rank gained since the first tracked gameweek. Positive means moved up. */
+  seasonChange: number | null;
+  /** Rank gained across the recent window shown in the chart. */
+  recentChange: number | null;
   trend: Array<RankChangePoint | null>;
 };
 

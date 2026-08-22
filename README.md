@@ -26,7 +26,6 @@ Next.js App Router MVP that uses official FPL public JSON endpoints to show a pu
 - TanStack Table
 - TanStack React Query
 - Zod
-- date-fns
 - Vitest
 
 ## Run locally
@@ -85,6 +84,14 @@ npm.cmd run dev
 - `lib/scoring.ts`: players played, provisional live points, captain handling, projected rank, and squad split logic.
 - `components/*`: search form, refresh indicator, filters, table, expandable rows, and squad cards.
 
+## Ranking model
+
+- `projectedRank` uses standard competition ranking: managers on the same projected
+  total share a rank and the following rank skips accordingly (1, 1, 1, 4, …).
+- Official standing only breaks display order, never the rank number itself.
+- The Rank Change tab reads the current gameweek from the same live payload as the
+  league table, so the two tabs can never disagree on points or gameweek.
+
 ## Assumptions for v1
 
 - Only public classic mini-leagues are supported.
@@ -136,8 +143,9 @@ Every FPL call goes through `lib/fpl-client.ts`, which applies:
 
 ## Remaining limitations
 
-- Official autosub behavior can change after all fixtures complete; live rows are marked provisional.
+- Official autosub behavior can change after all fixtures complete; live rows are marked provisional in the UI.
 - No authentication flow for private leagues.
-- No persistent server cache beyond Next.js fetch caching.
+- No persistent server cache beyond the in-process memo.
 - No Playwright suite yet.
+- Interface copy is Korean; there is no locale switch.
 

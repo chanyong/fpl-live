@@ -1,9 +1,17 @@
 import { mapWithConcurrency } from "@/lib/concurrency";
-import { getAllStandings, getBootstrapStatic, getEntryHistory, getEntryPicks } from "@/lib/fpl-client";
-import { getCurrentGw } from "@/lib/gameweek";
-import type { Chip, EntryHistoryPayload, RankChangeManager, RankChangePoint, RankChangeResponse } from "@/lib/types";
+import { getBootstrapStatic, getEntryHistory } from "@/lib/fpl-client";
+import { getLeagueLivePayload } from "@/lib/league-aggregator";
+import type {
+  EntryHistoryPayload,
+  RankChangeManager,
+  RankChangePoint,
+  RankChangeResponse
+} from "@/lib/types";
 
 const ENTRY_CONCURRENCY = Number(process.env.FPL_PICKS_CONCURRENCY ?? 8);
+
+/** Window used for the "recent form" movement figure. */
+const RECENT_WINDOW = 5;
 
 const CHART_COLORS = [
   "#cf8952", "#67b39f", "#72b9ea", "#d3829f", "#e4ad55", "#8b7fe6", "#84c76b", "#e98e64",
@@ -18,14 +26,8 @@ type ManagerBase = {
   overallRank: number | null;
   overallTotal: number;
   history: EntryHistoryPayload;
-  picks: {
-    active_chip: Chip;
-    entry_history: {
-      event: number;
-      points: number;
-      total_points: number;
-    };
-  } | null;
+  /** Live figures for the current gameweek, straight from the league table payload. */
+  live: { gwPoints: number; totalPoints: number };
 };
 
 function getTrackedGameweeks(
@@ -62,13 +64,12 @@ function buildTrendData(
       byGw[row.event] = row;
     });
 
-    if (manager.picks?.entry_history?.event === currentEventId) {
-      byGw[currentEventId] = {
-        event: currentEventId,
-        total_points: manager.picks.entry_history.total_points,
-        points: manager.picks.entry_history.points
-      };
-    }
+    // The current gameweek always comes from the live table so both tabs agree.
+    byGw[currentEventId] = {
+      event: currentEventId,
+      total_points: manager.live.totalPoints,
+      points: manager.live.gwPoints
+    };
 
     timelines[manager.entry] = gameweeks.map((gw) => {
       const row = byGw[gw];
@@ -107,52 +108,45 @@ function buildTrendData(
   return { gameweeks, timelines };
 }
 
+/** Positive means the manager climbed; null when there is nothing to compare against. */
+function rankMovement(points: RankChangePoint[], window?: number) {
+  const slice = window ? points.slice(-window) : points;
+  if (slice.length < 2) {
+    return null;
+  }
+
+  return slice[0].rank - slice[slice.length - 1].rank;
+}
+
 export async function getLeagueRankChangePayload(args: {
   leagueId: number;
 }): Promise<RankChangeResponse> {
-  const [bootstrap, standings] = await Promise.all([
+  // The live payload is the shared source of truth for the current gameweek; it is
+  // memoised per league, so the standings tab usually pays for this fetch already.
+  const [bootstrap, live] = await Promise.all([
     getBootstrapStatic(),
-    getAllStandings(args.leagueId)
+    getLeagueLivePayload({ leagueId: args.leagueId, gw: "current" })
   ]);
 
-  const currentGw = getCurrentGw(bootstrap.events);
+  const currentGw = live.league.currentGw;
 
-  // Bounded fan-out: a large league would otherwise fire two requests per manager at once.
-  // A single failed history no longer rejects the whole payload.
-  const entryPayloads = await mapWithConcurrency(
-    standings.results,
-    ENTRY_CONCURRENCY,
-    async (row) => {
-      const [history, picks] = await Promise.all([
-        getEntryHistory(row.entry).catch(() => null),
-        getEntryPicks(row.entry, currentGw).catch(() => null)
-      ]);
-
-      return { history, picks };
-    }
+  const historyResults = await mapWithConcurrency(live.rows, ENTRY_CONCURRENCY, (row) =>
+    getEntryHistory(row.entryId)
   );
 
-  const historyPayloads = entryPayloads.map((result) =>
-    result.status === "fulfilled" ? result.value.history : null
-  );
-  const picksPayloads = entryPayloads.map((result) =>
-    result.status === "fulfilled" ? result.value.picks : null
-  );
+  const managersBase: ManagerBase[] = live.rows.map((row, index) => {
+    const result = historyResults[index];
 
-  const managersBase: ManagerBase[] = standings.results.map((row, index) => ({
-    entry: row.entry,
-    playerName: row.player_name || "Unknown Manager",
-    entryName: row.entry_name || "Unnamed Team",
-    overallRank: row.rank || null,
-    overallTotal: row.total || 0,
-    history: historyPayloads[index] || { current: [] },
-    picks: picksPayloads[index]
-      ? {
-          active_chip: picksPayloads[index].active_chip,
-          entry_history: picksPayloads[index].entry_history
-        }
-      : null
-  }));
+    return {
+      entry: row.entryId,
+      playerName: row.managerName || "Unknown Manager",
+      entryName: row.teamName || "Unnamed Team",
+      overallRank: row.rank || null,
+      overallTotal: row.totalPoints || 0,
+      history: result.status === "fulfilled" ? result.value : { current: [] },
+      live: { gwPoints: row.gwPoints, totalPoints: row.totalPoints }
+    };
+  });
 
   const trendData = buildTrendData(bootstrap.events, managersBase, currentGw);
 
@@ -160,8 +154,8 @@ export async function getLeagueRankChangePayload(args: {
     .map((manager, index) => {
       const trend = trendData.timelines[manager.entry] || [];
       const filtered = trend.filter((row): row is RankChangePoint => Boolean(row));
-      const latest = filtered.slice(-1)[0] || null;
-      const previous = filtered.slice(-2, -1)[0] || null;
+      const latest = filtered[filtered.length - 1] ?? null;
+      const previous = filtered[filtered.length - 2] ?? null;
 
       return {
         entry: manager.entry,
@@ -173,6 +167,8 @@ export async function getLeagueRankChangePayload(args: {
         gwPoints: latest?.eventPoints ?? 0,
         color: CHART_COLORS[index % CHART_COLORS.length],
         previousRank: previous?.rank ?? null,
+        seasonChange: rankMovement(filtered),
+        recentChange: rankMovement(filtered, RECENT_WINDOW),
         trend
       };
     })
@@ -180,8 +176,8 @@ export async function getLeagueRankChangePayload(args: {
 
   return {
     league: {
-      id: standings.league.id,
-      name: standings.league.name,
+      id: live.league.id,
+      name: live.league.name,
       currentGw,
       lastUpdated: new Date().toISOString()
     },

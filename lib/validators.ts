@@ -13,7 +13,9 @@ export const bootstrapStaticSchema = z.object({
     z.object({
       id: z.number(),
       name: z.string(),
-      short_name: z.string()
+      short_name: z.string(),
+      // Crest filenames key off code, not id.
+      code: z.number().optional().default(0)
     })
   ),
   elements: z.array(

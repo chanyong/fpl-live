@@ -28,21 +28,21 @@ function createContext(): ScoringContext {
       [15, { id: 15, webName: "Fwd C", teamId: 15, elementType: 4, photo: "15.jpg" }]
     ]),
     teamsById: new Map([
-      [1, { id: 1, name: "Arsenal", shortName: "ARS" }],
-      [2, { id: 2, name: "Aston Villa", shortName: "AVL" }],
-      [3, { id: 3, name: "Bournemouth", shortName: "BOU" }],
-      [4, { id: 4, name: "Brentford", shortName: "BRE" }],
-      [5, { id: 5, name: "Brighton", shortName: "BHA" }],
-      [6, { id: 6, name: "Chelsea", shortName: "CHE" }],
-      [7, { id: 7, name: "Crystal Palace", shortName: "CRY" }],
-      [8, { id: 8, name: "Everton", shortName: "EVE" }],
-      [9, { id: 9, name: "Fulham", shortName: "FUL" }],
-      [10, { id: 10, name: "Ipswich", shortName: "IPS" }],
-      [11, { id: 11, name: "Leicester", shortName: "LEI" }],
-      [12, { id: 12, name: "Liverpool", shortName: "LIV" }],
-      [13, { id: 13, name: "Man City", shortName: "MCI" }],
-      [14, { id: 14, name: "Man Utd", shortName: "MUN" }],
-      [15, { id: 15, name: "Newcastle", shortName: "NEW" }]
+      [1, { id: 1, name: "Arsenal", shortName: "ARS", code: 1 }],
+      [2, { id: 2, name: "Aston Villa", shortName: "AVL", code: 2 }],
+      [3, { id: 3, name: "Bournemouth", shortName: "BOU", code: 3 }],
+      [4, { id: 4, name: "Brentford", shortName: "BRE", code: 4 }],
+      [5, { id: 5, name: "Brighton", shortName: "BHA", code: 5 }],
+      [6, { id: 6, name: "Chelsea", shortName: "CHE", code: 6 }],
+      [7, { id: 7, name: "Crystal Palace", shortName: "CRY", code: 7 }],
+      [8, { id: 8, name: "Everton", shortName: "EVE", code: 8 }],
+      [9, { id: 9, name: "Fulham", shortName: "FUL", code: 9 }],
+      [10, { id: 10, name: "Ipswich", shortName: "IPS", code: 10 }],
+      [11, { id: 11, name: "Leicester", shortName: "LEI", code: 11 }],
+      [12, { id: 12, name: "Liverpool", shortName: "LIV", code: 12 }],
+      [13, { id: 13, name: "Man City", shortName: "MCI", code: 13 }],
+      [14, { id: 14, name: "Man Utd", shortName: "MUN", code: 14 }],
+      [15, { id: 15, name: "Newcastle", shortName: "NEW", code: 15 }]
     ]),
     liveByElementId: new Map([
       [1, { minutes: 90, totalPoints: 6 }],
@@ -143,14 +143,38 @@ describe("scoring", () => {
     expect(result.gwPoints).toBe(63);
   });
 
-  it("computes projected ranks using live totals with stable tie-break", () => {
+  it("computes projected ranks using live totals", () => {
     const ranked = computeProjectedRanks([
-      { rank: 3, totalPoints: 110 },
-      { rank: 1, totalPoints: 130 },
-      { rank: 2, totalPoints: 110 }
+      { entryId: 30, rank: 3, totalPoints: 110 },
+      { entryId: 10, rank: 1, totalPoints: 130 },
+      { entryId: 20, rank: 2, totalPoints: 110 }
     ]);
 
-    expect(ranked.map((row) => row.projectedRank)).toEqual([3, 1, 2]);
+    expect(ranked.map((row) => row.projectedRank)).toEqual([2, 1, 2]);
+  });
+
+  it("gives tied managers the same rank and skips the next one", () => {
+    const ranked = computeProjectedRanks([
+      { entryId: 1, rank: 1, totalPoints: 22 },
+      { entryId: 2, rank: 3, totalPoints: 22 },
+      { entryId: 3, rank: 3, totalPoints: 22 },
+      { entryId: 4, rank: 2, totalPoints: 21 },
+      { entryId: 5, rank: 5, totalPoints: 21 },
+      { entryId: 6, rank: 5, totalPoints: 20 }
+    ]);
+
+    expect(ranked.map((row) => row.projectedRank)).toEqual([1, 1, 1, 4, 4, 6]);
+  });
+
+  it("does not let managers sharing an official rank overwrite each other", () => {
+    // All three sit at official rank 5; keying the lookup by rank collapsed them.
+    const ranked = computeProjectedRanks([
+      { entryId: 1, rank: 5, totalPoints: 21 },
+      { entryId: 2, rank: 5, totalPoints: 20 },
+      { entryId: 3, rank: 5, totalPoints: 19 }
+    ]);
+
+    expect(ranked.map((row) => row.projectedRank)).toEqual([1, 2, 3]);
   });
 
   it("shows captain-adjusted points in the squad cards", () => {

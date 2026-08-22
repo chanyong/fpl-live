@@ -255,26 +255,40 @@ export function computePlayersPlayed(args: {
   }).length;
 }
 
-export function computeProjectedRanks<T extends { rank: number; totalPoints: number; projectedTotalPoints?: number }>(rows: T[]) {
-  const sorted = [...rows].sort((left, right) => {
-    const leftScore = left.projectedTotalPoints ?? left.totalPoints;
-    const rightScore = right.projectedTotalPoints ?? right.totalPoints;
+export function computeProjectedRanks<
+  T extends { entryId: number; rank: number; totalPoints: number; projectedTotalPoints?: number }
+>(rows: T[]) {
+  const scoreOf = (row: T) => row.projectedTotalPoints ?? row.totalPoints;
 
-    if (rightScore !== leftScore) {
-      return rightScore - leftScore;
+  const sorted = [...rows].sort((left, right) => {
+    const difference = scoreOf(right) - scoreOf(left);
+    if (difference !== 0) {
+      return difference;
     }
 
+    // Official standing breaks the display order, but never the rank number.
     return left.rank - right.rank;
   });
 
-  const byRank = new Map<number, number>();
+  // Keyed by entryId: FPL gives tied managers the same official rank, so keying
+  // by rank silently collapsed them onto one another.
+  const byEntry = new Map<number, number>();
+  let previousScore: number | null = null;
+  let previousRank = 0;
+
   sorted.forEach((row, index) => {
-    byRank.set(row.rank, index + 1);
+    const score = scoreOf(row);
+    // Standard competition ranking: equal scores share a rank, the next one skips.
+    const rank = previousScore !== null && score === previousScore ? previousRank : index + 1;
+
+    byEntry.set(row.entryId, rank);
+    previousScore = score;
+    previousRank = rank;
   });
 
   return rows.map((row) => ({
     ...row,
-    projectedRank: byRank.get(row.rank) ?? row.rank
+    projectedRank: byEntry.get(row.entryId) ?? row.rank
   }));
 }
 
@@ -310,6 +324,7 @@ export function splitSquad(
       elementId: pick.element,
       webName: element?.webName ?? `Player ${pick.element}`,
       teamShortName: team?.shortName ?? "-",
+      teamCode: team?.code ?? 0,
       position: getPlayerPosition(pick.element, context),
       livePoints: displayPoints,
       minutes: live.minutes,

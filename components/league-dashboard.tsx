@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import type { LeagueLiveResponse, RankChangeResponse } from "@/lib/types";
 import { CaptainStats } from "@/components/captain-stats";
 import { FixturesPanel } from "@/components/fixtures-panel";
 import { LeagueTable } from "@/components/league-table";
 import { RankChangePanel } from "@/components/rank-change-panel";
+import { RefreshIndicator } from "@/components/refresh-indicator";
 
 async function fetchLeagueLive(leagueId: string, refresh = false) {
   const response = await fetch(
@@ -16,18 +17,18 @@ async function fetchLeagueLive(leagueId: string, refresh = false) {
 
   if (!response.ok) {
     const payload = (await response.json()) as { error?: string };
-    throw new Error(payload.error ?? "Failed to fetch league data");
+    throw new Error(payload.error ?? "리그 데이터를 불러오지 못했습니다.");
   }
 
   return (await response.json()) as LeagueLiveResponse;
 }
 
-async function fetchRankChange(leagueId: string, refresh = false) {
-  const response = await fetch(`/api/league-rank-change?leagueId=${leagueId}${refresh ? "&refresh=1" : ""}`);
+async function fetchRankChange(leagueId: string) {
+  const response = await fetch(`/api/league-rank-change?leagueId=${leagueId}`);
 
   if (!response.ok) {
     const payload = (await response.json()) as { error?: string };
-    throw new Error(payload.error ?? "Failed to fetch rank change data");
+    throw new Error(payload.error ?? "순위 추이 데이터를 불러오지 못했습니다.");
   }
 
   return (await response.json()) as RankChangeResponse;
@@ -35,6 +36,8 @@ async function fetchRankChange(leagueId: string, refresh = false) {
 
 export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; buildId: string }) {
   const [tab, setTab] = useState<"standings" | "fixtures" | "rank-change">("standings");
+  const queryClient = useQueryClient();
+
   const query = useQuery({
     queryKey: ["league-live", leagueId],
     queryFn: () => fetchLeagueLive(leagueId),
@@ -43,6 +46,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
     refetchOnReconnect: true,
     refetchOnMount: true
   });
+
   const rankChangeQuery = useQuery({
     queryKey: ["league-rank-change", leagueId],
     queryFn: () => fetchRankChange(leagueId),
@@ -54,91 +58,109 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
   const tabs = useMemo(
     () => [
-      { id: "standings", label: "Weekly Rank" },
-      { id: "fixtures", label: "Fixtures" },
-      { id: "rank-change", label: "Rank Change" }
+      { id: "standings", label: "주간 순위" },
+      { id: "fixtures", label: "경기 일정" },
+      { id: "rank-change", label: "순위 추이" }
     ] as const,
     []
   );
 
+  // Force-refresh bypasses the server's 30s memo so the button means something.
+  async function handleRefresh() {
+    const fresh = await fetchLeagueLive(leagueId, true);
+    queryClient.setQueryData(["league-live", leagueId], fresh);
+    if (tab === "rank-change") {
+      await rankChangeQuery.refetch();
+    }
+  }
+
+  const isRankChangeTab = tab === "rank-change";
+  const activeError = isRankChangeTab ? rankChangeQuery.error : query.error;
+  const isLoading = isRankChangeTab ? rankChangeQuery.isLoading : query.isLoading;
+
   return (
     <main className="mx-auto flex min-h-screen max-w-[1080px] flex-col px-2 py-3 sm:px-3 md:px-3 md:py-5 lg:max-w-[1120px]">
-      <div className="mb-4 flex flex-col gap-3 md:mb-5 md:flex-row md:items-center md:justify-between md:gap-3">
+      <div className="mb-4 flex flex-col gap-3 md:mb-5 md:flex-row md:items-end md:justify-between md:gap-4">
         <div className="min-w-0">
-          <Link href="/" className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)] md:text-xs">
-            Search another league
+          <Link
+            href="/"
+            className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)] transition hover:text-[var(--accent)] md:text-xs"
+          >
+            다른 리그 검색
           </Link>
-          <h1 className="mt-1 text-[2rem] font-semibold leading-none md:mt-2 md:text-[2rem]">
-            {query.data?.league.name ?? rankChangeQuery.data?.league.name ?? `League ${leagueId}`}
+          <h1 className="mt-1 text-[2rem] font-semibold leading-none md:mt-2">
+            {query.data?.league.name ?? rankChangeQuery.data?.league.name ?? `리그 ${leagueId}`}
           </h1>
           <p className="mt-1 text-[16px] text-[var(--muted)] md:text-base">
             {query.data
-              ? `Gameweek ${query.data.league.currentGw} live dashboard`
+              ? `게임위크 ${query.data.league.currentGw} 라이브 대시보드`
               : rankChangeQuery.data
-                ? `Gameweek ${rankChangeQuery.data.league.currentGw} rank history`
-                : "Loading official FPL data"}
+                ? `게임위크 ${rankChangeQuery.data.league.currentGw} 순위 기록`
+                : "공식 FPL 데이터를 불러오는 중"}
           </p>
         </div>
+
+        {query.data ? (
+          <RefreshIndicator
+            lastUpdated={query.data.league.lastUpdated}
+            isFetching={query.isFetching || rankChangeQuery.isFetching}
+            isProvisional={query.data.league.isProvisional}
+            onRefresh={handleRefresh}
+            buildId={buildId}
+          />
+        ) : null}
       </div>
 
-      {query.isLoading && tab !== "rank-change" ? (
+      {isLoading ? (
         <div className="grid gap-3">
-          {Array.from({ length: 8 }).map((_, index) => (
+          {Array.from({ length: isRankChangeTab ? 6 : 8 }).map((_, index) => (
             <div
               key={index}
-              className="h-16 animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80"
+              className={`animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 ${
+                isRankChangeTab ? "h-24" : "h-16"
+              }`}
             />
           ))}
         </div>
       ) : null}
 
-      {rankChangeQuery.isLoading && tab === "rank-change" ? (
-        <div className="grid gap-3">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-24 animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80"
-            />
-          ))}
-        </div>
-      ) : null}
-
-      {query.isError && tab !== "rank-change" ? (
+      {activeError ? (
         <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-[var(--danger)]">
-          {(query.error as Error).message}
-        </div>
-      ) : null}
-
-      {rankChangeQuery.isError && tab === "rank-change" ? (
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-[var(--danger)]">
-          {(rankChangeQuery.error as Error).message}
+          {(activeError as Error).message}
         </div>
       ) : null}
 
       {query.data && query.data.rows.length === 0 ? (
         <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6">
-          No standings were returned for this league.
+          이 리그의 순위 데이터가 비어 있습니다. 공개 클래식 리그 ID인지 확인해 주세요.
         </div>
       ) : null}
 
-      {(query.data || rankChangeQuery.data) ? (
+      {query.data || rankChangeQuery.data ? (
         <>
-          {query.data && query.data.errors.length > 0 && tab !== "rank-change" ? (
+          {query.data && query.data.errors.length > 0 && !isRankChangeTab ? (
             <div className="mb-4 rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-[var(--warning)]">
-              일부 매니저 데이터를 불러오지 못했습니다. 킥오프 후 자동 반영됩니다.
+              매니저 {query.data.errors.length}명의 데이터를 불러오지 못했습니다. 킥오프 후 자동 반영됩니다.
             </div>
           ) : null}
 
-          <div className="mb-3 inline-flex w-full rounded-[1rem] border border-[var(--border)] bg-[var(--surface)] p-1 md:mb-4 md:w-auto">
+          <div
+            role="tablist"
+            aria-label="대시보드 보기"
+            className="mb-3 inline-flex w-full rounded-[1rem] border border-[var(--border)] bg-[var(--surface)] p-1 md:mb-4 md:w-auto"
+          >
             {tabs.map((item) => {
               const active = tab === item.id;
+
               return (
                 <button
                   key={item.id}
                   type="button"
+                  role="tab"
+                  aria-selected={active}
                   onClick={() => setTab(item.id)}
-                  className={`flex-1 rounded-[0.8rem] px-4 py-2 text-sm font-semibold md:flex-none ${
-                    active ? "bg-[var(--text)] text-white" : "text-[var(--muted)]"
+                  className={`flex-1 rounded-[0.8rem] px-4 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none ${
+                    active ? "bg-[var(--text)] text-white" : "text-[var(--muted)] hover:text-[var(--text)]"
                   }`}
                 >
                   {item.label}
@@ -155,10 +177,16 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
           ) : null}
 
           {tab === "fixtures" && query.data ? (
-            <FixturesPanel fixtures={query.data.fixtures} currentGw={query.data.league.currentGw} />
+            <FixturesPanel
+              fixtures={query.data.fixtures}
+              currentGw={query.data.league.currentGw}
+              rows={query.data.rows}
+            />
           ) : null}
 
-          {tab === "rank-change" && rankChangeQuery.data ? <RankChangePanel data={rankChangeQuery.data} /> : null}
+          {tab === "rank-change" && rankChangeQuery.data ? (
+            <RankChangePanel data={rankChangeQuery.data} />
+          ) : null}
         </>
       ) : null}
     </main>
