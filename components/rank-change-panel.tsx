@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ChipStatusPanel } from "@/components/chip-status-panel";
 import { RankDelta } from "@/components/rank-delta";
+import { formatMoney } from "@/lib/season-summary";
 import type { RankChangeManager, RankChangePoint, RankChangeResponse } from "@/lib/types";
 
 /** Below this many tracked gameweeks a trend line says nothing, so we show a table instead. */
@@ -100,10 +102,36 @@ function buildLeagueStats(managers: TrendManager[]) {
       .slice(0, STAT_LIMIT);
   }
 
+  const seasonRanking = (
+    pick: (manager: TrendManager) => number | null,
+    order: "asc" | "desc"
+  ) =>
+    managers
+      .map((manager) => ({
+        entry: manager.entry,
+        entryName: manager.entryName,
+        playerName: manager.playerName,
+        value: pick(manager)
+      }))
+      .filter((item): item is StatItem => item.value !== null && item.value > 0)
+      .sort((a, b) => (order === "desc" ? b.value - a.value : a.value - b.value))
+      .slice(0, STAT_LIMIT);
+
   return {
     trackedGameweeks: Math.max(
       ...managers.map((manager) => manager.trend.filter(Boolean).length),
       0
+    ),
+    benchWasteTop: seasonRanking((manager) => manager.season.pointsOnBench, "desc"),
+    hitCostTop: seasonRanking((manager) => manager.season.transferCost, "desc"),
+    squadValueTop: seasonRanking((manager) => manager.season.squadValue, "desc"),
+    overallRankTop: seasonRanking((manager) => manager.season.overallRank, "asc"),
+    veteranBestTop: seasonRanking(
+      (manager) =>
+        manager.season.pastSeasons.length > 0
+          ? Math.min(...manager.season.pastSeasons.map((season) => season.rank))
+          : null,
+      "asc"
     ),
     firstPlaceTop: mapCountRanking(firstPlaceCounts),
     secondPlaceTop: mapCountRanking(secondPlaceCounts),
@@ -443,6 +471,49 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
           </div>
         </section>
       ) : null}
+
+      <ChipStatusPanel managers={trendManagers} />
+
+      <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
+        <div className="mb-3">
+          <div className="text-[1rem] font-semibold">시즌 기록</div>
+          <div className="text-[12px] text-[var(--muted)]">
+            게임위크 수와 무관하게 시즌 누적으로 집계됩니다.
+          </div>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <StatCard
+            title="벤치에 버린 점수"
+            subtitle="시즌 누적 벤치 점수 Top 5"
+            items={stats.benchWasteTop}
+            formatter={(item) => `${item.value}점`}
+          />
+          <StatCard
+            title="이적 히트 최다"
+            subtitle="시즌 누적 차감 점수 Top 5"
+            items={stats.hitCostTop}
+            formatter={(item) => `−${item.value}점`}
+          />
+          <StatCard
+            title="팀 가치 최고"
+            subtitle="현재 스쿼드 가치 Top 5"
+            items={stats.squadValueTop}
+            formatter={(item) => formatMoney(item.value)}
+          />
+          <StatCard
+            title="전 세계 순위 최고"
+            subtitle="현재 FPL 전체 순위 Top 5"
+            items={stats.overallRankTop}
+            formatter={(item) => `${item.value.toLocaleString("ko-KR")}위`}
+          />
+          <StatCard
+            title="역대 최고 순위"
+            subtitle="지난 시즌들 중 최고 기록 Top 5"
+            items={stats.veteranBestTop}
+            formatter={(item) => `${item.value.toLocaleString("ko-KR")}위`}
+          />
+        </div>
+      </section>
 
       <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
         <div className="flex flex-wrap items-center justify-between gap-2">

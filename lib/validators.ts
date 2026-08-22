@@ -1,6 +1,17 @@
 import { z } from "zod";
 
 export const bootstrapStaticSchema = z.object({
+  // Every chip the season grants, split into first/second half windows.
+  chips: z
+    .array(
+      z.object({
+        name: z.string(),
+        start_event: z.number(),
+        stop_event: z.number()
+      })
+    )
+    .optional()
+    .default([]),
   events: z.array(
     z.object({
       id: z.number(),
@@ -54,9 +65,34 @@ export const entryHistorySchema = z.object({
     z.object({
       event: z.number(),
       points: z.number(),
-      total_points: z.number()
+      total_points: z.number(),
+      overall_rank: z.number().nullable().optional().default(null),
+      bank: z.number().optional().default(0),
+      value: z.number().optional().default(0),
+      event_transfers: z.number().optional().default(0),
+      event_transfers_cost: z.number().optional().default(0),
+      points_on_bench: z.number().optional().default(0)
     })
-  )
+  ),
+  chips: z
+    .array(
+      z.object({
+        name: z.string(),
+        event: z.number()
+      })
+    )
+    .optional()
+    .default([]),
+  past: z
+    .array(
+      z.object({
+        season_name: z.string(),
+        total_points: z.number(),
+        rank: z.number()
+      })
+    )
+    .optional()
+    .default([])
 });
 
 export const entrySchema = z.object({

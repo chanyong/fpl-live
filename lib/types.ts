@@ -146,10 +146,47 @@ export type EntryHistoryRow = {
   event: number;
   points: number;
   total_points: number;
+  overall_rank: number | null;
+  bank: number;
+  value: number;
+  event_transfers: number;
+  event_transfers_cost: number;
+  points_on_bench: number;
 };
 
 export type EntryHistoryPayload = {
   current: EntryHistoryRow[];
+  chips: Array<{ name: string; event: number }>;
+  past: Array<{ season_name: string; total_points: number; rank: number }>;
+};
+
+/** One chip the season grants, valid within a gameweek window. */
+export type ChipDefinition = {
+  name: string;
+  start: number;
+  stop: number;
+};
+
+export type ChipStatus = ChipDefinition & {
+  label: string;
+  /** Gameweek it was played in, or null while it is still in hand. */
+  usedEvent: number | null;
+  /** Window closed without the chip being played. */
+  expired: boolean;
+};
+
+/** Season-long figures that FPL already returns alongside the weekly history. */
+export type ManagerSeason = {
+  chips: ChipStatus[];
+  chipsRemaining: number;
+  pointsOnBench: number;
+  transfers: number;
+  transferCost: number;
+  /** Tenths of a million, as FPL reports it. */
+  squadValue: number | null;
+  bank: number | null;
+  overallRank: number | null;
+  pastSeasons: Array<{ seasonName: string; totalPoints: number; rank: number }>;
 };
 
 export type RankChangePoint = {
@@ -169,6 +206,7 @@ export type RankChangeManager = {
   gwPoints: number;
   color: string;
   previousRank: number | null;
+  season: ManagerSeason;
   /** Rank gained since the first tracked gameweek. Positive means moved up. */
   seasonChange: number | null;
   /** Rank gained across the recent window shown in the chart. */

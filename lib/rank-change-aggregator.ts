@@ -1,7 +1,9 @@
 import { mapWithConcurrency } from "@/lib/concurrency";
 import { getBootstrapStatic, getEntryHistory } from "@/lib/fpl-client";
 import { getLeagueLivePayload } from "@/lib/league-aggregator";
+import { buildManagerSeason } from "@/lib/season-summary";
 import type {
+  ChipDefinition,
   EntryHistoryPayload,
   RankChangeManager,
   RankChangePoint,
@@ -29,6 +31,8 @@ type ManagerBase = {
   /** Live figures for the current gameweek, straight from the league table payload. */
   live: { gwPoints: number; totalPoints: number };
 };
+
+const EMPTY_HISTORY: EntryHistoryPayload = { current: [], chips: [], past: [] };
 
 function getTrackedGameweeks(
   events: Array<{ id: number; finished: boolean; is_current: boolean }>,
@@ -143,10 +147,16 @@ export async function getLeagueRankChangePayload(args: {
       entryName: row.teamName || "Unnamed Team",
       overallRank: row.rank || null,
       overallTotal: row.totalPoints || 0,
-      history: result.status === "fulfilled" ? result.value : { current: [] },
+      history: result.status === "fulfilled" ? result.value : EMPTY_HISTORY,
       live: { gwPoints: row.gwPoints, totalPoints: row.totalPoints }
     };
   });
+
+  const chipDefinitions: ChipDefinition[] = bootstrap.chips.map((chip) => ({
+    name: chip.name,
+    start: chip.start_event,
+    stop: chip.stop_event
+  }));
 
   const trendData = buildTrendData(bootstrap.events, managersBase, currentGw);
 
@@ -167,6 +177,7 @@ export async function getLeagueRankChangePayload(args: {
         gwPoints: latest?.eventPoints ?? 0,
         color: CHART_COLORS[index % CHART_COLORS.length],
         previousRank: previous?.rank ?? null,
+        season: buildManagerSeason(manager.history, chipDefinitions, currentGw),
         seasonChange: rankMovement(filtered),
         recentChange: rankMovement(filtered, RECENT_WINDOW),
         trend

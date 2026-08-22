@@ -92,6 +92,17 @@ npm.cmd run dev
 - The Rank Change tab reads the current gameweek from the same live payload as the
   league table, so the two tabs can never disagree on points or gameweek.
 
+## Season figures
+
+The rank-trend tab already fetches `entry/{id}/history/` per manager. Beyond the
+weekly points it also carries chip usage, bench points, squad value, transfer
+hits, overall rank and past seasons, all surfaced without any extra request:
+
+- Chip availability is derived from `bootstrap-static` `chips`, which grants each
+  chip once per half of the season, so "remaining" is exact rather than assumed.
+- A played chip consumes the window its gameweek falls in; an unused chip whose
+  window has closed is marked expired.
+
 ## Assumptions for v1
 
 - Only public classic mini-leagues are supported.

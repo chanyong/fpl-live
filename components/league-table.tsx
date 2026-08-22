@@ -12,7 +12,8 @@ import {
 import type { LeagueLiveResponse, LeagueRow as LeagueRowType } from "@/lib/types";
 import { Filters } from "@/components/filters";
 import { CaretDown, CaretRight, CaretUp, SortToggle } from "@/components/icons";
-import { GwPoints, LeagueRow, LeagueRowExpanded, chipLabel } from "@/components/league-row";
+import { GwPoints, LeagueRow, LeagueRowExpanded } from "@/components/league-row";
+import { chipLabel } from "@/lib/chips";
 import { RankDelta } from "@/components/rank-delta";
 
 const columnHelper = createColumnHelper<LeagueRowType>();

@@ -1,22 +1,7 @@
 import { RankDelta } from "@/components/rank-delta";
+import { chipLabel } from "@/lib/chips";
 import type { LeagueRow as LeagueRowType } from "@/lib/types";
 import { SquadStrip } from "@/components/squad-strip";
-
-export function chipLabel(chip: LeagueRowType["chip"], short = false) {
-  if (!chip) {
-    return "-";
-  }
-
-  const labels = {
-    "3xc": short ? "TC" : "트리플 캡틴",
-    bboost: short ? "BB" : "벤치 부스트",
-    freehit: short ? "FH" : "프리 힛",
-    wildcard: short ? "WC" : "와일드카드",
-    manager: short ? "MGR" : "매니저"
-  };
-
-  return labels[chip] ?? chip;
-}
 
 /** "22 -4" — the hit is invisible otherwise, since gwPoints is already net. */
 export function GwPoints({ row, className }: { row: LeagueRowType; className?: string }) {
