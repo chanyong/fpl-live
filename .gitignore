@@ -6,3 +6,13 @@ coverage
 dist
 
 tsconfig.tsbuildinfo
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+# Favicon source image (converted into app/icon.png)
+pavicon.png
+
+# Stray API dumps from redirect typos
+C:Dropbox*
+*fpl_final.json
