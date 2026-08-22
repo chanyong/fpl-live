@@ -1,3 +1,4 @@
+import { mapWithConcurrency } from "@/lib/concurrency";
 import {
   getAllStandings,
   getBootstrapStatic,
@@ -5,6 +6,7 @@ import {
   getEventLive,
   getFixtures
 } from "@/lib/fpl-client";
+import { getCurrentGw } from "@/lib/gameweek";
 import {
   calculateLiveScore,
   computePlayersPlayed,
@@ -33,7 +35,29 @@ type LeagueLiveArgs = {
 };
 
 const CACHE_TTL_MS = 30_000;
+const CACHE_MAX_ENTRIES = 50;
+const PICKS_CONCURRENCY = Number(process.env.FPL_PICKS_CONCURRENCY ?? 8);
 const leagueLiveCache = new Map<string, { data: LeagueLiveResponse; expiresAt: number }>();
+
+/** Drops expired keys, then trims the oldest ones so the map cannot grow unbounded. */
+function pruneLeagueLiveCache() {
+  const now = Date.now();
+
+  for (const [key, entry] of leagueLiveCache) {
+    if (entry.expiresAt <= now) {
+      leagueLiveCache.delete(key);
+    }
+  }
+
+  // Map iterates in insertion order, so the first keys are the least recently written.
+  while (leagueLiveCache.size >= CACHE_MAX_ENTRIES) {
+    const oldest = leagueLiveCache.keys().next();
+    if (oldest.done) {
+      break;
+    }
+    leagueLiveCache.delete(oldest.value);
+  }
+}
 
 type FixtureWithStats = {
   id: number;
@@ -65,17 +89,6 @@ const STAT_LABELS: Record<string, string> = {
   bonus: "Bonus",
   bps: "Bonus Points System"
 };
-
-function getCurrentGw(events: Array<{ id: number; is_current: boolean; finished: boolean }>) {
-  const current = events.find((event) => event.is_current);
-
-  if (current) {
-    return current.id;
-  }
-
-  const lastFinished = [...events].reverse().find((event) => event.finished);
-  return lastFinished?.id ?? events[events.length - 1]?.id ?? 1;
-}
 
 function getPlayerPhoto(photo: string | undefined) {
   return photo
@@ -384,14 +397,14 @@ export async function getLeagueLivePayload({
   }
 
   const [bootstrap, standings, fixtures] = await Promise.all([
-    getBootstrapStatic({ forceRefresh }),
-    getAllStandings(leagueId, { forceRefresh }),
-    getFixtures({ forceRefresh })
+    getBootstrapStatic(),
+    getAllStandings(leagueId),
+    getFixtures()
   ]);
 
   const currentGw = gw === "current" ? getCurrentGw(bootstrap.events) : Number(gw);
   const currentGwFixtures = fixtures.filter((fixture) => fixture.event === currentGw);
-  const live = await getEventLive(currentGw, { forceRefresh });
+  const live = await getEventLive(currentGw);
   const elements = bootstrap.elements.map((element) => ({
     id: element.id,
     webName: element.web_name,
@@ -412,12 +425,14 @@ export async function getLeagueLivePayload({
     fixtures: currentGwFixtures
   });
 
-  const rowResults = await Promise.allSettled(
-    standings.results.map(async (standing) => {
-      const picks = await getEntryPicks(standing.entry, currentGw, { forceRefresh });
+  const rowResults = await mapWithConcurrency(
+    standings.results,
+    PICKS_CONCURRENCY,
+    async (standing) => {
+      const picks = await getEntryPicks(standing.entry, currentGw);
 
       return buildRow({ standing, picks, context });
-    })
+    }
   );
 
   const errors: string[] = [];
@@ -470,6 +485,7 @@ export async function getLeagueLivePayload({
     errors
   };
 
+  pruneLeagueLiveCache();
   leagueLiveCache.set(cacheKey, { data: result, expiresAt: Date.now() + CACHE_TTL_MS });
 
   return result;

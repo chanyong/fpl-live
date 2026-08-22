@@ -126,6 +126,14 @@ npm run test
 3. Build command: `npm install && npm run build`
 4. Start command: `npm run start`
 
+## Upstream request policy
+
+Every FPL call goes through `lib/fpl-client.ts`, which applies:
+
+- a per-request timeout (`FPL_TIMEOUT_MS`, default 10s)
+- retries with exponential backoff on 429/408/5xx and network errors, honouring `Retry-After` (`FPL_MAX_ATTEMPTS`, default 3)
+- bounded fan-out when fetching per-manager picks and history (`FPL_PICKS_CONCURRENCY`, default 8), so a large league cannot fire one request per manager at once
+
 ## Remaining limitations
 
 - Official autosub behavior can change after all fixtures complete; live rows are marked provisional.

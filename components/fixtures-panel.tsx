@@ -167,7 +167,7 @@ export function FixturesPanel({ fixtures, currentGw }: { fixtures: LeagueFixture
                             {fixture.homeTeam} vs {fixture.awayTeam}
                           </div>
                           <div className="mt-1 text-[12px] text-[var(--muted)]">
-                            {fixtureStatus(fixture)} ? {kickoffDateTimeLabel(fixture.kickoffTime)}
+                            {fixtureStatus(fixture)} · {kickoffDateTimeLabel(fixture.kickoffTime)}
                           </div>
                         </div>
 

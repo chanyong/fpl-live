@@ -1,5 +1,9 @@
+import { mapWithConcurrency } from "@/lib/concurrency";
 import { getAllStandings, getBootstrapStatic, getEntryHistory, getEntryPicks } from "@/lib/fpl-client";
+import { getCurrentGw } from "@/lib/gameweek";
 import type { Chip, EntryHistoryPayload, RankChangeManager, RankChangePoint, RankChangeResponse } from "@/lib/types";
+
+const ENTRY_CONCURRENCY = Number(process.env.FPL_PICKS_CONCURRENCY ?? 8);
 
 const CHART_COLORS = [
   "#cf8952", "#67b39f", "#72b9ea", "#d3829f", "#e4ad55", "#8b7fe6", "#84c76b", "#e98e64",
@@ -23,21 +27,6 @@ type ManagerBase = {
     };
   } | null;
 };
-
-function getCurrentGw(events: Array<{ id: number; is_current: boolean; finished: boolean }>) {
-  const current = events.find((event) => event.is_current);
-
-  if (current && !current.finished) {
-    return current.id;
-  }
-
-  const next = events.find((event) => !event.finished);
-  if (next) {
-    return next.id;
-  }
-
-  return current?.id ?? events[events.length - 1]?.id ?? 1;
-}
 
 function getTrackedGameweeks(
   events: Array<{ id: number; finished: boolean; is_current: boolean }>,
@@ -120,23 +109,35 @@ function buildTrendData(
 
 export async function getLeagueRankChangePayload(args: {
   leagueId: number;
-  forceRefresh?: boolean;
 }): Promise<RankChangeResponse> {
   const [bootstrap, standings] = await Promise.all([
-    getBootstrapStatic({ forceRefresh: args.forceRefresh }),
-    getAllStandings(args.leagueId, { forceRefresh: args.forceRefresh })
+    getBootstrapStatic(),
+    getAllStandings(args.leagueId)
   ]);
 
   const currentGw = getCurrentGw(bootstrap.events);
 
-  const [historyPayloads, picksPayloads] = await Promise.all([
-    Promise.all(
-      standings.results.map((row) => getEntryHistory(row.entry, { forceRefresh: args.forceRefresh }))
-    ),
-    Promise.all(
-      standings.results.map((row) => getEntryPicks(row.entry, currentGw, { forceRefresh: args.forceRefresh }).catch(() => null))
-    )
-  ]);
+  // Bounded fan-out: a large league would otherwise fire two requests per manager at once.
+  // A single failed history no longer rejects the whole payload.
+  const entryPayloads = await mapWithConcurrency(
+    standings.results,
+    ENTRY_CONCURRENCY,
+    async (row) => {
+      const [history, picks] = await Promise.all([
+        getEntryHistory(row.entry).catch(() => null),
+        getEntryPicks(row.entry, currentGw).catch(() => null)
+      ]);
+
+      return { history, picks };
+    }
+  );
+
+  const historyPayloads = entryPayloads.map((result) =>
+    result.status === "fulfilled" ? result.value.history : null
+  );
+  const picksPayloads = entryPayloads.map((result) =>
+    result.status === "fulfilled" ? result.value.picks : null
+  );
 
   const managersBase: ManagerBase[] = standings.results.map((row, index) => ({
     entry: row.entry,
