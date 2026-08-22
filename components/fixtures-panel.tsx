@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { hasFixtureEnded, isFixtureInPlay } from "@/lib/fixture-status";
 import type { LeagueFixture } from "@/lib/types";
 
 const KOREAN_DATE_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
@@ -22,11 +23,11 @@ const KOREAN_TIME_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
 });
 
 function fixtureStatus(fixture: LeagueFixture) {
-  if (fixture.finished) {
+  if (hasFixtureEnded(fixture)) {
     return "FT";
   }
 
-  if (fixture.started) {
+  if (isFixtureInPlay(fixture)) {
     return "LIVE";
   }
 
@@ -38,11 +39,11 @@ function fixtureStatus(fixture: LeagueFixture) {
 }
 
 function fixtureStatusClass(fixture: LeagueFixture) {
-  if (fixture.finished) {
+  if (hasFixtureEnded(fixture)) {
     return "bg-emerald-100 text-emerald-800";
   }
 
-  if (fixture.started) {
+  if (isFixtureInPlay(fixture)) {
     return "bg-amber-100 text-amber-800";
   }
 
