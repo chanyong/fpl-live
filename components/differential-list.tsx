@@ -2,24 +2,39 @@
 
 import { useMemo, useState } from "react";
 import { CaretDown, SortToggle } from "@/components/icons";
-import { FdrStrip } from "@/components/fdr-strip";
-import { availability } from "@/lib/player-metrics";
+import { FdrAverage, FdrStrip } from "@/components/fdr-strip";
+import { availability, averageDifficulty } from "@/lib/player-metrics";
 import { formatMoney } from "@/lib/season-summary";
 import type { PlayerStat, TeamFixtureOutlook } from "@/lib/types";
 
-type SortKey = "form" | "selectedByPercent" | "eventPoints" | "totalPoints" | "pointsPerGame" | "cost";
+/** Fixture difficulty is not in PlayerStat, so it is joined on for the table. */
+type Row = PlayerStat & { fixtures: TeamFixtureOutlook[]; avgDifficulty: number | null };
 
-const COLUMNS: Array<{ key: SortKey; label: string; format: (player: PlayerStat) => string }> = [
+type SortKey =
+  | "form"
+  | "selectedByPercent"
+  | "eventPoints"
+  | "totalPoints"
+  | "pointsPerGame"
+  | "cost"
+  | "avgDifficulty";
+
+const COLUMNS: Array<{ key: SortKey; label: string; format: (player: Row) => string }> = [
   { key: "selectedByPercent", label: "소유율", format: (player) => `${player.selectedByPercent}%` },
   { key: "form", label: "폼", format: (player) => player.form.toFixed(1) },
   { key: "eventPoints", label: "GW 점수", format: (player) => String(player.eventPoints) },
   { key: "totalPoints", label: "누적", format: (player) => String(player.totalPoints) },
   { key: "pointsPerGame", label: "경기당", format: (player) => player.pointsPerGame.toFixed(1) },
-  { key: "cost", label: "가격", format: (player) => formatMoney(player.cost) }
+  { key: "cost", label: "가격", format: (player) => formatMoney(player.cost) },
+  {
+    key: "avgDifficulty",
+    label: "평균 난이도",
+    format: (player) => (player.avgDifficulty === null ? "-" : player.avgDifficulty.toFixed(1))
+  }
 ];
 
-/** Low ownership sorts the other way — a smaller number is the more interesting one. */
-const ASCENDING: SortKey[] = ["selectedByPercent", "cost"];
+/** These read better small-first: a cheap player, a light owner base, an easy run. */
+const ASCENDING: SortKey[] = ["selectedByPercent", "cost", "avgDifficulty"];
 
 export function DifferentialList({
   players,
@@ -34,15 +49,21 @@ export function DifferentialList({
 }) {
   const [sortKey, setSortKey] = useState<SortKey>("form");
 
-  const rows = useMemo(
-    () =>
-      [...players].sort((left, right) =>
-        ASCENDING.includes(sortKey)
-          ? left[sortKey] - right[sortKey] || right.form - left.form
-          : right[sortKey] - left[sortKey] || right.totalPoints - left.totalPoints
-      ),
-    [players, sortKey]
-  );
+  const rows = useMemo(() => {
+    const joined: Row[] = players.map((player) => {
+      const fixtures = fdr[player.teamShortName] ?? [];
+      return { ...player, fixtures, avgDifficulty: averageDifficulty(fixtures) };
+    });
+
+    // A team with no fixtures left sorts last rather than posing as the easiest run.
+    const value = (row: Row) => (sortKey === "avgDifficulty" ? row.avgDifficulty ?? 99 : row[sortKey]);
+
+    return joined.sort((left, right) =>
+      ASCENDING.includes(sortKey)
+        ? value(left) - value(right) || right.form - left.form
+        : value(right) - value(left) || right.totalPoints - left.totalPoints
+    );
+  }, [players, sortKey, fdr]);
 
   if (rows.length === 0) {
     return (
@@ -61,7 +82,7 @@ export function DifferentialList({
       </p>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[680px] border-collapse text-[13px]">
+        <table className="w-full min-w-[800px] border-collapse text-[13px]">
           <thead>
             <tr className="border-b border-[var(--border)] text-[10px] uppercase tracking-[0.08em] text-[var(--muted)]">
               <th className="px-2 py-2 text-left">선수</th>
@@ -122,11 +143,15 @@ export function DifferentialList({
                   <td className="px-2 py-1.5 text-[12px] text-[var(--muted)]">{player.position}</td>
                   {COLUMNS.map((column) => (
                     <td key={column.key} className="px-2 py-1.5 text-right tabular-nums">
-                      {column.format(player)}
+                      {column.key === "avgDifficulty" ? (
+                        <FdrAverage value={player.avgDifficulty} count={player.fixtures.length} />
+                      ) : (
+                        column.format(player)
+                      )}
                     </td>
                   ))}
                   <td className="px-2 py-1.5">
-                    <FdrStrip compact fixtures={fdr[player.teamShortName] ?? []} />
+                    <FdrStrip compact fixtures={player.fixtures} />
                   </td>
                 </tr>
               );

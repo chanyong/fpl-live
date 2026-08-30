@@ -12,6 +12,23 @@ export function difficultyStyle(difficulty: number) {
   };
 }
 
+/** The strip's mean, as a pill. The exact figure is printed; the tint only echoes it. */
+export function FdrAverage({ value, count }: { value: number | null; count: number }) {
+  if (value === null) {
+    return <span className="text-[11px] text-[var(--muted)]">-</span>;
+  }
+
+  return (
+    <span
+      title={`다음 ${count}경기 평균 난이도 ${value.toFixed(1)} — 낮을수록 쉬움`}
+      className="inline-flex min-w-[30px] justify-center rounded-[4px] px-1 py-[1px] text-[11px] font-semibold tabular-nums"
+      style={difficultyStyle(value)}
+    >
+      {value.toFixed(1)}
+    </span>
+  );
+}
+
 export function FdrStrip({
   fixtures,
   compact = false

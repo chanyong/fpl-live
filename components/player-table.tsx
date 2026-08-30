@@ -2,10 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { CaretDown, CaretUp, SortToggle } from "@/components/icons";
-import { FdrStrip } from "@/components/fdr-strip";
-import { availability } from "@/lib/player-metrics";
+import { FdrAverage, FdrStrip } from "@/components/fdr-strip";
+import { availability, averageDifficulty } from "@/lib/player-metrics";
 import { formatMoney } from "@/lib/season-summary";
 import type { FplPosition, PlayerStat, TeamFixtureOutlook } from "@/lib/types";
+
+/** Fixture difficulty is not in PlayerStat, so it is joined on for the table. */
+type Row = PlayerStat & { fixtures: TeamFixtureOutlook[]; avgDifficulty: number | null };
 
 type SortKey =
   | "totalPoints"
@@ -15,9 +18,10 @@ type SortKey =
   | "selectedByPercent"
   | "netTransfers"
   | "cost"
-  | "expectedGoalInvolvements";
+  | "expectedGoalInvolvements"
+  | "avgDifficulty";
 
-const COLUMNS: Array<{ key: SortKey; label: string; format: (player: PlayerStat) => string }> = [
+const COLUMNS: Array<{ key: SortKey; label: string; format: (player: Row) => string }> = [
   { key: "eventPoints", label: "GW", format: (player) => String(player.eventPoints) },
   { key: "totalPoints", label: "누적", format: (player) => String(player.totalPoints) },
   { key: "form", label: "폼", format: (player) => player.form.toFixed(1) },
@@ -30,7 +34,12 @@ const COLUMNS: Array<{ key: SortKey; label: string; format: (player: PlayerStat)
       `${player.netTransfers >= 0 ? "+" : "−"}${Math.abs(Math.round(player.netTransfers / 1000))}k`
   },
   { key: "cost", label: "가격", format: (player) => formatMoney(player.cost) },
-  { key: "expectedGoalInvolvements", label: "xGI", format: (player) => player.expectedGoalInvolvements.toFixed(2) }
+  { key: "expectedGoalInvolvements", label: "xGI", format: (player) => player.expectedGoalInvolvements.toFixed(2) },
+  {
+    key: "avgDifficulty",
+    label: "평균 난이도",
+    format: (player) => (player.avgDifficulty === null ? "-" : player.avgDifficulty.toFixed(1))
+  }
 ];
 
 const POSITIONS: Array<FplPosition | "ALL"> = ["ALL", "GKP", "DEF", "MID", "FWD"];
@@ -66,8 +75,18 @@ export function PlayerTable({
           player.teamShortName.toLowerCase().includes(needle)
         );
       })
-      .sort((left, right) => right[sortKey] - left[sortKey]);
-  }, [players, search, position, leagueOnly, ownedIds, sortKey]);
+      .map((player) => {
+        const fixtures = fdr[player.teamShortName] ?? [];
+        return { ...player, fixtures, avgDifficulty: averageDifficulty(fixtures) };
+      })
+      .sort((left, right) => {
+        // An easy run is a low number, and a team with no fixtures left sorts last.
+        if (sortKey === "avgDifficulty") {
+          return (left.avgDifficulty ?? 99) - (right.avgDifficulty ?? 99) || right.totalPoints - left.totalPoints;
+        }
+        return right[sortKey] - left[sortKey];
+      });
+  }, [players, search, position, leagueOnly, ownedIds, sortKey, fdr]);
 
   const visible = rows.slice(0, limit);
 
@@ -117,7 +136,7 @@ export function PlayerTable({
       </div>
 
       <div className="overflow-x-auto rounded-[1rem] border border-[var(--border)] bg-[var(--surface)]">
-        <table className="min-w-[720px] w-full border-collapse text-[13px]">
+        <table className="min-w-[830px] w-full border-collapse text-[13px]">
           <thead>
             <tr className="border-b border-[var(--border)] bg-[var(--surface-strong)]/40 text-[10px] uppercase tracking-[0.08em] text-[var(--muted)]">
               <th className="px-2 py-2 text-left">선수</th>
@@ -129,11 +148,11 @@ export function PlayerTable({
                     <button
                       type="button"
                       onClick={() => setSortKey(column.key)}
-                      aria-sort={active ? "descending" : "none"}
+                      aria-sort={active ? (column.key === "avgDifficulty" ? "ascending" : "descending") : "none"}
                       className={`inline-flex items-center gap-1 ${active ? "text-[var(--text)]" : ""}`}
                     >
                       {column.label}
-                      {active ? <CaretDown /> : <SortToggle />}
+                      {active ? <CaretDown className={column.key === "avgDifficulty" ? "rotate-180" : ""} /> : <SortToggle />}
                     </button>
                   </th>
                 );
@@ -178,11 +197,15 @@ export function PlayerTable({
                   </td>
                   {COLUMNS.map((column) => (
                     <td key={column.key} className="px-2 py-1.5 text-right tabular-nums">
-                      {column.format(player)}
+                      {column.key === "avgDifficulty" ? (
+                        <FdrAverage value={player.avgDifficulty} count={player.fixtures.length} />
+                      ) : (
+                        column.format(player)
+                      )}
                     </td>
                   ))}
                   <td className="px-2 py-1.5">
-                    <FdrStrip compact fixtures={fdr[player.teamShortName] ?? []} />
+                    <FdrStrip compact fixtures={player.fixtures} />
                   </td>
                 </tr>
               );

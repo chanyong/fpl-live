@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BarSeries, LineSeries } from "@/components/charts/mini-series";
 import { FdrStrip } from "@/components/fdr-strip";
 import { RemoteImage } from "@/components/remote-image";
-import { availability } from "@/lib/player-metrics";
+import { availability, averageDifficulty } from "@/lib/player-metrics";
 import { formatMoney } from "@/lib/season-summary";
 import type {
   LeaguePlayerStat,
@@ -145,7 +145,14 @@ export function PlayerDetail({
         ) : null}
 
         <div className="grid gap-2">
-          <Panel title="다음 경기 난이도" hint="숫자가 클수록 어려움">
+          <Panel
+            title="다음 경기 난이도"
+            hint={
+              fixtures.length > 0
+                ? `평균 ${averageDifficulty(fixtures)?.toFixed(1)} · 숫자가 클수록 어려움`
+                : "숫자가 클수록 어려움"
+            }
+          >
             <FdrStrip fixtures={fixtures} />
           </Panel>
 

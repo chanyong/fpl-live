@@ -1,4 +1,4 @@
-import type { FplPosition, PlayerStat } from "@/lib/types";
+import type { FplPosition, PlayerStat, TeamFixtureOutlook } from "@/lib/types";
 
 /** Below this many minutes a form figure is noise, not a signal. */
 export const DIFFERENTIAL_MIN_MINUTES = 45;
@@ -90,4 +90,17 @@ export function topBy<T>(rows: T[], value: (row: T) => number, limit: number) {
 export function roundTo(value: number, digits = 1) {
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
+}
+
+/**
+ * Mean fixture difficulty over the run shown in the strip.
+ * Null when a team has no scheduled fixtures left, so it can sort to the end
+ * rather than pretending to be the easiest run on the board.
+ */
+export function averageDifficulty(fixtures: TeamFixtureOutlook[]) {
+  if (fixtures.length === 0) {
+    return null;
+  }
+
+  return roundTo(fixtures.reduce((total, fixture) => total + fixture.difficulty, 0) / fixtures.length);
 }

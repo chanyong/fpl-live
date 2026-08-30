@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   availability,
+  averageDifficulty,
   differentialSwing,
   effectiveOwnership,
   percent,
@@ -160,6 +161,32 @@ describe("selectDifferentials", () => {
   it("leaves the input untouched", () => {
     selectDifferentials(squad, cuts);
     expect(squad[0].webName).toBe("inZone");
+  });
+});
+
+describe("averageDifficulty", () => {
+  const run = (difficulties: number[]) =>
+    difficulties.map((difficulty, index) => ({
+      gw: index + 3,
+      opponent: "OPP",
+      home: index % 2 === 0,
+      difficulty
+    }));
+
+  it("averages the run shown in the strip", () => {
+    expect(averageDifficulty(run([2, 4, 2, 4, 2]))).toBe(2.8);
+  });
+
+  it("rounds to one decimal", () => {
+    expect(averageDifficulty(run([3, 3, 4]))).toBe(3.3);
+  });
+
+  it("returns null for a team with nothing scheduled, so it can sort last", () => {
+    expect(averageDifficulty([])).toBeNull();
+  });
+
+  it("handles a single remaining fixture", () => {
+    expect(averageDifficulty(run([5]))).toBe(5);
   });
 });
 
