@@ -16,7 +16,8 @@ Next.js App Router MVP that uses official FPL public JSON endpoints to show a pu
 - `https://fantasy.premierleague.com/api/entry/{entryId}/event/{gw}/picks/`
 - `https://fantasy.premierleague.com/api/event/{gw}/live/`
 - `https://fantasy.premierleague.com/api/fixtures/`
-- Optional future enhancement: `https://fantasy.premierleague.com/api/element-summary/{playerId}/`
+- `https://fantasy.premierleague.com/api/element-summary/{playerId}/` — only when a
+  player is opened in the player tab, never in bulk.
 
 ## Stack
 
@@ -102,6 +103,25 @@ hits, overall rank and past seasons, all surfaced without any extra request:
   chip once per half of the season, so "remaining" is exact rather than assumed.
 - A played chip consumes the window its gameweek falls in; an unused chip whose
   window has closed is marked expired.
+
+## Player figures
+
+The player tab is served by `/api/player-stats`, which reuses the memoised league
+payload and reads everything else out of `bootstrap-static` and `fixtures` — both
+already fetched for the other tabs. No extra upstream request is made to render it.
+
+- A player's gameweek score adds the same provisional bonus the league table uses,
+  so the two tabs can never disagree about what a player has scored.
+- `transfers_in_event` / `transfers_out_event` reset at every deadline, so during a
+  live gameweek they describe moves for the *next* one. The UI labels the window.
+- **Effective ownership** counts only starters, and counts a captain twice — that is
+  what actually scores.
+- **Rank contribution** is `points × (1 − ownership)`: a player the whole league
+  fields moves nobody, a player one manager fields is worth his full score. The
+  gameweek figure uses effective ownership and is zero when every owner benched him;
+  the season figure uses today's roster share, because past lineups are not kept.
+- The global player table is trimmed to players with minutes, plus everyone a league
+  squad holds, so a benched unused player still has a row.
 
 ## Assumptions for v1
 

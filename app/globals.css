@@ -11,6 +11,22 @@
   --accent-soft: #ddf5ea;
   --danger: #9f2a2a;
   --warning: #8c5f11;
+
+  /* Data-viz marks. Deliberately not the semantic accent/danger pair: green-vs-red is
+     the one diverging combination colour-blind readers cannot separate. Blue-vs-red is
+     validated against this cream surface for both normal and CVD vision. */
+  --chart-in: #2a78d6;
+  --chart-out: #e34948;
+  --chart-mute: #9a9082;
+  --chart-mute-soft: #ded6c6;
+
+  /* Fixture difficulty: one hue, light to dark. The number is always printed alongside,
+     so the colour is never the only cue. */
+  --fdr-1: #86b6ef;
+  --fdr-2: #5598e7;
+  --fdr-3: #2a78d6;
+  --fdr-4: #1c5cab;
+  --fdr-5: #104281;
 }
 
 * {

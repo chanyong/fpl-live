@@ -12,6 +12,20 @@ export function parseLeagueId(raw: string | null) {
   return { leagueId } as const;
 }
 
+/** FPL element ids are positive integers; anything else must never reach the upstream URL. */
+export function parseElementId(raw: string | null) {
+  if (!raw) {
+    return { error: "elementId query parameter is required" } as const;
+  }
+
+  const elementId = Number(raw);
+  if (!Number.isInteger(elementId) || elementId <= 0) {
+    return { error: "elementId must be a positive integer" } as const;
+  }
+
+  return { elementId } as const;
+}
+
 /** Accepts "current" or a gameweek number in the 1-38 range. */
 export function parseGw(raw: string | null) {
   const value = raw ?? "current";

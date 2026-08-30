@@ -1,5 +1,6 @@
 import {
   bootstrapStaticSchema,
+  elementSummarySchema,
   entryHistorySchema,
   entrySchema,
   fixturesSchema,
@@ -151,4 +152,8 @@ export function getEventLive(gw: number) {
 
 export function getFixtures() {
   return fetchJson("/fixtures/", fixturesSchema);
+}
+
+export function getElementSummary(elementId: number) {
+  return fetchJson(`/element-summary/${elementId}/`, elementSummarySchema);
 }

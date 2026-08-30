@@ -189,6 +189,99 @@ export type ManagerSeason = {
   pastSeasons: Array<{ seasonName: string; totalPoints: number; rank: number }>;
 };
 
+/** One player as the statistics tab shows them — all of it from bootstrap-static. */
+export type PlayerStat = {
+  id: number;
+  webName: string;
+  teamId: number;
+  teamShortName: string;
+  teamCode: number;
+  position: FplPosition;
+  /** Tenths of a million, as FPL reports it. */
+  cost: number;
+  costChangeEvent: number;
+  /** −100…100 progress toward the next price move. */
+  priceChangePercent: number;
+  totalPoints: number;
+  eventPoints: number;
+  form: number;
+  pointsPerGame: number;
+  selectedByPercent: number;
+  transfersInEvent: number;
+  transfersOutEvent: number;
+  netTransfers: number;
+  minutes: number;
+  ictIndex: number;
+  expectedGoalInvolvements: number;
+  status: string;
+  news: string;
+  photoUrl: string | null;
+};
+
+export type TeamFixtureOutlook = {
+  gw: number;
+  opponent: string;
+  home: boolean;
+  difficulty: number;
+};
+
+/** A player seen through the league: who owns him and what that is worth. */
+export type LeaguePlayerStat = {
+  elementId: number;
+  webName: string;
+  teamShortName: string;
+  teamCode: number;
+  position: FplPosition;
+  cost: number;
+  ownedBy: number;
+  /** Indexes into PlayerStatsResponse.managers. */
+  owners: number[];
+  captains: number[];
+  starters: number;
+  leaguePercent: number;
+  /** Starters plus captain doubles, over the manager count. */
+  effectiveOwnership: number;
+  globalPercent: number;
+  gwPoints: number;
+  seasonPoints: number;
+  /** Points this player has poured into the league as a whole. */
+  leagueContribution: number;
+  /** Points an owner gains on the league average this gameweek. */
+  gwSwing: number;
+  /** The same idea across the season, against today's ownership. */
+  seasonSwing: number;
+};
+
+export type PlayerStatsResponse = {
+  league: {
+    id: number;
+    name: string;
+    currentGw: number;
+    nextGw: number | null;
+    managerCount: number;
+    lastUpdated: string;
+  };
+  managers: Array<{ entryId: number; managerName: string; teamName: string; rank: number }>;
+  players: PlayerStat[];
+  /** Next five fixtures per team, keyed by short name. */
+  fdr: Record<string, TeamFixtureOutlook[]>;
+  leaguePlayers: LeaguePlayerStat[];
+};
+
+export type PlayerHistoryPoint = {
+  gw: number;
+  points: number;
+  minutes: number;
+  value: number;
+  selected: number;
+  transfersBalance: number;
+};
+
+export type PlayerHistoryResponse = {
+  elementId: number;
+  history: PlayerHistoryPoint[];
+};
+
 export type RankChangePoint = {
   gw: number;
   totalPoints: number;

@@ -59,7 +59,7 @@ function pruneLeagueLiveCache() {
   }
 }
 
-type FixtureWithStats = {
+export type FixtureWithStats = {
   id: number;
   event: number | null;
   kickoff_time: string | null;
@@ -138,7 +138,7 @@ function assignProvisionalBonus(values: Array<{ value: number; element: number }
   ];
 }
 
-function buildProvisionalBonusByElement(fixtures: FixtureWithStats[]) {
+export function buildProvisionalBonusByElement(fixtures: FixtureWithStats[]) {
   const bonusMap = new Map<number, number>();
 
   for (const fixture of fixtures) {
