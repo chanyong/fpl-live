@@ -3,9 +3,11 @@
 import { useMemo, useState } from "react";
 import { DivergingRows, type BarRow } from "@/components/charts/bar-rows";
 import { FormScatter } from "@/components/charts/form-scatter";
+import { DifferentialList } from "@/components/differential-list";
 import { LeaguePlayersPanel } from "@/components/league-players-panel";
 import { PlayerDetail } from "@/components/player-detail";
 import { PlayerTable } from "@/components/player-table";
+import { DIFFERENTIAL_MIN_MINUTES, selectDifferentials } from "@/lib/player-metrics";
 import type { PlayerStatsResponse } from "@/lib/types";
 
 /** A differential is a player this much of the world owns, or less. */
@@ -110,6 +112,11 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
     });
   }, [data.players]);
 
+  const differentials = useMemo(
+    () => selectDifferentials(data.players, { ownershipCut: OWNERSHIP_CUT, formCut: FORM_CUT }),
+    [data.players]
+  );
+
   const transferWindowLabel = data.league.nextGw
     ? `GW${data.league.nextGw} 데드라인 대비`
     : `GW${data.league.currentGw} 기준`;
@@ -204,6 +211,18 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
                 />
               </div>
             </div>
+          </Section>
+
+          <Section
+            title={`차별화 후보 ${differentials.length}명`}
+            hint={`소유율 ${OWNERSHIP_CUT}% 이하, 폼 ${FORM_CUT} 이상, ${DIFFERENTIAL_MIN_MINUTES}분 이상 출전. 위 산점도에서 강조된 선수와 같은 목록입니다.`}
+          >
+            <DifferentialList
+              players={differentials}
+              fdr={data.fdr}
+              ownedIds={ownedIds}
+              onSelect={setSelected}
+            />
           </Section>
 
           <PlayerTable players={data.players} fdr={data.fdr} ownedIds={ownedIds} onSelect={setSelected} />

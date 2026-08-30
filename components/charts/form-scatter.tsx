@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { DIFFERENTIAL_MIN_MINUTES } from "@/lib/player-metrics";
 import type { PlayerStat } from "@/lib/types";
 
 const WIDTH = 720;
@@ -9,8 +10,7 @@ const M = { left: 40, right: 14, top: 16, bottom: 40 };
 const PLOT_W = WIDTH - M.left - M.right;
 const PLOT_H = HEIGHT - M.top - M.bottom;
 
-/** Below this many minutes a form figure is noise, not a signal. */
-const MIN_MINUTES = 45;
+const MIN_MINUTES = DIFFERENTIAL_MIN_MINUTES;
 const MAX_LABELS_IN_ZONE = 8;
 
 type Props = {

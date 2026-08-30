@@ -1,4 +1,29 @@
-import type { FplPosition } from "@/lib/types";
+import type { FplPosition, PlayerStat } from "@/lib/types";
+
+/** Below this many minutes a form figure is noise, not a signal. */
+export const DIFFERENTIAL_MIN_MINUTES = 45;
+
+export type DifferentialCuts = {
+  /** Owned by this share of the world, or less. */
+  ownershipCut: number;
+  /** …while scoring at least this. */
+  formCut: number;
+};
+
+/**
+ * Lightly-owned players in form — the quadrant the scatter highlights.
+ * The list and the chart share this filter so they can never show different players.
+ */
+export function selectDifferentials(players: PlayerStat[], cuts: DifferentialCuts) {
+  return players
+    .filter(
+      (player) =>
+        player.minutes >= DIFFERENTIAL_MIN_MINUTES &&
+        player.selectedByPercent <= cuts.ownershipCut &&
+        player.form >= cuts.formCut
+    )
+    .sort((left, right) => right.form - left.form || right.totalPoints - left.totalPoints);
+}
 
 export const POSITION_BY_TYPE: Record<number, FplPosition> = {
   1: "GKP",
