@@ -192,12 +192,44 @@ export function LeaguePlayersPanel({
         )}
       </section>
 
+      {summary.solo.length > 0 ? (
+        <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
+          <div className="mb-2">
+            <h3 className="text-[1rem] font-semibold">단독 보유 {summary.solo.length}명</h3>
+            <p className="text-[12px] text-[var(--muted)]">한 명만 가진 선수. 이 선수들이 리그 순위를 벌립니다.</p>
+          </div>
+          <ul className="flex flex-col gap-1">
+            {[...summary.solo]
+              .sort((left, right) => right.seasonPoints - left.seasonPoints)
+              .slice(0, 8)
+              .map((row) => (
+                <li key={row.elementId}>
+                  <button
+                    type="button"
+                    onClick={() => onSelect(row.elementId)}
+                    className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-1 text-left text-[13px] transition hover:bg-[var(--surface-strong)]/50"
+                  >
+                    <span className="min-w-0 truncate">
+                      <span className="font-semibold">{row.webName}</span>
+                      <span className="ml-1 text-[11px] text-[var(--muted)]">{row.teamShortName}</span>
+                    </span>
+                    <span className="whitespace-nowrap text-[12px] tabular-nums text-[var(--muted)]">
+                      {managerNames[row.owners[0]] ?? "?"} · 누적 {row.seasonPoints}점
+                    </span>
+                  </button>
+                </li>
+              ))}
+          </ul>
+        </section>
+      ) : null}
+
       <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
           <div>
             <h3 className="text-[1rem] font-semibold">리그 보유 선수 {leaguePlayers.length}명</h3>
             <p className="text-[12px] text-[var(--muted)]">
-              단독 보유 {summary.solo.length}명 · 전원 보유 {summary.template.length}명 · 헤더를 눌러 정렬합니다.
+              {managerCount}명 전원이 가진 선수 {summary.template.length}명 · 헤더를 눌러 정렬하고, 행을 누르면 상세가
+              열립니다.
             </p>
           </div>
         </div>
@@ -292,36 +324,6 @@ export function LeaguePlayersPanel({
         </div>
       </section>
 
-      {summary.solo.length > 0 ? (
-        <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
-          <div className="mb-2">
-            <h3 className="text-[1rem] font-semibold">단독 보유 {summary.solo.length}명</h3>
-            <p className="text-[12px] text-[var(--muted)]">한 명만 가진 선수. 이 선수들이 리그 순위를 벌립니다.</p>
-          </div>
-          <ul className="flex flex-col gap-1">
-            {[...summary.solo]
-              .sort((left, right) => right.seasonPoints - left.seasonPoints)
-              .slice(0, 8)
-              .map((row) => (
-                <li key={row.elementId}>
-                  <button
-                    type="button"
-                    onClick={() => onSelect(row.elementId)}
-                    className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-1 text-left text-[13px] transition hover:bg-[var(--surface-strong)]/50"
-                  >
-                    <span className="min-w-0 truncate">
-                      <span className="font-semibold">{row.webName}</span>
-                      <span className="ml-1 text-[11px] text-[var(--muted)]">{row.teamShortName}</span>
-                    </span>
-                    <span className="whitespace-nowrap text-[12px] tabular-nums text-[var(--muted)]">
-                      {managerNames[row.owners[0]] ?? "?"} · 누적 {row.seasonPoints}점
-                    </span>
-                  </button>
-                </li>
-              ))}
-          </ul>
-        </section>
-      ) : null}
     </div>
   );
 }

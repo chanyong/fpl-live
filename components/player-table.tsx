@@ -92,6 +92,14 @@ export function PlayerTable({
 
   return (
     <div className="flex flex-col gap-2">
+      <div className="px-1">
+        <h3 className="text-[1rem] font-semibold">전체 선수</h3>
+        <p className="text-[12px] text-[var(--muted)]">
+          {rows.length}명 · 출전 기록이 있는 선수와 우리 리그가 보유한 선수 전체입니다. 헤더를 눌러 정렬하고, 행을
+          누르면 상세가 열립니다.
+        </p>
+      </div>
+
       <div className="flex flex-col gap-2 rounded-[1rem] border border-[var(--border)] bg-[var(--surface)] p-2.5 md:flex-row md:items-center">
         <input
           value={search}
