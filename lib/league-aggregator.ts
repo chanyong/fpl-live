@@ -138,11 +138,27 @@ function assignProvisionalBonus(values: Array<{ value: number; element: number }
   ];
 }
 
+/**
+ * True once FPL has published the fixture's bonus itself.
+ *
+ * `finished` stays false until the whole gameweek is signed off, so it says nothing about
+ * whether bonus has landed. `finished_provisional` is the flag that flips at the whistle,
+ * but the bonus rows can appear in the fixture before it does — and the moment they do,
+ * that bonus is already inside `event_points` and the live `total_points`. Estimating it
+ * again from BPS would pay the player twice, which is what made a Haaland hat-trick of
+ * bonus points read as six.
+ */
+function hasPublishedBonus(fixture: FixtureWithStats) {
+  const bonus = fixture.stats.find((stat) => stat.identifier === "bonus");
+
+  return bonus ? [...bonus.h, ...bonus.a].some((item) => item.value > 0) : false;
+}
+
 export function buildProvisionalBonusByElement(fixtures: FixtureWithStats[]) {
   const bonusMap = new Map<number, number>();
 
   for (const fixture of fixtures) {
-    if (!fixture.started || fixture.finished_provisional) {
+    if (!fixture.started || fixture.finished_provisional || hasPublishedBonus(fixture)) {
       continue;
     }
 

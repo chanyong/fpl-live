@@ -240,6 +240,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
       {selectedPlayer ? (
         <PlayerDetail
           player={selectedPlayer}
+          gw={data.league.currentGw}
           fixtures={data.fdr[selectedPlayer.teamShortName] ?? []}
           leagueStat={leagueById.get(selectedPlayer.id)}
           managerNames={managerNames}

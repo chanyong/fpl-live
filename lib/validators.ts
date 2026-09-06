@@ -176,7 +176,24 @@ export const liveSchema = z.object({
         total_points: z.number(),
         bonus: z.number().optional().default(0),
         bps: z.number().optional().default(0)
-      })
+      }),
+      // The per-fixture ledger behind total_points, which the score breakdown reads.
+      explain: z
+        .array(
+          z.object({
+            fixture: z.number(),
+            stats: z.array(
+              z.object({
+                identifier: z.string(),
+                points: z.number(),
+                value: z.number(),
+                points_modification: z.number().optional().default(0)
+              })
+            )
+          })
+        )
+        .optional()
+        .default([])
     })
   )
 });

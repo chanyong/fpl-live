@@ -42,6 +42,6 @@ export function LeagueRow({ row, gwClassName }: { row: LeagueRowType; gwClassNam
   );
 }
 
-export function LeagueRowExpanded({ row }: { row: LeagueRowType }) {
-  return <SquadStrip squad={row.squad} />;
+export function LeagueRowExpanded({ row, gw }: { row: LeagueRowType; gw: number }) {
+  return <SquadStrip squad={row.squad} gw={gw} />;
 }

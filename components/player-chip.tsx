@@ -36,12 +36,15 @@ function scoreTone(points: number, status: PlayerLiveCard["status"]) {
   return "text-stone-700";
 }
 
-export function PlayerChip({ player }: { player: PlayerLiveCard }) {
+export function PlayerChip({ player, onSelect }: { player: PlayerLiveCard; onSelect?: () => void }) {
   const pointsLabel = player.status === "not_played" ? "-" : String(player.livePoints);
 
   return (
-    <div
-      className={`flex min-w-0 gap-2.5 rounded-[1rem] border border-[var(--border)] border-l-4 bg-white px-2.5 py-2.5 shadow-sm md:px-3 md:py-3 ${positionTone[player.position]}`}
+    <button
+      type="button"
+      onClick={onSelect}
+      title={`${player.webName} 득점 상세 보기`}
+      className={`flex w-full min-w-0 gap-2.5 rounded-[1rem] border border-[var(--border)] border-l-4 bg-white px-2.5 py-2.5 text-left shadow-sm transition hover:border-[var(--accent)] md:px-3 md:py-3 ${positionTone[player.position]}`}
     >
       <RemoteImage
         src={player.photoUrl}
@@ -81,6 +84,6 @@ export function PlayerChip({ player }: { player: PlayerLiveCard }) {
           </span>
         </div>
       </div>
-    </div>
+    </button>
   );
 }

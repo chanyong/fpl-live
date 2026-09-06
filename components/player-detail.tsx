@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BarSeries, LineSeries } from "@/components/charts/mini-series";
 import { FdrStrip } from "@/components/fdr-strip";
+import { PointsBreakdown } from "@/components/points-breakdown";
 import { RemoteImage } from "@/components/remote-image";
 import { availability, averageDifficulty } from "@/lib/player-metrics";
 import { formatMoney } from "@/lib/season-summary";
@@ -48,12 +49,14 @@ function Panel({ title, hint, children }: { title: string; hint?: string; childr
 
 export function PlayerDetail({
   player,
+  gw,
   fixtures,
   leagueStat,
   managerNames,
   onClose
 }: {
   player: PlayerStat;
+  gw: number;
   fixtures: TeamFixtureOutlook[];
   leagueStat?: LeaguePlayerStat;
   managerNames: string[];
@@ -145,6 +148,10 @@ export function PlayerDetail({
         ) : null}
 
         <div className="grid gap-2">
+          <Panel title={`GW${gw} 점수는 이렇게 나왔습니다`} hint="FPL이 기록한 항목 그대로">
+            <PointsBreakdown elementId={player.id} gw={gw} />
+          </Panel>
+
           <Panel
             title="다음 경기 난이도"
             hint={

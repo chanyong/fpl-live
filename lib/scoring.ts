@@ -331,6 +331,7 @@ export function splitSquad(
       status,
       isCaptain: pick.isCaptain,
       isViceCaptain: pick.isViceCaptain,
+      multiplier: effectiveMultiplier,
       photoUrl: element
         ? `https://resources.premierleague.com/premierleague/photos/players/110x140/p${element.photo.replace(".jpg", "")}.png`
         : null

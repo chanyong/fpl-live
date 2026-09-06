@@ -21,6 +21,8 @@ export type PlayerLiveCard = {
   status: PlayerStatus;
   isCaptain: boolean;
   isViceCaptain: boolean;
+  /** What this manager's lineup multiplies the player by: 0 benched, 1 playing, 2 or 3 captain. */
+  multiplier: number;
   photoUrl: string | null;
 };
 
@@ -318,4 +320,41 @@ export type RankChangeResponse = {
     gameweeks: number[];
   };
   managers: RankChangeManager[];
+};
+
+/** One line of a player's gameweek score — "득점 1 → 4점". */
+export type PointsLine = {
+  identifier: string;
+  label: string;
+  value: number;
+  points: number;
+};
+
+export type PlayerPointsFixture = {
+  fixtureId: number;
+  opponent: string;
+  home: boolean;
+  kickoffTime: string | null;
+  started: boolean;
+  /** FPL has settled this fixture, so its bonus is final. */
+  settled: boolean;
+  minutes: number;
+  lines: PointsLine[];
+  /** Estimated from BPS, and only ever non-zero while FPL has yet to publish its own. */
+  provisionalBonus: number;
+  points: number;
+};
+
+export type PlayerPointsResponse = {
+  elementId: number;
+  gw: number;
+  webName: string;
+  teamShortName: string;
+  position: FplPosition;
+  /** What FPL has confirmed so far. */
+  confirmedPoints: number;
+  provisionalBonus: number;
+  /** confirmedPoints + provisionalBonus — what the dashboard shows. */
+  points: number;
+  fixtures: PlayerPointsFixture[];
 };

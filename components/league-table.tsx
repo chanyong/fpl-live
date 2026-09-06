@@ -183,7 +183,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                     {isExpanded ? (
                       <tr className="bg-[var(--surface-strong)]/30">
                         <td colSpan={5} className="px-1 py-2">
-                          <LeagueRowExpanded row={row} />
+                          <LeagueRowExpanded row={row} gw={data.league.currentGw} />
                         </td>
                       </tr>
                     ) : null}
@@ -240,7 +240,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                   {isExpanded ? (
                     <tr className="bg-[var(--surface-strong)]/40">
                       <td colSpan={9} className="px-2.5 py-2.5">
-                        <LeagueRowExpanded row={row} />
+                        <LeagueRowExpanded row={row} gw={data.league.currentGw} />
                       </td>
                     </tr>
                   ) : null}

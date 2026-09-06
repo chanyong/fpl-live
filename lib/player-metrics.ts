@@ -104,3 +104,45 @@ export function averageDifficulty(fixtures: TeamFixtureOutlook[]) {
 
   return roundTo(fixtures.reduce((total, fixture) => total + fixture.difficulty, 0) / fixtures.length);
 }
+
+/** How FPL names each scoring line, in the order it lists them. */
+const POINT_LABELS: Record<string, string> = {
+  minutes: "출전 시간",
+  starts: "선발 출전",
+  goals_scored: "득점",
+  assists: "도움",
+  clean_sheets: "클린시트",
+  goals_conceded: "실점",
+  own_goals: "자책골",
+  penalties_saved: "페널티 선방",
+  penalties_missed: "페널티 실축",
+  yellow_cards: "경고",
+  red_cards: "퇴장",
+  saves: "선방",
+  defensive_contribution: "수비 기여",
+  bonus: "보너스",
+  bps: "BPS"
+};
+
+export function pointsLabel(identifier: string) {
+  return POINT_LABELS[identifier] ?? identifier.replace(/_/g, " ");
+}
+
+/** How the recorded figure reads next to its label: "90분", "1골", "3점". */
+export function pointsValueLabel(identifier: string, value: number) {
+  switch (identifier) {
+    case "minutes":
+      return `${value}분`;
+    case "goals_scored":
+      return `${value}골`;
+    case "assists":
+      return `${value}도움`;
+    case "saves":
+      return `${value}선방`;
+    case "starts":
+    case "clean_sheets":
+      return value > 0 ? "예" : "아니오";
+    default:
+      return String(value);
+  }
+}

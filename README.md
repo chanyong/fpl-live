@@ -112,6 +112,21 @@ already fetched for the other tabs. No extra upstream request is made to render 
 
 - A player's gameweek score adds the same provisional bonus the league table uses,
   so the two tabs can never disagree about what a player has scored.
+- **Provisional bonus is only ever estimated for a fixture FPL has not scored itself.**
+  `finished` stays false until the whole gameweek is signed off, and the bonus rows can
+  appear in a fixture before `finished_provisional` flips — at which point that bonus is
+  already inside `event_points`. So the estimate is skipped the moment a fixture carries
+  any bonus of its own; without that check a live Haaland read 12 instead of 9. Each half
+  of a double gameweek is judged on its own, so a settled fixture never suppresses the
+  estimate for one still in play.
+
+### Score breakdown
+
+`/api/player-points` returns one player's gameweek score line by line, read straight out
+of the live endpoint's `explain` block rather than re-derived from the scoring rules — so
+the breakdown always adds up to the number on the card. The provisional bonus is reported
+as its own figure and labelled 잠정, so it is obvious which part is not final yet. It is
+reachable from any squad card in the standings tab and from the player detail sheet.
 - `transfers_in_event` / `transfers_out_event` reset at every deadline, so during a
   live gameweek they describe moves for the *next* one. The UI labels the window.
 - **Effective ownership** counts only starters, and counts a captain twice — that is
