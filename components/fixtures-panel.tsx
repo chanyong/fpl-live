@@ -438,13 +438,18 @@ export function FixturesPanel({
                         )}
                         {owned && owned.managerCount > 0 && rows.length > 0 ? (
                           <span
-                            aria-hidden="true"
-                            className="ml-auto h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-[var(--chart-mute-soft)]"
+                            className="ml-auto flex shrink-0 items-center gap-1.5"
+                            title={`리그 ${rows.length}명 중 ${owned.managerCount}명이 이 경기 선수를 보유`}
                           >
-                            <span
-                              className="block h-full rounded-full bg-[var(--accent)]"
-                              style={{ width: `${Math.round((owned.managerCount / rows.length) * 100)}%` }}
-                            />
+                            <span className="tabular-nums">
+                              보유율 <b className="font-semibold text-[var(--text)]">{Math.round((owned.managerCount / rows.length) * 100)}%</b>
+                            </span>
+                            <span aria-hidden="true" className="h-1.5 w-14 overflow-hidden rounded-full bg-[var(--chart-mute-soft)]">
+                              <span
+                                className="block h-full rounded-full bg-[var(--accent)]"
+                                style={{ width: `${Math.round((owned.managerCount / rows.length) * 100)}%` }}
+                              />
+                            </span>
                           </span>
                         ) : null}
                       </div>
