@@ -59,20 +59,24 @@ function PositionBars({ a, b }: { a: LeagueRow; b: LeagueRow }) {
   const pointsA = pointsByPosition(a);
   const pointsB = pointsByPosition(b);
   const max = Math.max(1, ...COMPARE_POSITIONS.flatMap((position) => [pointsA[position], pointsB[position]]));
+  const totalA = COMPARE_POSITIONS.reduce((sum, position) => sum + pointsA[position], 0);
+  const totalB = COMPARE_POSITIONS.reduce((sum, position) => sum + pointsB[position], 0);
   const width = (value: number) => `${Math.max(value, 0) / max * 100}%`;
 
   return (
     <section className="border-b border-[var(--border)] px-3 py-3 md:px-5">
       <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">포지션별 GW 득점</h3>
-      <p className="mb-2 text-[11px] text-[var(--muted)]">선발 선수 기준, 주장 배수 포함 · 벤치 제외</p>
+      <p className="mb-2 text-[11px] text-[var(--muted)]">
+        포지션별로 선발 11명이 얻은 점수 합계입니다 (주장 2배 반영, 벤치·이적 차감 제외)
+      </p>
       <ul className="space-y-1.5">
         {COMPARE_POSITIONS.map((position) => (
           <li
             key={position}
-            className="grid grid-cols-[2rem_minmax(0,1fr)_2.75rem_minmax(0,1fr)_2rem] items-center gap-1.5 text-[12px] tabular-nums md:grid-cols-[2.5rem_minmax(0,1fr)_3rem_minmax(0,1fr)_2.5rem]"
+            className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.75rem_minmax(0,1fr)_2.5rem] items-center gap-1.5 text-[12px] tabular-nums md:grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)_3rem]"
           >
             <span className="text-right font-semibold" style={{ color: "var(--chart-in)" }}>
-              {pointsA[position]}
+              {pointsA[position]}점
             </span>
             <span className="flex h-3 justify-end overflow-hidden rounded-l-full bg-[var(--chart-mute-soft)]/50">
               <span className="h-full rounded-l-full" style={{ width: width(pointsA[position]), backgroundColor: "var(--chart-in)" }} />
@@ -82,10 +86,17 @@ function PositionBars({ a, b }: { a: LeagueRow; b: LeagueRow }) {
               <span className="h-full rounded-r-full" style={{ width: width(pointsB[position]), backgroundColor: "var(--chart-out)" }} />
             </span>
             <span className="font-semibold" style={{ color: "var(--chart-out)" }}>
-              {pointsB[position]}
+              {pointsB[position]}점
             </span>
           </li>
         ))}
+        <li className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.75rem_minmax(0,1fr)_2.5rem] items-center gap-1.5 border-t border-[var(--border)] pt-1.5 text-[12px] font-semibold tabular-nums md:grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)_3rem]">
+          <span className="text-right" style={{ color: "var(--chart-in)" }}>{totalA}점</span>
+          <span />
+          <span className="text-center text-[11px] text-[var(--muted)]">합계</span>
+          <span />
+          <span style={{ color: "var(--chart-out)" }}>{totalB}점</span>
+        </li>
       </ul>
       <div className="mt-2 flex justify-between text-[11px] font-semibold">
         <span className="flex items-center gap-1" style={{ color: "var(--chart-in)" }}>

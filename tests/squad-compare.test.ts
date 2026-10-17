@@ -44,8 +44,9 @@ describe("compareSquads", () => {
 });
 
 describe("pointsByPosition", () => {
-  it("applies multipliers and ignores the bench", () => {
-    const captain = { ...card(2, "MID", 6), multiplier: 2 };
+  it("sums starters' displayed points once and ignores the bench", () => {
+    // livePoints already includes the captain multiplier (6 base x 2 shown as 12).
+    const captain = { ...card(2, "MID", 12), multiplier: 2 };
     const result = pointsByPosition(row([card(1, "GKP", 3), captain], [card(9, "FWD", 8)]));
 
     expect(result).toEqual({ GKP: 3, DEF: 0, MID: 12, FWD: 0 });

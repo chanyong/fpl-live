@@ -24,12 +24,17 @@ function byPointsThenName(a: PlayerLiveCard, b: PlayerLiveCard) {
   return b.livePoints - a.livePoints || a.webName.localeCompare(b.webName);
 }
 
-/** Gameweek points each position contributed, with captain multipliers and an empty bench. */
+/**
+ * Gameweek points each position contributed, bench excluded.
+ *
+ * A card's livePoints already carries the captain multiplier, so they are summed as they are;
+ * multiplying again would double a captain's score.
+ */
 export function pointsByPosition(row: LeagueRow): Record<FplPosition, number> {
   const totals: Record<FplPosition, number> = { GKP: 0, DEF: 0, MID: 0, FWD: 0 };
 
   for (const player of row.squad.starters) {
-    totals[player.position] += player.livePoints * player.multiplier;
+    totals[player.position] += player.livePoints;
   }
 
   return totals;
