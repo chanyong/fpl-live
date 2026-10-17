@@ -15,6 +15,7 @@ import { CaretDown, CaretRight, CaretUp, SortToggle } from "@/components/icons";
 import { GwPoints, LeagueRow, LeagueRowExpanded } from "@/components/league-row";
 import { chipLabel } from "@/lib/chips";
 import { RankDelta } from "@/components/rank-delta";
+import { SquadCompareDialog } from "@/components/squad-compare-dialog";
 
 const columnHelper = createColumnHelper<LeagueRowType>();
 
@@ -60,6 +61,9 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
   const [search, setSearch] = useState("");
   const [chipOnly, setChipOnly] = useState(false);
   const [topN, setTopN] = useState("all");
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [compareOpen, setCompareOpen] = useState(false);
 
   const filteredRows = useMemo(() => {
     return data.rows.filter((row) => {
@@ -87,19 +91,67 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
   const toggle = (entryId: number) =>
     setExpandedId((current) => (current === entryId ? null : entryId));
 
+  // A third pick pushes out the oldest one, so two are always one tap away.
+  const toggleSelected = (entryId: number) =>
+    setSelectedIds((current) =>
+      current.includes(entryId)
+        ? current.filter((id) => id !== entryId)
+        : [...current, entryId].slice(-2)
+    );
+
+  const exitCompareMode = () => {
+    setCompareMode(false);
+    setSelectedIds([]);
+    setCompareOpen(false);
+  };
+
+  const selectedRows = selectedIds
+    .map((id) => data.rows.find((row) => row.entryId === id))
+    .filter((row): row is LeagueRowType => Boolean(row));
+
   // The row is the control, so it has to answer to the keyboard as well as the mouse.
-  const rowProps = (entryId: number, isExpanded: boolean) => ({
-    role: "button" as const,
-    tabIndex: 0,
-    "aria-expanded": isExpanded,
-    onClick: () => toggle(entryId),
-    onKeyDown: (event: KeyboardEvent<HTMLTableRowElement>) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        toggle(entryId);
+  const rowProps = (entryId: number, isExpanded: boolean) => {
+    const activate = () => (compareMode ? toggleSelected(entryId) : toggle(entryId));
+
+    return {
+      role: "button" as const,
+      tabIndex: 0,
+      ...(compareMode
+        ? { "aria-pressed": selectedIds.includes(entryId) }
+        : { "aria-expanded": isExpanded }),
+      onClick: activate,
+      onKeyDown: (event: KeyboardEvent<HTMLTableRowElement>) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          activate();
+        }
       }
+    };
+  };
+
+  const selectMark = (entryId: number) => {
+    if (!compareMode) {
+      return null;
     }
-  });
+
+    const order = selectedIds.indexOf(entryId);
+
+    return (
+      <span
+        aria-hidden="true"
+        className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[11px] font-bold ${
+          order >= 0
+            ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+            : "border-[var(--border)] bg-white text-transparent"
+        }`}
+      >
+        {order >= 0 ? order + 1 : "·"}
+      </span>
+    );
+  };
+
+  const rowSelectedClass = (entryId: number) =>
+    compareMode && selectedIds.includes(entryId) ? "bg-[var(--accent-soft)]" : "bg-white";
 
   if (filteredRows.length === 0) {
     return (
@@ -130,6 +182,26 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
         setTopN={setTopN}
       />
 
+      <div className="flex items-center justify-between gap-2 px-1">
+        <p className="text-[12px] text-[var(--muted)] md:text-[13px]">
+          {compareMode
+            ? "비교할 매니저 2명을 선택하세요."
+            : "두 매니저의 스쿼드를 포지션별로 비교할 수 있어요."}
+        </p>
+        <button
+          type="button"
+          aria-pressed={compareMode}
+          onClick={() => (compareMode ? exitCompareMode() : setCompareMode(true))}
+          className={`min-h-10 shrink-0 rounded-full border px-4 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+            compareMode
+              ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+              : "border-[var(--border)] bg-white text-[var(--text)] hover:border-[var(--accent)]"
+          }`}
+        >
+          {compareMode ? "비교 종료" : "스쿼드 비교"}
+        </button>
+      </div>
+
       <div className="overflow-hidden rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] shadow-[0_14px_32px_rgba(55,40,20,0.08)] md:hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse text-[12px]">
@@ -151,14 +223,18 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                 return (
                   <Fragment key={row.entryId}>
                     <tr
-                      className="cursor-pointer border-b border-[var(--border)] bg-white align-top focus:outline-none focus-visible:bg-[var(--accent-soft)]"
+                      className={`cursor-pointer border-b border-[var(--border)] align-top focus:outline-none focus-visible:bg-[var(--accent-soft)] ${rowSelectedClass(row.entryId)}`}
                       {...rowProps(row.entryId, isExpanded)}
                     >
                       <td className="px-1 py-2.5 align-top">
                         <div className="flex items-center gap-1 font-semibold tabular-nums text-stone-800">
-                          <span className="text-[var(--muted)]">
-                            {isExpanded ? <CaretDown /> : <CaretRight />}
-                          </span>
+                          {compareMode ? (
+                            selectMark(row.entryId)
+                          ) : (
+                            <span className="text-[var(--muted)]">
+                              {isExpanded ? <CaretDown /> : <CaretRight />}
+                            </span>
+                          )}
                           <span>{row.projectedRank}</span>
                         </div>
                         <div className="mt-0.5 pl-4 text-[10px]">
@@ -180,7 +256,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                       </td>
                       <td className="px-1 py-2.5 text-right align-top font-semibold tabular-nums">{row.totalPoints}</td>
                     </tr>
-                    {isExpanded ? (
+                    {isExpanded && !compareMode ? (
                       <tr className="bg-[var(--surface-strong)]/30">
                         <td colSpan={5} className="px-1 py-2">
                           <LeagueRowExpanded row={row} gw={data.league.currentGw} />
@@ -232,12 +308,12 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
               return (
                 <Fragment key={row.entryId}>
                   <tr
-                    className="cursor-pointer border-b border-[var(--border)] bg-white transition hover:bg-stone-50 focus:outline-none focus-visible:bg-[var(--accent-soft)]"
+                    className={`cursor-pointer border-b border-[var(--border)] transition hover:bg-stone-50 focus:outline-none focus-visible:bg-[var(--accent-soft)] ${rowSelectedClass(row.entryId)}`}
                     {...rowProps(row.entryId, isExpanded)}
                   >
-                    <LeagueRow row={row} gwClassName={tone} />
+                    <LeagueRow row={row} gwClassName={tone} selectMark={selectMark(row.entryId)} />
                   </tr>
-                  {isExpanded ? (
+                  {isExpanded && !compareMode ? (
                     <tr className="bg-[var(--surface-strong)]/40">
                       <td colSpan={9} className="px-2.5 py-2.5">
                         <LeagueRowExpanded row={row} gw={data.league.currentGw} />
@@ -250,6 +326,32 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
           </tbody>
         </table>
       </div>
+
+      {compareMode ? (
+        <div className="sticky bottom-3 z-40 flex items-center justify-between gap-3 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2 shadow-[0_10px_30px_rgba(55,40,20,0.2)]">
+          <div className="min-w-0 truncate text-sm">
+            {selectedRows.length === 0
+              ? "0/2 선택"
+              : selectedRows.map((row) => row.teamName).join(" vs ")}
+          </div>
+          <button
+            type="button"
+            disabled={selectedRows.length < 2}
+            onClick={() => setCompareOpen(true)}
+            className="min-h-10 shrink-0 rounded-full bg-[var(--text)] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            비교하기 ({selectedRows.length}/2)
+          </button>
+        </div>
+      ) : null}
+
+      {compareOpen && selectedRows.length === 2 ? (
+        <SquadCompareDialog
+          a={selectedRows[0]}
+          b={selectedRows[1]}
+          onClose={() => setCompareOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

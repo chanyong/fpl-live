@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { RankDelta } from "@/components/rank-delta";
 import { chipLabel } from "@/lib/chips";
 import type { LeagueRow as LeagueRowType } from "@/lib/types";
@@ -20,11 +21,22 @@ export function GwPoints({ row, className }: { row: LeagueRowType; className?: s
   );
 }
 
-export function LeagueRow({ row, gwClassName }: { row: LeagueRowType; gwClassName?: string }) {
+export function LeagueRow({
+  row,
+  gwClassName,
+  selectMark
+}: {
+  row: LeagueRowType;
+  gwClassName?: string;
+  selectMark?: ReactNode;
+}) {
   return (
     <>
       <td className="px-2.5 py-3 text-center">
-        <span className="font-semibold tabular-nums text-stone-800">{row.projectedRank}</span>
+        <span className="inline-flex items-center gap-1.5">
+          {selectMark}
+          <span className="font-semibold tabular-nums text-stone-800">{row.projectedRank}</span>
+        </span>
       </td>
       <td className="px-2.5 py-3 text-center text-[13px]">
         <RankDelta from={row.rank} to={row.projectedRank} />
