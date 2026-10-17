@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { LeagueLiveResponse, PlayerStatsResponse, RankChangeResponse } from "@/lib/types";
 import { CaptainStats } from "@/components/captain-stats";
 import { FixturesPanel } from "@/components/fixtures-panel";
+import { LeagueKpis } from "@/components/league-kpis";
 import { LeagueTable } from "@/components/league-table";
 import { PlayerTrendsPanel } from "@/components/player-trends-panel";
 import { RankChangePanel } from "@/components/rank-change-panel";
@@ -212,6 +213,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
           {tab === "standings" && query.data ? (
             <>
+              <LeagueKpis rows={query.data.rows} gw={query.data.league.currentGw} />
               <CaptainStats stats={query.data.captainStats} />
               <LeagueTable data={query.data} />
             </>

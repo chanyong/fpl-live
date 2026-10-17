@@ -23,6 +23,37 @@ function PlayerPill({ player, tone }: { player: PlayerLiveCard; tone: string }) 
   );
 }
 
+/** How much of the fifteen the two managers share, as a ring with the count inside. */
+function SharedRing({ shared, total }: { shared: number; total: number }) {
+  const radius = 26;
+  const circumference = 2 * Math.PI * radius;
+
+  return (
+    <div
+      className="relative h-16 w-16"
+      role="img"
+      aria-label={`공통 ${shared}명 / ${total}명`}
+    >
+      <svg viewBox="0 0 64 64" className="h-full w-full -rotate-90">
+        <circle cx="32" cy="32" r={radius} fill="none" stroke="var(--chart-mute-soft)" strokeWidth="7" />
+        <circle
+          cx="32"
+          cy="32"
+          r={radius}
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth="7"
+          strokeLinecap="round"
+          strokeDasharray={`${(shared / total) * circumference} ${circumference}`}
+        />
+      </svg>
+      <div className="absolute inset-0 grid place-items-center text-sm font-semibold tabular-nums">
+        {shared}/{total}
+      </div>
+    </div>
+  );
+}
+
 /** One position as a row-aligned grid, so both squads read straight across. */
 function PositionGrid({
   columns,
@@ -115,6 +146,20 @@ export function SquadCompareDialog({
           >
             ×
           </button>
+        </div>
+
+        <div className="grid grid-cols-[repeat(3,minmax(0,1fr))] items-center gap-2 border-b border-[var(--border)] px-3 py-3 text-center md:px-5">
+          <div className="min-w-0">
+            <div className="text-xl font-semibold tabular-nums md:text-2xl">{a.gwPoints}</div>
+            <div className="text-[11px] text-[var(--muted)]">GW · 총 {a.totalPoints}</div>
+          </div>
+          <div className="mx-auto">
+            <SharedRing shared={comparison.sharedCount} total={15} />
+          </div>
+          <div className="min-w-0">
+            <div className="text-xl font-semibold tabular-nums md:text-2xl">{b.gwPoints}</div>
+            <div className="text-[11px] text-[var(--muted)]">GW · 총 {b.totalPoints}</div>
+          </div>
         </div>
 
         <div className="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-2 border-b border-[var(--border)] bg-[var(--surface-strong)]/40 px-3 py-2 text-center md:px-5">
