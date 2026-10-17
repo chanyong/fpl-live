@@ -19,6 +19,9 @@ import { SquadCompareDialog } from "@/components/squad-compare-dialog";
 
 const columnHelper = createColumnHelper<LeagueRowType>();
 
+/** Columns that only hold a short value shrink to fit, leaving the slack to the name columns. */
+const NARROW_COLUMNS = new Set(["projectedRank", "movement", "chip", "playersPlayed", "gwPoints", "totalPoints"]);
+
 const columns = [
   columnHelper.accessor("projectedRank", { header: "순위" }),
   columnHelper.display({ id: "movement", header: "변동" }),
@@ -319,7 +322,12 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                   const sorted = header.column.getIsSorted();
 
                   return (
-                    <th key={header.id} className="px-2.5 py-2 text-left text-[12px] font-semibold">
+                    <th
+                      key={header.id}
+                      className={`px-2.5 py-2 text-left text-[12px] font-semibold ${
+                        NARROW_COLUMNS.has(header.column.id) ? "w-px whitespace-nowrap" : ""
+                      }`}
+                    >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <button
                           type="button"

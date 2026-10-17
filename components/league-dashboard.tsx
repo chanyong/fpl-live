@@ -212,11 +212,15 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
           {tab === "standings" && query.data ? (
             <>
-              <div className="mb-1.5 grid gap-1.5 md:grid-cols-2 md:items-stretch">
-                <LeagueKpis rows={query.data.rows} gw={query.data.league.currentGw} />
-                <CaptainStats stats={query.data.captainStats} />
+              <div className="grid gap-1.5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+                <div className="space-y-1.5 lg:sticky lg:top-2 lg:order-2">
+                  <LeagueKpis rows={query.data.rows} gw={query.data.league.currentGw} />
+                  <CaptainStats stats={query.data.captainStats} layout="list" />
+                </div>
+                <div className="min-w-0 lg:order-1">
+                  <LeagueTable data={query.data} />
+                </div>
               </div>
-              <LeagueTable data={query.data} />
             </>
           ) : null}
 
