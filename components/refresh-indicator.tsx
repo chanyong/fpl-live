@@ -9,15 +9,13 @@ type RefreshIndicatorProps = {
   isFetching: boolean;
   isProvisional: boolean;
   onRefresh: () => void;
-  buildId: string;
 };
 
 export function RefreshIndicator({
   lastUpdated,
   isFetching,
   isProvisional,
-  onRefresh,
-  buildId
+  onRefresh
 }: RefreshIndicatorProps) {
   // Re-render on a timer so "3분 전" keeps counting between fetches.
   const [now, setNow] = useState(() => Date.now());
@@ -55,10 +53,6 @@ export function RefreshIndicator({
         <RefreshIcon className={isFetching ? "animate-spin" : undefined} />
         새로고침
       </button>
-
-      <span className="hidden text-[11px] opacity-70 sm:inline" title="배포 버전">
-        {buildId}
-      </span>
     </div>
   );
 }

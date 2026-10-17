@@ -148,7 +148,6 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
             isFetching={query.isFetching || rankChangeQuery.isFetching || playerStatsQuery.isFetching}
             isProvisional={query.data.league.isProvisional}
             onRefresh={handleRefresh}
-            buildId={buildId}
           />
         ) : null}
       </div>
@@ -236,6 +235,10 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
           ) : null}
         </>
       ) : null}
+
+      <footer className="mt-auto pt-8 text-center text-[11px] text-[var(--muted)] opacity-70" title="배포 버전">
+        build {buildId}
+      </footer>
     </main>
   );
 }
