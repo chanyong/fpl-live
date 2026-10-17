@@ -8,7 +8,7 @@ import { LeaguePlayersPanel } from "@/components/league-players-panel";
 import { PlayerDetail } from "@/components/player-detail";
 import { PlayerTable } from "@/components/player-table";
 import { DIFFERENTIAL_MIN_MINUTES, selectDifferentials } from "@/lib/player-metrics";
-import type { PlayerStatsResponse } from "@/lib/types";
+import type { FplPosition, PlayerStatsResponse } from "@/lib/types";
 
 /** A differential is a player this much of the world owns, or less. */
 const OWNERSHIP_CUT = 10;
@@ -17,6 +17,31 @@ const FORM_CUT = 6;
 
 const compact = new Intl.NumberFormat("ko-KR", { notation: "compact", maximumFractionDigits: 1 });
 const full = new Intl.NumberFormat("ko-KR");
+
+type PositionFilter = "ALL" | FplPosition;
+
+const POSITION_FILTERS: Array<{ id: PositionFilter; label: string }> = [
+  { id: "ALL", label: "전체" },
+  { id: "GKP", label: "GKP" },
+  { id: "DEF", label: "DEF" },
+  { id: "MID", label: "MID" },
+  { id: "FWD", label: "FWD" }
+];
+
+/** Price moves are announced once FPL's own progress meter is this close to 100%. */
+const PRICE_SOON_CUT = 90;
+
+function KpiCard({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div className="min-w-[8.5rem] shrink-0 snap-start rounded-2xl border border-[var(--border)] bg-white/80 px-3 py-2.5 md:min-w-0 md:px-4 md:py-3">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)] md:text-xs">
+        {label}
+      </div>
+      <div className="mt-1 truncate text-2xl font-semibold leading-none tabular-nums md:text-3xl">{value}</div>
+      <div className="mt-1.5 truncate text-[11px] text-[var(--muted)] md:text-xs">{sub}</div>
+    </div>
+  );
+}
 
 type View = "transfers" | "performance" | "league";
 
@@ -49,6 +74,20 @@ function Section({
 export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
   const [view, setView] = useState<View>("transfers");
   const [selected, setSelected] = useState<number | null>(null);
+  const [position, setPosition] = useState<PositionFilter>("ALL");
+
+  // One position filter drives every view, so the chart, the list and the table never disagree.
+  const players = useMemo(
+    () => (position === "ALL" ? data.players : data.players.filter((player) => player.position === position)),
+    [data.players, position]
+  );
+  const leaguePlayers = useMemo(
+    () =>
+      position === "ALL"
+        ? data.leaguePlayers
+        : data.leaguePlayers.filter((player) => player.position === position),
+    [data.leaguePlayers, position]
+  );
 
   const managerNames = useMemo(() => data.managers.map((manager) => manager.managerName), [data.managers]);
   const ownedIds = useMemo(
@@ -62,7 +101,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
   );
 
   const transferRows: BarRow[] = useMemo(() => {
-    const byNet = [...data.players].sort((left, right) => right.netTransfers - left.netTransfers);
+    const byNet = [...players].sort((left, right) => right.netTransfers - left.netTransfers);
     const movers = [...byNet.slice(0, 6), ...byNet.slice(-4).reverse()];
 
     return movers.map((player) => ({
@@ -75,7 +114,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
       tooltip: `${player.webName} · 영입 ${full.format(player.transfersInEvent)} / 방출 ${full.format(player.transfersOutEvent)}`,
       onSelect: () => setSelected(player.id)
     }));
-  }, [data.players]);
+  }, [players]);
 
   const transferMax = useMemo(
     () =>
@@ -87,11 +126,11 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
   );
 
   const priceRows: BarRow[] = useMemo(() => {
-    const risers = [...data.players]
+    const risers = [...players]
       .filter((player) => player.priceChangePercent > 0)
       .sort((left, right) => right.priceChangePercent - left.priceChangePercent)
       .slice(0, 5);
-    const fallers = [...data.players]
+    const fallers = [...players]
       .filter((player) => player.priceChangePercent < 0)
       .sort((left, right) => left.priceChangePercent - right.priceChangePercent)
       .slice(0, 4);
@@ -110,11 +149,23 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
         onSelect: () => setSelected(player.id)
       };
     });
-  }, [data.players]);
+  }, [players]);
 
   const differentials = useMemo(
-    () => selectDifferentials(data.players, { ownershipCut: OWNERSHIP_CUT, formCut: FORM_CUT }),
-    [data.players]
+    () => selectDifferentials(players, { ownershipCut: OWNERSHIP_CUT, formCut: FORM_CUT }),
+    [players]
+  );
+
+  const topHeld = useMemo(
+    () => leaguePlayers.reduce<(typeof leaguePlayers)[number] | null>(
+      (best, row) => (best === null || row.ownedBy > best.ownedBy ? row : best),
+      null
+    ),
+    [leaguePlayers]
+  );
+  const priceSoon = useMemo(
+    () => players.filter((player) => Math.abs(player.priceChangePercent) >= PRICE_SOON_CUT).length,
+    [players]
   );
 
   const transferWindowLabel = data.league.nextGw
@@ -125,6 +176,23 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
 
   return (
     <div className="flex flex-col gap-3">
+      <section
+        aria-label="선수 요약"
+        className="flex snap-x gap-2 overflow-x-auto pb-1 md:grid md:grid-cols-3 md:gap-3 md:overflow-visible md:pb-0"
+      >
+        <KpiCard
+          label="리그 최다 보유"
+          value={topHeld?.webName ?? "-"}
+          sub={topHeld ? `${topHeld.ownedBy}명 보유 · ${topHeld.leaguePercent}%` : "보유 선수 없음"}
+        />
+        <KpiCard label="가격 변동 임박" value={`${priceSoon}명`} sub={`진행률 ${PRICE_SOON_CUT}% 이상`} />
+        <KpiCard
+          label="차별화 후보"
+          value={`${differentials.length}명`}
+          sub={`소유율 ${OWNERSHIP_CUT}% 이하 · 폼 ${FORM_CUT}+`}
+        />
+      </section>
+
       <div
         role="tablist"
         aria-label="선수 데이터 보기"
@@ -148,6 +216,24 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
             </button>
           );
         })}
+      </div>
+
+      <div role="group" aria-label="포지션 필터" className="flex gap-1.5 overflow-x-auto">
+        {POSITION_FILTERS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            aria-pressed={position === item.id}
+            onClick={() => setPosition(item.id)}
+            className={`min-h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+              position === item.id
+                ? "border-[var(--text)] bg-[var(--text)] text-white"
+                : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--accent)]"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
 
       {view === "transfers" ? (
@@ -203,7 +289,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
             <div className="overflow-x-auto">
               <div className="min-w-[540px]">
                 <FormScatter
-                  players={data.players}
+                  players={players}
                   ownershipCut={OWNERSHIP_CUT}
                   formCut={FORM_CUT}
                   ownedIds={ownedIds}
@@ -225,13 +311,13 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
             />
           </Section>
 
-          <PlayerTable players={data.players} fdr={data.fdr} ownedIds={ownedIds} onSelect={setSelected} />
+          <PlayerTable players={players} fdr={data.fdr} ownedIds={ownedIds} onSelect={setSelected} />
         </>
       ) : null}
 
       {view === "league" ? (
         <LeaguePlayersPanel
-          leaguePlayers={data.leaguePlayers}
+          leaguePlayers={leaguePlayers}
           managerNames={managerNames}
           onSelect={setSelected}
         />

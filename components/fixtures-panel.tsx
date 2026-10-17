@@ -97,6 +97,35 @@ function kickoffDateTimeLabel(kickoffTime: string | null) {
   return `${formatKoreanDate(date)} ${KOREAN_TIME_FORMATTER.format(date)} KST`;
 }
 
+type StatusFilter = "all" | "live" | "upcoming" | "ended";
+
+function fixtureCategory(fixture: LeagueFixture): Exclude<StatusFilter, "all"> {
+  if (hasFixtureEnded(fixture)) {
+    return "ended";
+  }
+
+  return isFixtureInPlay(fixture) ? "live" : "upcoming";
+}
+
+const STATUS_FILTERS: Array<{ id: StatusFilter; label: string }> = [
+  { id: "all", label: "전체" },
+  { id: "live", label: "진행 중" },
+  { id: "upcoming", label: "예정" },
+  { id: "ended", label: "종료" }
+];
+
+function SummaryCard({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div className="min-w-[8.5rem] shrink-0 snap-start rounded-2xl border border-[var(--border)] bg-white/80 px-3 py-2.5 md:min-w-0 md:px-4 md:py-3">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)] md:text-xs">
+        {label}
+      </div>
+      <div className="mt-1 text-2xl font-semibold leading-none tabular-nums md:text-3xl">{value}</div>
+      <div className="mt-1.5 truncate text-[11px] text-[var(--muted)] md:text-xs">{sub}</div>
+    </div>
+  );
+}
+
 type OwnedPlayer = {
   elementId: number;
   webName: string;
@@ -247,6 +276,7 @@ export function FixturesPanel({
 }) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   useEffect(() => {
     setSelectedId((current) => (current && fixtures.some((fixture) => fixture.id === current) ? current : null));
@@ -259,10 +289,31 @@ export function FixturesPanel({
 
   const ownership = useMemo(() => buildOwnership(rows, fixtures), [rows, fixtures]);
 
+  const statusCounts = useMemo(() => {
+    const counts = { all: fixtures.length, live: 0, upcoming: 0, ended: 0 };
+    for (const fixture of fixtures) {
+      counts[fixtureCategory(fixture)] += 1;
+    }
+    return counts;
+  }, [fixtures]);
+
+  const heldFixtures = useMemo(
+    () => fixtures.filter((fixture) => (ownership.get(fixture.id)?.managerCount ?? 0) > 0).length,
+    [fixtures, ownership]
+  );
+
+  const visibleFixtures = useMemo(
+    () =>
+      statusFilter === "all"
+        ? fixtures
+        : fixtures.filter((fixture) => fixtureCategory(fixture) === statusFilter),
+    [fixtures, statusFilter]
+  );
+
   const groupedFixtures = useMemo(() => {
     const groups = new Map<string, LeagueFixture[]>();
 
-    for (const fixture of fixtures) {
+    for (const fixture of visibleFixtures) {
       const key = kickoffDateLabel(fixture.kickoffTime);
       const existing = groups.get(key) ?? [];
       existing.push(fixture);
@@ -270,7 +321,7 @@ export function FixturesPanel({
     }
 
     return Array.from(groups.entries()).map(([label, items]) => ({ label, items }));
-  }, [fixtures]);
+  }, [visibleFixtures]);
 
   if (fixtures.length === 0) {
     return (
@@ -281,10 +332,48 @@ export function FixturesPanel({
   }
 
   return (
+    <div>
+    <section
+      aria-label={`게임위크 ${currentGw} 경기 요약`}
+      className="mb-3 flex snap-x gap-2 overflow-x-auto pb-1 md:grid md:grid-cols-4 md:gap-3 md:overflow-visible md:pb-0"
+    >
+      <SummaryCard label="진행 중" value={`${statusCounts.live}경기`} sub="지금 뛰는 경기" />
+      <SummaryCard label="예정" value={`${statusCounts.upcoming}경기`} sub="아직 킥오프 전" />
+      <SummaryCard label="종료" value={`${statusCounts.ended}경기`} sub={`GW ${currentGw}`} />
+      <SummaryCard
+        label="리그 보유 경기"
+        value={`${heldFixtures}/${fixtures.length}`}
+        sub="우리 리그 선수가 뛰는 경기"
+      />
+    </section>
+
     <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-3">
-      <div className="mb-2 px-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-        게임위크 {currentGw} 경기
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-2">
+        <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+          게임위크 {currentGw} 경기
+        </div>
+        <div role="group" aria-label="경기 상태 필터" className="flex gap-1.5 overflow-x-auto">
+          {STATUS_FILTERS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={statusFilter === item.id}
+              onClick={() => setStatusFilter(item.id)}
+              className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-3 text-[12px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+                statusFilter === item.id
+                  ? "border-[var(--text)] bg-[var(--text)] text-white"
+                  : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--accent)]"
+              }`}
+            >
+              {item.label} <span className="tabular-nums">{statusCounts[item.id]}</span>
+            </button>
+          ))}
+        </div>
       </div>
+
+      {groupedFixtures.length === 0 ? (
+        <div className="px-2 py-6 text-center text-sm text-[var(--muted)]">해당하는 경기가 없습니다.</div>
+      ) : null}
 
       <div className="space-y-4">
         {groupedFixtures.map((group) => (
@@ -338,7 +427,7 @@ export function FixturesPanel({
                       <div className="mt-1.5 flex items-center gap-1 text-[11px] text-[var(--muted)]">
                         <span className="shrink-0">{isSelected ? <CaretDown /> : <CaretRight />}</span>
                         {owned && owned.managerCount > 0 ? (
-                          <span className="min-w-0 truncate">
+                          <span className="min-w-0 flex-1 truncate">
                             우리 리그 <b className="font-semibold text-[var(--text)]">{owned.managerCount}명</b> 보유
                             {topOwned && topOwned.captains > 0 ? (
                               <span> · {topOwned.webName} 주장 {topOwned.captains}명</span>
@@ -347,6 +436,17 @@ export function FixturesPanel({
                         ) : (
                           <span>보유 선수 없음</span>
                         )}
+                        {owned && owned.managerCount > 0 && rows.length > 0 ? (
+                          <span
+                            aria-hidden="true"
+                            className="ml-auto h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-[var(--chart-mute-soft)]"
+                          >
+                            <span
+                              className="block h-full rounded-full bg-[var(--accent)]"
+                              style={{ width: `${Math.round((owned.managerCount / rows.length) * 100)}%` }}
+                            />
+                          </span>
+                        ) : null}
                       </div>
                     </button>
 
@@ -403,5 +503,6 @@ export function FixturesPanel({
         ))}
       </div>
     </section>
+    </div>
   );
 }

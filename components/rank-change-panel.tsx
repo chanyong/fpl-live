@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { CaretDown, CaretRight } from "@/components/icons";
 import { ChipStatusPanel } from "@/components/chip-status-panel";
 import { RankDelta } from "@/components/rank-delta";
 import { formatMoney } from "@/lib/season-summary";
@@ -148,6 +149,44 @@ function buildLeagueStats(managers: TrendManager[]) {
       .sort((a, b) => b.value - a.value || (a.gw || 0) - (b.gw || 0))
       .slice(0, STAT_LIMIT)
   };
+}
+
+/**
+ * A card whose body folds away. Phones start folded so the long record lists do not bury the
+ * chart; wider screens start open. The choice is made after mount to keep hydration stable.
+ */
+function CollapsibleSection({
+  title,
+  subtitle,
+  children
+}: {
+  title: string;
+  subtitle: ReactNode;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setOpen(window.matchMedia("(min-width: 768px)").matches);
+  }, []);
+
+  return (
+    <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className="flex w-full items-start justify-between gap-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+      >
+        <span className="min-w-0">
+          <span className="block text-[1rem] font-semibold">{title}</span>
+          <span className="block text-[12px] text-[var(--muted)]">{subtitle}</span>
+        </span>
+        <span className="mt-1 shrink-0 text-[var(--muted)]">{open ? <CaretDown /> : <CaretRight />}</span>
+      </button>
+      {open ? <div className="mt-3">{children}</div> : null}
+    </section>
+  );
 }
 
 function StatCard({
@@ -662,13 +701,7 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
 
       <ChipStatusPanel managers={trendManagers} />
 
-      <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
-        <div className="mb-3">
-          <div className="text-[1rem] font-semibold">시즌 기록</div>
-          <div className="text-[12px] text-[var(--muted)]">
-            게임위크 수와 무관하게 시즌 누적으로 집계됩니다.
-          </div>
-        </div>
+      <CollapsibleSection title="시즌 기록" subtitle="게임위크 수와 무관하게 시즌 누적으로 집계됩니다.">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <StatCard
             title="벤치에 버린 점수"
@@ -701,28 +734,25 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
             formatter={(item) => `${item.value.toLocaleString("ko-KR")}위`}
           />
         </div>
-      </section>
+      </CollapsibleSection>
 
-      <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <div className="text-[1rem] font-semibold">GW 통계</div>
-            <div className="text-[12px] text-[var(--muted)]">
-              {statsReady
-                ? `GW1부터 현재까지 ${stats.trackedGameweeks}개 게임위크 기준입니다.`
-                : `게임위크 ${MIN_GW_FOR_STATS}주차부터 의미 있는 값이 나옵니다. 현재 ${stats.trackedGameweeks}주차.`}
-            </div>
-          </div>
-          {!statsReady ? (
-            <button
-              type="button"
-              onClick={() => setShowStats((current) => !current)}
-              className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[12px] font-semibold transition hover:border-[var(--accent)]"
-            >
-              {showStats ? "접기" : "그래도 보기"}
-            </button>
-          ) : null}
-        </div>
+      <CollapsibleSection
+        title="GW 통계"
+        subtitle={
+          statsReady
+            ? `GW1부터 현재까지 ${stats.trackedGameweeks}개 게임위크 기준입니다.`
+            : `게임위크 ${MIN_GW_FOR_STATS}주차부터 의미 있는 값이 나옵니다. 현재 ${stats.trackedGameweeks}주차.`
+        }
+      >
+        {!statsReady ? (
+          <button
+            type="button"
+            onClick={() => setShowStats((current) => !current)}
+            className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[12px] font-semibold transition hover:border-[var(--accent)]"
+          >
+            {showStats ? "접기" : "그래도 보기"}
+          </button>
+        ) : null}
 
         {statsReady || showStats ? (
           <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -737,7 +767,7 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
             <StatCard title="최대 순위 점프" subtitle="직전 GW 대비 상승폭 Top 5" items={stats.rankJumpTop} formatter={(item) => `GW${item.gw} · +${item.value}`} />
           </div>
         ) : null}
-      </section>
+      </CollapsibleSection>
     </section>
   );
 }
