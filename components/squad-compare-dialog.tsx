@@ -13,26 +13,46 @@ const positionLabel = {
 
 function PlayerPill({ player, tone }: { player: PlayerLiveCard; tone: string }) {
   return (
-    <li className={`rounded-lg border px-2 py-1.5 ${tone}`}>
+    <div className={`rounded-lg border px-2 py-1.5 ${tone}`}>
       <div className="truncate text-[13px] font-semibold leading-4 md:text-sm">{player.webName}</div>
       <div className="mt-0.5 flex items-center justify-between gap-1 text-[11px] leading-4 text-[var(--muted)]">
         <span className="truncate">{player.teamShortName}</span>
         <span className="tabular-nums">{player.status === "not_played" ? "-" : `${player.livePoints}점`}</span>
       </div>
-    </li>
+    </div>
   );
 }
 
-function Column({ players, tone }: { players: PlayerLiveCard[]; tone: string }) {
-  if (players.length === 0) {
+/** One position as a row-aligned grid, so both squads read straight across. */
+function PositionGrid({
+  columns,
+  tones
+}: {
+  columns: [PlayerLiveCard[], PlayerLiveCard[], PlayerLiveCard[]];
+  tones: [string, string, string];
+}) {
+  const rows = Math.max(...columns.map((players) => players.length));
+
+  if (rows === 0) {
     return <div className="py-2 text-center text-xs text-[var(--muted)]">-</div>;
   }
 
   return (
-    <ul className="space-y-1.5">
-      {players.map((player) => (
-        <PlayerPill key={player.elementId} player={player} tone={tone} />
-      ))}
+    <ul className="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-y-1.5">
+      {Array.from({ length: rows }).flatMap((_, rowIndex) =>
+        columns.map((players, columnIndex) => {
+          const player = players[rowIndex];
+
+          return (
+            <li
+              key={`${rowIndex}-${columnIndex}`}
+              className={`px-1 ${columnIndex === 1 ? "border-x border-[var(--border)]" : ""}`}
+            >
+              {player ? <PlayerPill player={player} tone={tones[columnIndex]} /> : null}
+            </li>
+          );
+        })
+      )}
     </ul>
   );
 }
@@ -97,7 +117,7 @@ export function SquadCompareDialog({
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 border-b border-[var(--border)] bg-[var(--surface-strong)]/40 px-3 py-2 text-center md:px-5">
+        <div className="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-2 border-b border-[var(--border)] bg-[var(--surface-strong)]/40 px-3 py-2 text-center md:px-5">
           <div className="min-w-0">
             <div className="truncate text-[13px] font-semibold md:text-sm">{a.teamName}</div>
             <div className="text-[11px] text-sky-700">단독 보유 {comparison.onlyACount}</div>
@@ -118,11 +138,10 @@ export function SquadCompareDialog({
               <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
                 {positionLabel[group.position]} ({group.position})
               </h3>
-              <div className="grid grid-cols-3 items-start gap-2">
-                <Column players={group.onlyA} tone={toneA} />
-                <Column players={group.shared} tone={toneShared} />
-                <Column players={group.onlyB} tone={toneB} />
-              </div>
+              <PositionGrid
+                columns={[group.onlyA, group.shared, group.onlyB]}
+                tones={[toneA, toneShared, toneB]}
+              />
             </section>
           ))}
         </div>
