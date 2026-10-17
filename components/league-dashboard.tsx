@@ -10,6 +10,7 @@ import { LeagueKpis } from "@/components/league-kpis";
 import { LeagueTable } from "@/components/league-table";
 import { PlayerTrendsPanel } from "@/components/player-trends-panel";
 import { RankChangePanel } from "@/components/rank-change-panel";
+import { SidePanelLayout } from "@/components/side-panel-layout";
 import { RefreshIndicator } from "@/components/refresh-indicator";
 
 async function fetchLeagueLive(leagueId: string, refresh = false) {
@@ -212,15 +213,16 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
           {tab === "standings" && query.data ? (
             <>
-              <div className="grid gap-1.5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
-                <div className="space-y-1.5 lg:sticky lg:top-2 lg:order-2">
-                  <LeagueKpis rows={query.data.rows} gw={query.data.league.currentGw} />
-                  <CaptainStats stats={query.data.captainStats} layout="list" />
-                </div>
-                <div className="min-w-0 lg:order-1">
-                  <LeagueTable data={query.data} />
-                </div>
-              </div>
+              <SidePanelLayout
+                side={
+                  <>
+                    <LeagueKpis rows={query.data.rows} gw={query.data.league.currentGw} />
+                    <CaptainStats stats={query.data.captainStats} layout="list" />
+                  </>
+                }
+              >
+                <LeagueTable data={query.data} />
+              </SidePanelLayout>
             </>
           ) : null}
 

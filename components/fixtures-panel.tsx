@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CaretDown, CaretRight } from "@/components/icons";
 import { KpiCard, KpiGrid } from "@/components/kpi-card";
+import { SidePanelLayout } from "@/components/side-panel-layout";
 import { RemoteImage, crestUrl } from "@/components/remote-image";
 import { hasFixtureEnded, isFixtureInPlay } from "@/lib/fixture-status";
 import { countdownLabel } from "@/lib/time-format";
@@ -321,7 +322,8 @@ export function FixturesPanel({
   }
 
   return (
-    <div>
+    <SidePanelLayout
+      side={
     <KpiGrid label={`게임위크 ${currentGw} 경기 요약`}>
       <KpiCard label="진행 중" value={`${statusCounts.live}경기`} sub="지금 뛰는 경기" />
       <KpiCard label="예정" value={`${statusCounts.upcoming}경기`} sub="아직 킥오프 전" />
@@ -332,7 +334,8 @@ export function FixturesPanel({
         sub="우리 리그 선수가 뛰는 경기"
       />
     </KpiGrid>
-
+      }
+    >
     <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-2">
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5 px-1.5">
         <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
@@ -494,6 +497,6 @@ export function FixturesPanel({
         ))}
       </div>
     </section>
-    </div>
+    </SidePanelLayout>
   );
 }

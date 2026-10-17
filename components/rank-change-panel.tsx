@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CaretDown, CaretRight } from "@/components/icons";
+import { KpiCard, KpiGrid } from "@/components/kpi-card";
+import { SidePanelLayout } from "@/components/side-panel-layout";
 import { ChipStatusPanel } from "@/components/chip-status-panel";
 import { RankDelta } from "@/components/rank-delta";
 import { formatMoney } from "@/lib/season-summary";
@@ -610,28 +612,23 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
   const hasChart = data.trend.gameweeks.length >= MIN_GW_FOR_CHART;
   const statsReady = stats.trackedGameweeks >= MIN_GW_FOR_STATS;
 
-  return (
-    <section className="space-y-4">
-      {!hasChart ? (
-        <StandingsSoFar managers={trendManagers} currentGw={data.league.currentGw} />
-      ) : selectedManagers.length ? (
-        <TrendChart
-          managers={selectedManagers}
-          gameweeks={visibleGameweeks}
-          totalManagers={trendManagers.length}
-          headerRight={
-            data.trend.gameweeks.length > PERIODS[0].size ? (
-              <PeriodTabs value={period} onChange={setPeriod} />
-            ) : undefined
-          }
-        />
-      ) : (
-        <section className="grid min-h-[220px] place-items-center rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-4 text-center text-[14px] text-[var(--muted)]">
-          매니저를 하나 이상 선택해 주세요.
-        </section>
-      )}
+  const summary = useMemo(() => {
+    const leader =
+      trendManagers.find((manager) => manager.latestRank === 1) ??
+      [...trendManagers].sort((x, y) => y.totalPoints - x.totalPoints)[0];
+    const scores = trendManagers.flatMap((manager) =>
+      manager.trend.filter((row): row is RankChangePoint => Boolean(row)).map((row) => row.eventPoints)
+    );
 
-      {hasChart ? (
+    return {
+      leader,
+      average: scores.length ? Math.round((scores.reduce((sum, value) => sum + value, 0) / scores.length) * 10) / 10 : 0
+    };
+  }, [trendManagers]);
+  const topScore = stats.weeklyHighScoresTop[0];
+  const topJump = stats.rankJumpTop[0];
+
+  const selector = hasChart ? (
         <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
           <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div className="text-[1rem] font-semibold">매니저 선택</div>
@@ -652,7 +649,7 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
               </button>
             </div>
           </div>
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-1.5 md:grid-cols-2 lg:max-h-[48vh] lg:grid-cols-1 lg:overflow-y-auto">
             {trendManagers.map((manager) => {
               const active = selectedEntries.includes(manager.entry);
 
@@ -695,7 +692,55 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
             })}
           </div>
         </section>
+  ) : null;
+
+  const sideContent = (
+    <>
+      {hasChart ? (
+        <KpiGrid label="순위 추이 요약">
+          <KpiCard
+            label="현재 1위"
+            value={summary.leader ? `${summary.leader.totalPoints}점` : "-"}
+            sub={summary.leader?.playerName ?? ""}
+          />
+          <KpiCard
+            label="최고 GW 득점"
+            value={topScore ? `${topScore.value}점` : "-"}
+            sub={topScore ? `${topScore.playerName} · GW${topScore.gw}` : ""}
+          />
+          <KpiCard
+            label="최대 순위 상승"
+            value={topJump ? `+${topJump.value}` : "-"}
+            sub={topJump ? `${topJump.playerName} · GW${topJump.gw}` : ""}
+          />
+          <KpiCard label="GW 평균" value={`${summary.average}점`} sub={`${stats.trackedGameweeks}개 GW 기준`} />
+        </KpiGrid>
       ) : null}
+      {selector}
+    </>
+  );
+
+  return (
+    <SidePanelLayout side={sideContent} sideFirst={false}>
+    <section className="space-y-2">
+      {!hasChart ? (
+        <StandingsSoFar managers={trendManagers} currentGw={data.league.currentGw} />
+      ) : selectedManagers.length ? (
+        <TrendChart
+          managers={selectedManagers}
+          gameweeks={visibleGameweeks}
+          totalManagers={trendManagers.length}
+          headerRight={
+            data.trend.gameweeks.length > PERIODS[0].size ? (
+              <PeriodTabs value={period} onChange={setPeriod} />
+            ) : undefined
+          }
+        />
+      ) : (
+        <section className="grid min-h-[220px] place-items-center rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-4 text-center text-[14px] text-[var(--muted)]">
+          매니저를 하나 이상 선택해 주세요.
+        </section>
+      )}
 
       {hasChart ? <GwHeatmap managers={visibleManagers} gameweeks={visibleGameweeks} /> : null}
 
@@ -769,5 +814,6 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
         ) : null}
       </CollapsibleSection>
     </section>
+    </SidePanelLayout>
   );
 }

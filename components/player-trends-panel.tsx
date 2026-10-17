@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { KpiCard, KpiGrid } from "@/components/kpi-card";
+import { SidePanelLayout } from "@/components/side-panel-layout";
 import { DivergingRows, type BarRow } from "@/components/charts/bar-rows";
 import { FormScatter } from "@/components/charts/form-scatter";
 import { DifferentialList } from "@/components/differential-list";
@@ -164,7 +165,8 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
   const selectedPlayer = selected !== null ? playersById.get(selected) : undefined;
 
   return (
-    <div className="flex flex-col gap-2">
+    <SidePanelLayout
+      side={
       <KpiGrid label="선수 요약" columns={3}>
         <KpiCard
           label="리그 최다 보유"
@@ -178,7 +180,9 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
           sub={`소유율 ${OWNERSHIP_CUT}% 이하 · 폼 ${FORM_CUT}+`}
         />
       </KpiGrid>
-
+      }
+    >
+    <div className="flex flex-col gap-2">
       <div
         role="tablist"
         aria-label="선수 데이터 보기"
@@ -320,5 +324,6 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
         />
       ) : null}
     </div>
+    </SidePanelLayout>
   );
 }

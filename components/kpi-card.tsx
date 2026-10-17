@@ -15,7 +15,7 @@ export function KpiCard({ label, value, sub }: { label: string; value: string; s
   );
 }
 
-/** Two columns on phones (no sideways scrolling); the player tab stacks its three on narrow screens. */
+/** Two columns on phones (no sideways scrolling); one column once it moves into the wide-screen sidebar. */
 export function KpiGrid({
   label,
   columns = 4,
@@ -26,7 +26,11 @@ export function KpiGrid({
   children: ReactNode;
 }) {
   const layout =
-    columns === 2 ? "grid-cols-2" : columns === 3 ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2 md:grid-cols-4";
+    columns === 2
+      ? "grid-cols-2 lg:grid-cols-1"
+      : columns === 3
+        ? "grid-cols-1 sm:grid-cols-3 lg:grid-cols-1"
+        : "grid-cols-2 md:grid-cols-4 lg:grid-cols-1";
 
   return (
     <section aria-label={label} className={`grid gap-1.5 ${layout}`}>
