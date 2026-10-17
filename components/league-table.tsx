@@ -172,7 +172,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
 
   if (filteredRows.length === 0) {
     return (
-      <div className="space-y-3 md:space-y-4">
+      <div className="space-y-2 md:space-y-3">
         <Filters
           search={search}
           setSearch={setSearch}
@@ -189,7 +189,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
   }
 
   return (
-    <div className="space-y-3 md:space-y-4">
+    <div className="space-y-2 md:space-y-3">
       <Filters
         search={search}
         setSearch={setSearch}
@@ -199,11 +199,11 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
         setTopN={setTopN}
       />
 
-      <div className="flex items-center justify-between gap-2 px-1">
+      <div className="flex flex-wrap items-center justify-between gap-1.5">
         {compareMode ? (
           <p className="text-[12px] text-[var(--muted)] md:text-[13px]">비교할 매니저 2명을 선택하세요.</p>
         ) : (
-          <div role="group" aria-label="순위 변동 필터" className="flex gap-1.5 overflow-x-auto">
+          <div role="group" aria-label="순위 변동 필터" className="flex flex-wrap gap-1.5">
             {(
               [
                 { id: "all", label: "전체", count: quickCounts.all },
@@ -216,7 +216,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                 type="button"
                 aria-pressed={quick === item.id}
                 onClick={() => setQuick(item.id)}
-                className={`min-h-10 shrink-0 whitespace-nowrap rounded-full border px-3 text-[13px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+                className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-2.5 text-[13px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
                   quick === item.id
                     ? "border-[var(--text)] bg-[var(--text)] text-white"
                     : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--accent)]"
@@ -231,7 +231,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
           type="button"
           aria-pressed={compareMode}
           onClick={() => (compareMode ? exitCompareMode() : setCompareMode(true))}
-          className={`min-h-10 shrink-0 rounded-full border px-4 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+          className={`min-h-9 shrink-0 rounded-full border px-3 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
             compareMode
               ? "border-[var(--accent)] bg-[var(--accent)] text-white"
               : "border-[var(--border)] bg-white text-[var(--text)] hover:border-[var(--accent)]"

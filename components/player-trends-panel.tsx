@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { KpiCard, KpiGrid } from "@/components/kpi-card";
 import { DivergingRows, type BarRow } from "@/components/charts/bar-rows";
 import { FormScatter } from "@/components/charts/form-scatter";
 import { DifferentialList } from "@/components/differential-list";
@@ -30,18 +31,6 @@ const POSITION_FILTERS: Array<{ id: PositionFilter; label: string }> = [
 
 /** Price moves are announced once FPL's own progress meter is this close to 100%. */
 const PRICE_SOON_CUT = 90;
-
-function KpiCard({ label, value, sub }: { label: string; value: string; sub: string }) {
-  return (
-    <div className="min-w-[8.5rem] shrink-0 snap-start rounded-2xl border border-[var(--border)] bg-white/80 px-3 py-2.5 md:min-w-0 md:px-4 md:py-3">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)] md:text-xs">
-        {label}
-      </div>
-      <div className="mt-1 truncate text-2xl font-semibold leading-none tabular-nums md:text-3xl">{value}</div>
-      <div className="mt-1.5 truncate text-[11px] text-[var(--muted)] md:text-xs">{sub}</div>
-    </div>
-  );
-}
 
 type View = "transfers" | "performance" | "league";
 
@@ -175,11 +164,8 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
   const selectedPlayer = selected !== null ? playersById.get(selected) : undefined;
 
   return (
-    <div className="flex flex-col gap-3">
-      <section
-        aria-label="선수 요약"
-        className="flex snap-x gap-2 overflow-x-auto pb-1 md:grid md:grid-cols-3 md:gap-3 md:overflow-visible md:pb-0"
-      >
+    <div className="flex flex-col gap-2">
+      <KpiGrid label="선수 요약" columns={3}>
         <KpiCard
           label="리그 최다 보유"
           value={topHeld?.webName ?? "-"}
@@ -191,7 +177,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
           value={`${differentials.length}명`}
           sub={`소유율 ${OWNERSHIP_CUT}% 이하 · 폼 ${FORM_CUT}+`}
         />
-      </section>
+      </KpiGrid>
 
       <div
         role="tablist"
@@ -218,7 +204,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
         })}
       </div>
 
-      <div role="group" aria-label="포지션 필터" className="flex gap-1.5 overflow-x-auto">
+      <div role="group" aria-label="포지션 필터" className="flex flex-wrap gap-1.5">
         {POSITION_FILTERS.map((item) => (
           <button
             key={item.id}

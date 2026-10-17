@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CaretDown, CaretRight } from "@/components/icons";
+import { KpiCard, KpiGrid } from "@/components/kpi-card";
 import { RemoteImage, crestUrl } from "@/components/remote-image";
 import { hasFixtureEnded, isFixtureInPlay } from "@/lib/fixture-status";
 import { countdownLabel } from "@/lib/time-format";
@@ -113,18 +114,6 @@ const STATUS_FILTERS: Array<{ id: StatusFilter; label: string }> = [
   { id: "upcoming", label: "예정" },
   { id: "ended", label: "종료" }
 ];
-
-function SummaryCard({ label, value, sub }: { label: string; value: string; sub: string }) {
-  return (
-    <div className="min-w-[8.5rem] shrink-0 snap-start rounded-2xl border border-[var(--border)] bg-white/80 px-3 py-2.5 md:min-w-0 md:px-4 md:py-3">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)] md:text-xs">
-        {label}
-      </div>
-      <div className="mt-1 text-2xl font-semibold leading-none tabular-nums md:text-3xl">{value}</div>
-      <div className="mt-1.5 truncate text-[11px] text-[var(--muted)] md:text-xs">{sub}</div>
-    </div>
-  );
-}
 
 type OwnedPlayer = {
   elementId: number;
@@ -333,26 +322,23 @@ export function FixturesPanel({
 
   return (
     <div>
-    <section
-      aria-label={`게임위크 ${currentGw} 경기 요약`}
-      className="mb-3 flex snap-x gap-2 overflow-x-auto pb-1 md:grid md:grid-cols-4 md:gap-3 md:overflow-visible md:pb-0"
-    >
-      <SummaryCard label="진행 중" value={`${statusCounts.live}경기`} sub="지금 뛰는 경기" />
-      <SummaryCard label="예정" value={`${statusCounts.upcoming}경기`} sub="아직 킥오프 전" />
-      <SummaryCard label="종료" value={`${statusCounts.ended}경기`} sub={`GW ${currentGw}`} />
-      <SummaryCard
+    <KpiGrid label={`게임위크 ${currentGw} 경기 요약`}>
+      <KpiCard label="진행 중" value={`${statusCounts.live}경기`} sub="지금 뛰는 경기" />
+      <KpiCard label="예정" value={`${statusCounts.upcoming}경기`} sub="아직 킥오프 전" />
+      <KpiCard label="종료" value={`${statusCounts.ended}경기`} sub={`GW ${currentGw}`} />
+      <KpiCard
         label="리그 보유 경기"
         value={`${heldFixtures}/${fixtures.length}`}
         sub="우리 리그 선수가 뛰는 경기"
       />
-    </section>
+    </KpiGrid>
 
-    <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-2 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-3">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-2">
+    <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-2">
+      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5 px-1.5">
         <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
           게임위크 {currentGw} 경기
         </div>
-        <div role="group" aria-label="경기 상태 필터" className="flex gap-1.5 overflow-x-auto">
+        <div role="group" aria-label="경기 상태 필터" className="flex flex-wrap gap-1.5">
           {STATUS_FILTERS.map((item) => (
             <button
               key={item.id}

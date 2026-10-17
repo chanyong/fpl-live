@@ -116,8 +116,8 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
       : query.isLoading;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[1080px] flex-col px-2 py-3 sm:px-3 md:px-3 md:py-5 lg:max-w-[1120px]">
-      <div className="mb-4 flex flex-col gap-3 md:mb-5 md:flex-row md:items-end md:justify-between md:gap-4">
+    <main className="mx-auto flex min-h-screen max-w-[1080px] flex-col px-2 py-2 sm:px-3 md:px-3 md:py-3 lg:max-w-[1120px]">
+      <div className="mb-2 flex flex-col gap-2 md:mb-3 md:flex-row md:items-end md:justify-between md:gap-3">
         <div className="min-w-0">
           <Link
             href="/"
@@ -188,7 +188,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
           <div
             role="tablist"
             aria-label="대시보드 보기"
-            className="mb-3 flex w-full gap-1 overflow-x-auto rounded-[1rem] border border-[var(--border)] bg-[var(--surface)] p-1 md:mb-4 md:w-auto"
+            className="mb-2 flex w-full gap-1 overflow-x-auto rounded-[1rem] border border-[var(--border)] bg-[var(--surface)] p-1 md:w-auto"
           >
             {tabs.map((item) => {
               const active = tab === item.id;
