@@ -48,7 +48,7 @@ export function RefreshIndicator({
         type="button"
         onClick={onRefresh}
         disabled={isFetching}
-        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[var(--border)] bg-white px-3 font-semibold text-[var(--text)] transition hover:border-[var(--accent)] disabled:opacity-50"
+        className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-[var(--border)] bg-white px-3 font-semibold text-[var(--text)] transition hover:border-[var(--accent)] disabled:opacity-50"
       >
         <RefreshIcon className={isFetching ? "animate-spin" : undefined} />
         새로고침

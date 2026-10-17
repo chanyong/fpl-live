@@ -265,7 +265,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                       className={`cursor-pointer border-b border-[var(--border)] align-top focus:outline-none focus-visible:bg-[var(--accent-soft)] ${rowSelectedClass(row.entryId)}`}
                       {...rowProps(row.entryId, isExpanded)}
                     >
-                      <td className="px-1 py-2.5 align-top">
+                      <td className="px-1 py-1.5 align-top">
                         <div className="flex items-center gap-1 font-semibold tabular-nums text-stone-800">
                           {compareMode ? (
                             selectMark(row.entryId)
@@ -280,20 +280,20 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                           <RankDelta from={row.rank} to={row.projectedRank} />
                         </div>
                       </td>
-                      <td className="px-1 py-2.5 align-top">
+                      <td className="px-1 py-1.5 align-top">
                         <div className="truncate text-[13px] font-semibold leading-4">{row.teamName}</div>
                         <div className="mt-0.5 truncate text-[10px] leading-4 text-[var(--muted)]">{row.managerName}</div>
                       </td>
-                      <td className="px-1 py-2.5 align-top">
+                      <td className="px-1 py-1.5 align-top">
                         <div className="truncate text-[13px] font-semibold leading-4">{row.captainName}</div>
                         <div className="mt-0.5 truncate text-[10px] leading-4 text-[var(--muted)]">
                           {row.chip ? chipLabel(row.chip, true) : `${row.playersPlayed}명 출전`}
                         </div>
                       </td>
-                      <td className={`px-1 py-2.5 text-right align-top font-semibold ${tone}`}>
+                      <td className={`px-1 py-1.5 text-right align-top font-semibold ${tone}`}>
                         <GwPoints row={row} />
                       </td>
-                      <td className="px-1 py-2.5 text-right align-top font-semibold tabular-nums">{row.totalPoints}</td>
+                      <td className="px-1 py-1.5 text-right align-top font-semibold tabular-nums">{row.totalPoints}</td>
                     </tr>
                     {isExpanded && !compareMode ? (
                       <tr className="bg-[var(--surface-strong)]/30">
@@ -319,7 +319,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                   const sorted = header.column.getIsSorted();
 
                   return (
-                    <th key={header.id} className="px-2.5 py-3 text-left text-[12px] font-semibold">
+                    <th key={header.id} className="px-2.5 py-2 text-left text-[12px] font-semibold">
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <button
                           type="button"
@@ -354,7 +354,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                   </tr>
                   {isExpanded && !compareMode ? (
                     <tr className="bg-[var(--surface-strong)]/40">
-                      <td colSpan={9} className="px-2.5 py-2.5">
+                      <td colSpan={9} className="px-2.5 py-1.5">
                         <LeagueRowExpanded row={row} gw={data.league.currentGw} />
                       </td>
                     </tr>

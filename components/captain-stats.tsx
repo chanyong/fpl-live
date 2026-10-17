@@ -7,7 +7,7 @@ export function CaptainStats({ stats }: { stats: CaptainStat[] }) {
   }
 
   return (
-    <section className="mb-2 rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] px-2.5 py-2 shadow-[0_14px_30px_rgba(55,40,20,0.06)] md:px-4 md:py-2.5">
+    <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] px-2.5 py-2 shadow-[0_14px_30px_rgba(55,40,20,0.06)] md:px-4 md:py-2.5">
       <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between md:gap-4">
         <h2 className="shrink-0 text-[13px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)] md:text-lg md:normal-case md:tracking-normal md:text-[var(--text)]">
           주장 선택 Top 3

@@ -116,7 +116,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
       : query.isLoading;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[1080px] flex-col px-2 py-2 sm:px-3 md:px-3 md:py-3 lg:max-w-[1120px]">
+    <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-1.5 py-1.5 sm:px-2 md:px-3 md:py-2">
       <div className="mb-2 flex flex-col gap-2 md:mb-3 md:flex-row md:items-end md:justify-between md:gap-3">
         <div className="min-w-0">
           <Link
@@ -125,13 +125,13 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
           >
             다른 리그 검색
           </Link>
-          <h1 className="mt-1 text-[2rem] font-semibold leading-none md:mt-2">
+          <h1 className="mt-1 text-2xl font-semibold leading-none md:text-3xl">
             {query.data?.league.name ??
               rankChangeQuery.data?.league.name ??
               playerStatsQuery.data?.league.name ??
               `리그 ${leagueId}`}
           </h1>
-          <p className="mt-1 text-[16px] text-[var(--muted)] md:text-base">
+          <p className="text-sm text-[var(--muted)]">
             {query.data
               ? `게임위크 ${query.data.league.currentGw} 라이브 대시보드`
               : rankChangeQuery.data
@@ -200,7 +200,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
                   role="tab"
                   aria-selected={active}
                   onClick={() => setTab(item.id)}
-                  className={`flex-1 whitespace-nowrap rounded-[0.8rem] px-3 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none md:px-4 ${
+                  className={`flex-1 whitespace-nowrap rounded-[0.8rem] px-3 py-1.5 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none md:px-4 ${
                     active ? "bg-[var(--text)] text-white" : "text-[var(--muted)] hover:text-[var(--text)]"
                   }`}
                 >
@@ -212,8 +212,10 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
           {tab === "standings" && query.data ? (
             <>
-              <LeagueKpis rows={query.data.rows} gw={query.data.league.currentGw} />
-              <CaptainStats stats={query.data.captainStats} />
+              <div className="mb-1.5 grid gap-1.5 md:grid-cols-2 md:items-stretch">
+                <LeagueKpis rows={query.data.rows} gw={query.data.league.currentGw} />
+                <CaptainStats stats={query.data.captainStats} />
+              </div>
               <LeagueTable data={query.data} />
             </>
           ) : null}

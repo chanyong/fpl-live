@@ -32,24 +32,24 @@ export function LeagueRow({
 }) {
   return (
     <>
-      <td className="px-2.5 py-3 text-center">
+      <td className="px-2.5 py-1.5 text-center">
         <span className="inline-flex items-center gap-1.5">
           {selectMark}
           <span className="font-semibold tabular-nums text-stone-800">{row.projectedRank}</span>
         </span>
       </td>
-      <td className="px-2.5 py-3 text-center text-[13px]">
+      <td className="px-2.5 py-1.5 text-center text-[13px]">
         <RankDelta from={row.rank} to={row.projectedRank} />
       </td>
-      <td className="px-2.5 py-3 font-semibold">{row.teamName}</td>
-      <td className="px-2.5 py-3">{row.managerName}</td>
-      <td className="px-2.5 py-3">{row.captainName}</td>
-      <td className="px-2.5 py-3">{chipLabel(row.chip)}</td>
-      <td className="px-2.5 py-3 text-right tabular-nums">{row.playersPlayed}</td>
-      <td className={`px-2.5 py-3 text-right font-semibold ${gwClassName ?? "text-stone-800"}`}>
+      <td className="px-2.5 py-1.5 font-semibold">{row.teamName}</td>
+      <td className="px-2.5 py-1.5">{row.managerName}</td>
+      <td className="px-2.5 py-1.5">{row.captainName}</td>
+      <td className="px-2.5 py-1.5">{chipLabel(row.chip)}</td>
+      <td className="px-2.5 py-1.5 text-right tabular-nums">{row.playersPlayed}</td>
+      <td className={`px-2.5 py-1.5 text-right font-semibold ${gwClassName ?? "text-stone-800"}`}>
         <GwPoints row={row} />
       </td>
-      <td className="px-2.5 py-3 text-right tabular-nums">{row.totalPoints}</td>
+      <td className="px-2.5 py-1.5 text-right tabular-nums">{row.totalPoints}</td>
     </>
   );
 }

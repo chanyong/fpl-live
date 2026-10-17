@@ -11,7 +11,7 @@ export function LeagueKpis({ rows, gw }: { rows: LeagueRow[]; gw: number }) {
   }
 
   return (
-    <KpiGrid label={`게임위크 ${gw} 요약`}>
+    <KpiGrid label={`게임위크 ${gw} 요약`} columns={2}>
       <KpiCard
         label="GW 최고 득점"
         value={kpis.topGw ? `${kpis.topGw.points}점` : "-"}
