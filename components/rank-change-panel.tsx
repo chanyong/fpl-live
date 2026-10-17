@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ChipStatusPanel } from "@/components/chip-status-panel";
 import { RankDelta } from "@/components/rank-delta";
 import { formatMoney } from "@/lib/season-summary";
@@ -213,12 +213,25 @@ function spreadLabels(entries: Array<{ key: number; y: number }>, minGap: number
 function TrendChart({
   managers,
   gameweeks,
-  totalManagers
+  totalManagers,
+  headerRight
 }: {
   managers: TrendManager[];
   gameweeks: number[];
   totalManagers: number;
+  headerRight?: ReactNode;
 }) {
+  // Tapping or hovering a gameweek column lists everyone's rank for it below the chart,
+  // which works the same with a finger as with a mouse.
+  const [pickedGw, setPickedGw] = useState<number | null>(null);
+  const activeGw =
+    pickedGw !== null && gameweeks.includes(pickedGw) ? pickedGw : gameweeks[gameweeks.length - 1];
+  const activeIndex = gameweeks.indexOf(activeGw);
+  const activeRows = managers
+    .map((manager) => ({ manager, point: manager.full[activeIndex] }))
+    .filter((item): item is { manager: TrendManager; point: RankChangePoint } => Boolean(item.point))
+    .sort((a, b) => a.point.rank - b.point.rank || b.point.totalPoints - a.point.totalPoints);
+
   const width = Math.max(760, 150 + gameweeks.length * 32);
   const height = Math.max(300, 120 + totalManagers * 20);
   const padding = { top: 24, right: 132, bottom: 42, left: 48 };
@@ -246,11 +259,14 @@ function TrendChart({
 
   return (
     <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-4">
-      <div className="mb-3">
-        <div className="text-[1.05rem] font-semibold">개인별 순위 변화</div>
-        <div className="text-[12px] leading-5 text-[var(--muted)]">
-          GW1부터 현재 GW까지 누적점수 기준 리그 등수입니다.
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <div className="text-[1.05rem] font-semibold">개인별 순위 변화</div>
+          <div className="text-[12px] leading-5 text-[var(--muted)]">
+            누적점수 기준 리그 등수입니다. 게임위크를 누르면 그 주의 순위가 아래에 나옵니다.
+          </div>
         </div>
+        {headerRight}
       </div>
       <div className="overflow-x-auto pb-1">
         <svg
@@ -291,6 +307,17 @@ function TrendChart({
               </g>
             );
           })}
+          {activeIndex >= 0 ? (
+            <rect
+              x={getX(activeIndex) - 14}
+              y={padding.top - 8}
+              width="28"
+              height={innerHeight + 16}
+              rx="8"
+              fill="var(--accent)"
+              fillOpacity="0.08"
+            />
+          ) : null}
           {series.map(({ manager, points }) => {
             const path = points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x},${point.y}`).join(" ");
             const last = points[points.length - 1];
@@ -329,7 +356,146 @@ function TrendChart({
               </g>
             );
           })}
+          {gameweeks.map((gw, index) => (
+            <rect
+              key={`hit-${gw}`}
+              x={getX(index) - 14}
+              y={padding.top - 8}
+              width="28"
+              height={innerHeight + 16}
+              fill="transparent"
+              className="cursor-pointer"
+              onMouseEnter={() => setPickedGw(gw)}
+              onClick={() => setPickedGw(gw)}
+            >
+              <title>GW{gw}</title>
+            </rect>
+          ))}
         </svg>
+      </div>
+
+      <div className="mt-3 border-t border-[var(--border)] pt-3">
+        <div className="mb-2 text-[13px] font-semibold">GW{activeGw} 순위</div>
+        <ol className="grid grid-cols-2 gap-1.5 md:grid-cols-3 xl:grid-cols-4">
+          {activeRows.map(({ manager, point }) => (
+            <li
+              key={manager.entry}
+              className="flex min-w-0 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white px-2 py-1.5 text-[12px]"
+            >
+              <span className="w-6 shrink-0 font-semibold tabular-nums">{point.rank}위</span>
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: manager.color }} />
+              <span className="min-w-0 flex-1 truncate">{manager.playerName}</span>
+              <span className="shrink-0 tabular-nums text-[var(--muted)]">{point.eventPoints}점</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
+const PERIODS = [
+  { id: "5", label: "최근 5", size: 5 },
+  { id: "10", label: "최근 10", size: 10 },
+  { id: "all", label: "전체", size: null }
+] as const;
+
+type PeriodId = (typeof PERIODS)[number]["id"];
+
+function PeriodTabs({ value, onChange }: { value: PeriodId; onChange: (value: PeriodId) => void }) {
+  return (
+    <div role="group" aria-label="표시 기간" className="flex gap-1 rounded-full border border-[var(--border)] bg-white p-0.5">
+      {PERIODS.map((period) => (
+        <button
+          key={period.id}
+          type="button"
+          aria-pressed={value === period.id}
+          onClick={() => onChange(period.id)}
+          className={`rounded-full px-3 py-1 text-[12px] font-semibold transition ${
+            value === period.id ? "bg-[var(--text)] text-white" : "text-[var(--muted)] hover:text-[var(--text)]"
+          }`}
+        >
+          {period.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * One row per manager, one column per gameweek, shaded by that week's score.
+ * The shade is one blue ramp (never green against red) and the number is always printed.
+ */
+function GwHeatmap({ managers, gameweeks }: { managers: TrendManager[]; gameweeks: number[] }) {
+  const rows = [...managers].sort(
+    (a, b) => (a.latestRank ?? Number.MAX_SAFE_INTEGER) - (b.latestRank ?? Number.MAX_SAFE_INTEGER)
+  );
+  const scores = rows.flatMap((manager) =>
+    manager.full.filter((point): point is RankChangePoint => Boolean(point)).map((point) => point.eventPoints)
+  );
+
+  if (scores.length === 0) {
+    return null;
+  }
+
+  const min = Math.min(...scores);
+  const max = Math.max(...scores);
+  const shade = (value: number) => (max === min ? 0.5 : (value - min) / (max - min));
+
+  return (
+    <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-4">
+      <div className="mb-3">
+        <div className="text-[1.05rem] font-semibold">GW별 점수 히트맵</div>
+        <div className="text-[12px] leading-5 text-[var(--muted)]">
+          진할수록 그 주 점수가 높습니다. 옆으로 밀어 모든 게임위크를 볼 수 있어요.
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="border-separate border-spacing-[3px] text-[11px]">
+          <thead>
+            <tr>
+              <th className="sticky left-0 z-10 bg-[var(--surface)]" />
+              {gameweeks.map((gw) => (
+                <th key={gw} className="px-0.5 text-center font-medium text-[var(--muted)]">
+                  {gw}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((manager) => (
+              <tr key={manager.entry}>
+                <th
+                  scope="row"
+                  className="sticky left-0 z-10 max-w-[7rem] truncate bg-[var(--surface)] pr-2 text-left text-[12px] font-semibold"
+                >
+                  {manager.playerName}
+                </th>
+                {manager.full.map((point, index) => {
+                  if (!point) {
+                    return <td key={gameweeks[index]} className="h-8 min-w-8 rounded-md bg-[var(--chart-mute-soft)]/40" />;
+                  }
+
+                  const t = shade(point.eventPoints);
+
+                  return (
+                    <td
+                      key={gameweeks[index]}
+                      title={`GW${gameweeks[index]} · ${point.eventPoints}점`}
+                      className="h-8 min-w-8 rounded-md text-center font-semibold tabular-nums"
+                      style={{
+                        backgroundColor: `color-mix(in srgb, var(--chart-in) ${Math.round(10 + t * 80)}%, white)`,
+                        color: t > 0.55 ? "#fff" : "var(--text)"
+                      }}
+                    >
+                      {point.eventPoints}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </section>
   );
@@ -376,14 +542,29 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
   );
   const [selectedEntries, setSelectedEntries] = useState<number[]>([]);
   const [showStats, setShowStats] = useState(false);
+  const [period, setPeriod] = useState<PeriodId>("all");
 
   useEffect(() => {
     setSelectedEntries(data.managers.map((manager) => manager.entry));
   }, [data.managers]);
 
+  // The period trims the chart and the heatmap alike so the two always show the same weeks.
+  const periodSize = PERIODS.find((item) => item.id === period)?.size ?? null;
+  const visibleGameweeks = useMemo(
+    () => (periodSize ? data.trend.gameweeks.slice(-periodSize) : data.trend.gameweeks),
+    [data.trend.gameweeks, periodSize]
+  );
+  const visibleManagers = useMemo(
+    () =>
+      periodSize
+        ? trendManagers.map((manager) => ({ ...manager, full: manager.full.slice(-periodSize) }))
+        : trendManagers,
+    [periodSize, trendManagers]
+  );
+
   const selectedManagers = useMemo(
-    () => trendManagers.filter((manager) => selectedEntries.includes(manager.entry)),
-    [selectedEntries, trendManagers]
+    () => visibleManagers.filter((manager) => selectedEntries.includes(manager.entry)),
+    [selectedEntries, visibleManagers]
   );
 
   const stats = useMemo(() => buildLeagueStats(trendManagers), [trendManagers]);
@@ -397,8 +578,13 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
       ) : selectedManagers.length ? (
         <TrendChart
           managers={selectedManagers}
-          gameweeks={data.trend.gameweeks}
+          gameweeks={visibleGameweeks}
           totalManagers={trendManagers.length}
+          headerRight={
+            data.trend.gameweeks.length > PERIODS[0].size ? (
+              <PeriodTabs value={period} onChange={setPeriod} />
+            ) : undefined
+          }
         />
       ) : (
         <section className="grid min-h-[220px] place-items-center rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-4 text-center text-[14px] text-[var(--muted)]">
@@ -471,6 +657,8 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
           </div>
         </section>
       ) : null}
+
+      {hasChart ? <GwHeatmap managers={visibleManagers} gameweeks={visibleGameweeks} /> : null}
 
       <ChipStatusPanel managers={trendManagers} />
 

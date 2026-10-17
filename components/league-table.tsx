@@ -61,21 +61,38 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
   const [search, setSearch] = useState("");
   const [chipOnly, setChipOnly] = useState(false);
   const [topN, setTopN] = useState("all");
+  const [quick, setQuick] = useState<"all" | "up" | "down">("all");
   const [compareMode, setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
 
+  const quickCounts = useMemo(
+    () => ({
+      all: data.rows.length,
+      up: data.rows.filter((row) => row.projectedRank < row.rank).length,
+      down: data.rows.filter((row) => row.projectedRank > row.rank).length
+    }),
+    [data.rows]
+  );
+
   const filteredRows = useMemo(() => {
     return data.rows.filter((row) => {
+      const matchesQuick =
+        quick === "all"
+          ? true
+          : quick === "up"
+            ? row.projectedRank < row.rank
+            : row.projectedRank > row.rank;
+
       const matchesSearch =
         row.managerName.toLowerCase().includes(search.toLowerCase()) ||
         row.teamName.toLowerCase().includes(search.toLowerCase());
       const matchesChip = chipOnly ? Boolean(row.chip) : true;
       const matchesTopN = topN === "all" ? true : row.projectedRank <= Number(topN);
 
-      return matchesSearch && matchesChip && matchesTopN;
+      return matchesSearch && matchesChip && matchesTopN && matchesQuick;
     });
-  }, [chipOnly, data.rows, search, topN]);
+  }, [chipOnly, data.rows, quick, search, topN]);
 
   const gwTone = useMemo(() => buildRankTone(data.rows), [data.rows]);
 
@@ -183,11 +200,33 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
       />
 
       <div className="flex items-center justify-between gap-2 px-1">
-        <p className="text-[12px] text-[var(--muted)] md:text-[13px]">
-          {compareMode
-            ? "비교할 매니저 2명을 선택하세요."
-            : "두 매니저의 스쿼드를 포지션별로 비교할 수 있어요."}
-        </p>
+        {compareMode ? (
+          <p className="text-[12px] text-[var(--muted)] md:text-[13px]">비교할 매니저 2명을 선택하세요.</p>
+        ) : (
+          <div role="group" aria-label="순위 변동 필터" className="flex gap-1.5 overflow-x-auto">
+            {(
+              [
+                { id: "all", label: "전체", count: quickCounts.all },
+                { id: "up", label: "▲ 상승", count: quickCounts.up },
+                { id: "down", label: "▼ 하락", count: quickCounts.down }
+              ] as const
+            ).map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                aria-pressed={quick === item.id}
+                onClick={() => setQuick(item.id)}
+                className={`min-h-10 shrink-0 whitespace-nowrap rounded-full border px-3 text-[13px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+                  quick === item.id
+                    ? "border-[var(--text)] bg-[var(--text)] text-white"
+                    : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--accent)]"
+                }`}
+              >
+                {item.label} <span className="tabular-nums">{item.count}</span>
+              </button>
+            ))}
+          </div>
+        )}
         <button
           type="button"
           aria-pressed={compareMode}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compareSquads } from "@/lib/squad-compare";
+import { compareSquads, pointsByPosition } from "@/lib/squad-compare";
 import type { FplPosition, LeagueRow, PlayerLiveCard } from "@/lib/types";
 
 function card(elementId: number, position: FplPosition, livePoints = 2): PlayerLiveCard {
@@ -40,5 +40,14 @@ describe("compareSquads", () => {
     expect(result.sharedCount).toBe(2);
     expect(result.onlyACount).toBe(2);
     expect(result.onlyBCount).toBe(2);
+  });
+});
+
+describe("pointsByPosition", () => {
+  it("applies multipliers and ignores the bench", () => {
+    const captain = { ...card(2, "MID", 6), multiplier: 2 };
+    const result = pointsByPosition(row([card(1, "GKP", 3), captain], [card(9, "FWD", 8)]));
+
+    expect(result).toEqual({ GKP: 3, DEF: 0, MID: 12, FWD: 0 });
   });
 });
