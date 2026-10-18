@@ -27,7 +27,7 @@ function FixtureCell({ fixtures }: { fixtures: TeamFixtureOutlook[] | undefined 
   if (!fixtures || fixtures.length === 0) {
     return (
       <div
-        className="rounded-[6px] border border-dashed border-[var(--border)] px-1 py-1.5 text-center text-[11px] text-[var(--muted)]"
+        className="rounded-[6px] border border-dashed border-[var(--border)] px-1 py-2 text-center text-[13px] text-[var(--muted)]"
         title={tr("이 게임위크에는 경기가 없습니다", "No fixture this gameweek")}
       >
         -
@@ -40,7 +40,7 @@ function FixtureCell({ fixtures }: { fixtures: TeamFixtureOutlook[] | undefined 
       {fixtures.map((fixture, index) => (
         <div
           key={index}
-          className="rounded-[6px] px-1 py-1 text-center text-[11px] font-semibold leading-tight"
+          className="rounded-[6px] px-1 py-1.5 text-center text-[13px] font-semibold leading-tight"
           style={difficultyStyle(fixture.difficulty)}
           title={tr(
             `GW${fixture.gw} · ${fixture.home ? "홈" : "원정"} ${fixture.opponent} · 난이도 ${fixture.difficulty}`,
@@ -140,7 +140,7 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
         type="button"
         title={title}
         onClick={() => toggleSort(key)}
-        className={`inline-flex items-center gap-0.5 rounded px-1 py-0.5 font-semibold transition hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+        className={`inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[13px] font-semibold transition hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
           active ? "text-[var(--text)]" : ""
         }`}
       >
@@ -156,15 +156,15 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
     <section className="mt-3 rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-2">
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5 px-1.5">
         <div>
-          <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+          <div className="text-[14px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
             {tr("팀별 향후 일정 난이도", "Upcoming fixture difficulty by team")}
           </div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--muted)]">
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[13px] text-[var(--muted)]">
             <span>{tr("쉬움", "Easy")}</span>
             {[1, 2, 3, 4, 5].map((level) => (
               <span
                 key={level}
-                className="inline-flex h-[16px] w-[16px] items-center justify-center rounded-[3px] text-[10px] font-semibold tabular-nums"
+                className="inline-flex h-[20px] w-[20px] items-center justify-center rounded-[3px] text-[12px] font-semibold tabular-nums"
                 style={difficultyStyle(level)}
               >
                 {level}
@@ -176,9 +176,9 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] border-separate border-spacing-y-[3px] px-1 text-left">
+        <table className="w-full min-w-[860px] border-separate border-spacing-y-[3px] px-1 text-left">
           <thead>
-            <tr className="text-[11px] font-semibold text-[var(--muted)]">
+            <tr className="text-[13px] font-semibold text-[var(--muted)]">
               <th className="px-1 py-1" aria-sort={sort.key === "team" ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
                 {headerButton("team", tr("팀", "Team"))}
               </th>
@@ -210,13 +210,13 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
             {rows.map((row) => (
               <tr key={row.team} className="align-middle">
                 <td className="px-2 py-0.5">
-                  <span className="flex items-center gap-1.5 text-[13px] font-semibold">
+                  <span className="flex items-center gap-2 text-[15px] font-semibold">
                     <RemoteImage
                       src={crestUrl(row.teamCode)}
                       alt=""
                       fallback={row.team.slice(0, 1)}
-                      className="h-5 w-5 shrink-0 object-contain"
-                      fallbackClassName="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--surface-strong)] text-[9px] font-semibold text-[var(--muted)]"
+                      className="h-6 w-6 shrink-0 object-contain"
+                      fallbackClassName="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--surface-strong)] text-[10px] font-semibold text-[var(--muted)]"
                     />
                     {row.team}
                   </span>
@@ -226,7 +226,7 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
                     <span className="text-[11px] text-[var(--muted)]">-</span>
                   ) : (
                     <span
-                      className="inline-flex min-w-[34px] justify-center rounded-[4px] px-1 py-[1px] text-[12px] font-semibold tabular-nums"
+                      className="inline-flex min-w-[40px] justify-center rounded-[5px] px-1.5 py-[2px] text-[14px] font-semibold tabular-nums"
                       style={difficultyStyle(row.average)}
                     >
                       {row.average.toFixed(1)}
