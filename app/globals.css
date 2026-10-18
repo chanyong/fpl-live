@@ -20,13 +20,13 @@
   --chart-mute: #9a9082;
   --chart-mute-soft: #ded6c6;
 
-  /* Fixture difficulty: one hue, light to dark. The number is always printed alongside,
-     so the colour is never the only cue. */
-  --fdr-1: #86b6ef;
-  --fdr-2: #5598e7;
-  --fdr-3: #2a78d6;
-  --fdr-4: #1c5cab;
-  --fdr-5: #104281;
+  /* Fixture difficulty, matching the official FPL scale: green (easy) through grey to red and
+     maroon (hard). The number is always printed alongside, so the colour is never the only cue. */
+  --fdr-1: #257d5a;
+  --fdr-2: #6bf56b;
+  --fdr-3: #e2e2e2;
+  --fdr-4: #e8274f;
+  --fdr-5: #6b0f2e;
 }
 
 * {

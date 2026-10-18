@@ -3,13 +3,13 @@
 import type { TeamFixtureOutlook } from "@/lib/types";
 import { useLocale } from "@/components/locale-provider";
 
-/** One hue, light to dark. The number is printed in every cell, so colour is never the only cue. */
+/** Official FPL scale, green to maroon. The number is printed in every cell, so colour is never the only cue. */
 export function difficultyStyle(difficulty: number) {
   const clamped = Math.min(Math.max(Math.round(difficulty), 1), 5);
 
   return {
     background: `var(--fdr-${clamped})`,
-    color: clamped <= 2 ? "#0d366b" : "#ffffff"
+    color: clamped === 2 || clamped === 3 ? "#1b1b1b" : "#ffffff"
   };
 }
 
