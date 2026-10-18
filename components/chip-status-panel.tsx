@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { CHIP_SHORT_LABELS } from "@/lib/chips";
+import { CHIP_SHORT_LABELS, chipLabel } from "@/lib/chips";
 import type { ChipStatus, RankChangeManager } from "@/lib/types";
+import { useLocale } from "@/components/locale-provider";
 
 type ChipColumn = {
   key: string;
@@ -38,6 +39,7 @@ function buildColumns(chips: ChipStatus[]) {
 }
 
 function ChipCell({ chip }: { chip: ChipStatus | undefined }) {
+  const { tr, locale } = useLocale();
   if (!chip) {
     return <span className="text-[var(--muted)]">-</span>;
   }
@@ -46,7 +48,10 @@ function ChipCell({ chip }: { chip: ChipStatus | undefined }) {
     return (
       <span
         className="inline-block rounded-full bg-[var(--accent)] px-2 py-0.5 text-[11px] font-semibold text-white"
-        title={`${chip.label} · GW${chip.usedEvent} 사용`}
+        title={tr(
+          `${chipLabel(chip.name, false, locale)} · GW${chip.usedEvent} 사용`,
+          `${chipLabel(chip.name, false, locale)} · played in GW${chip.usedEvent}`
+        )}
       >
         GW{chip.usedEvent}
       </span>
@@ -57,9 +62,12 @@ function ChipCell({ chip }: { chip: ChipStatus | undefined }) {
     return (
       <span
         className="inline-block rounded-full bg-stone-200 px-2 py-0.5 text-[11px] font-medium text-stone-500 line-through"
-        title={`${chip.label} · GW${chip.stop}까지 못 씀`}
+        title={tr(
+          `${chipLabel(chip.name, false, locale)} · GW${chip.stop}까지 못 씀`,
+          `${chipLabel(chip.name, false, locale)} · not used by GW${chip.stop}`
+        )}
       >
-        만료
+        {tr("만료", "Expired")}
       </span>
     );
   }
@@ -67,14 +75,18 @@ function ChipCell({ chip }: { chip: ChipStatus | undefined }) {
   return (
     <span
       className="inline-block rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800"
-      title={`${chip.label} · GW${chip.start}~${chip.stop} 사용 가능`}
+      title={tr(
+        `${chipLabel(chip.name, false, locale)} · GW${chip.start}~${chip.stop} 사용 가능`,
+        `${chipLabel(chip.name, false, locale)} · available GW${chip.start}–${chip.stop}`
+      )}
     >
-      보유
+      {tr("보유", "Held")}
     </span>
   );
 }
 
 export function ChipStatusPanel({ managers }: { managers: RankChangeManager[] }) {
+  const { tr } = useLocale();
   const groups = useMemo(() => buildColumns(managers[0]?.season.chips ?? []), [managers]);
 
   if (groups.length === 0) {
@@ -90,9 +102,12 @@ export function ChipStatusPanel({ managers }: { managers: RankChangeManager[] })
   return (
     <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
       <div className="mb-3">
-        <div className="text-[1rem] font-semibold">칩 사용 현황</div>
+        <div className="text-[1rem] font-semibold">{tr("칩 사용 현황", "Chip status")}</div>
         <div className="text-[12px] text-[var(--muted)]">
-          남은 칩이 많은 순입니다. 칩은 전·후반기에 각각 한 번씩 주어집니다.
+          {tr(
+            "남은 칩이 많은 순입니다. 칩은 전·후반기에 각각 한 번씩 주어집니다.",
+            "Sorted by chips remaining. Each chip is granted once per half of the season."
+          )}
         </div>
       </div>
 
@@ -101,10 +116,10 @@ export function ChipStatusPanel({ managers }: { managers: RankChangeManager[] })
           <thead>
             <tr className="border-b border-[var(--border)] text-[10px] uppercase tracking-[0.08em] text-[var(--muted)]">
               <th className="px-2 py-2 text-left" rowSpan={2}>
-                매니저
+                {tr("매니저", "Manager")}
               </th>
               <th className="px-2 py-2 text-right" rowSpan={2}>
-                남음
+                {tr("남음", "Left")}
               </th>
               {groups.map((group) => (
                 <th

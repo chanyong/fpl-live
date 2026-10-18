@@ -1,3 +1,14 @@
+import type { Locale } from "@/lib/locale";
+
+/** English display names for the chips FPL exposes. */
+export const CHIP_LABELS_EN: Record<string, string> = {
+  wildcard: "Wildcard",
+  freehit: "Free Hit",
+  bboost: "Bench Boost",
+  "3xc": "Triple Captain",
+  manager: "Assistant Manager"
+};
+
 /** Display names for the chips FPL exposes. Unknown names fall through as-is. */
 export const CHIP_LABELS: Record<string, string> = {
   wildcard: "와일드카드",
@@ -23,10 +34,11 @@ export function chipSortIndex(name: string) {
   return index === -1 ? CHIP_ORDER.length : index;
 }
 
-export function chipLabel(name: string | null, short = false) {
+export function chipLabel(name: string | null, short = false, locale: Locale = "ko") {
   if (!name) {
     return "-";
   }
 
-  return (short ? CHIP_SHORT_LABELS[name] : CHIP_LABELS[name]) ?? name;
+  const long = locale === "en" ? CHIP_LABELS_EN : CHIP_LABELS;
+  return (short ? CHIP_SHORT_LABELS[name] : long[name]) ?? name;
 }

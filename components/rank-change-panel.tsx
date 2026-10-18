@@ -8,6 +8,7 @@ import { ChipStatusPanel } from "@/components/chip-status-panel";
 import { RankDelta } from "@/components/rank-delta";
 import { formatMoney } from "@/lib/season-summary";
 import type { RankChangeManager, RankChangePoint, RankChangeResponse } from "@/lib/types";
+import { useLocale } from "@/components/locale-provider";
 
 /** Below this many tracked gameweeks a trend line says nothing, so we show a table instead. */
 const MIN_GW_FOR_CHART = 2;
@@ -202,6 +203,7 @@ function StatCard({
   items: StatItem[];
   formatter: (item: StatItem) => string;
 }) {
+  const { tr } = useLocale();
   return (
     <article className="rounded-[1.1rem] border border-[var(--border)] bg-white/90 p-3 shadow-[0_8px_24px_rgba(55,40,20,0.05)]">
       <div className="text-[15px] font-semibold">{title}</div>
@@ -224,7 +226,7 @@ function StatCard({
             </div>
           ))
         ) : (
-          <div className="text-[12px] text-[var(--muted)]">데이터가 없습니다.</div>
+          <div className="text-[12px] text-[var(--muted)]">{tr("데이터가 없습니다.", "No data.")}</div>
         )}
       </div>
     </article>
@@ -262,6 +264,7 @@ function TrendChart({
   totalManagers: number;
   headerRight?: ReactNode;
 }) {
+  const { tr } = useLocale();
   // Tapping or hovering a gameweek column lists everyone's rank for it below the chart,
   // which works the same with a finger as with a mouse.
   const [pickedGw, setPickedGw] = useState<number | null>(null);
@@ -302,9 +305,12 @@ function TrendChart({
     <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-4">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div>
-          <div className="text-[1.05rem] font-semibold">개인별 순위 변화</div>
+          <div className="text-[1.05rem] font-semibold">{tr("개인별 순위 변화", "Rank by manager")}</div>
           <div className="text-[12px] leading-5 text-[var(--muted)]">
-            누적점수 기준 리그 등수입니다. 게임위크를 누르면 그 주의 순위가 아래에 나옵니다.
+            {tr(
+              "누적점수 기준 리그 등수입니다. 게임위크를 누르면 그 주의 순위가 아래에 나옵니다.",
+              "League rank by cumulative points. Tap a gameweek to list that week's ranks below."
+            )}
           </div>
         </div>
         {headerRight}
@@ -316,7 +322,7 @@ function TrendChart({
           className="block"
           style={{ minWidth: `${Math.min(width, 640)}px` }}
           role="img"
-          aria-label="리그 순위 추이 차트"
+          aria-label={tr("리그 순위 추이 차트", "League rank trend chart")}
         >
           {Array.from({ length: maxRank }, (_, index) => {
             const y = getY(index + 1);
@@ -324,7 +330,7 @@ function TrendChart({
               <g key={`rank-${index + 1}`}>
                 <line x1={padding.left} y1={y} x2={width - padding.right} y2={y} stroke="var(--border)" strokeOpacity="0.55" />
                 <text x={padding.left - 8} y={y + 4} fill="var(--muted)" fontSize="10" textAnchor="end">
-                  {index + 1}위
+                  {tr(`${index + 1}위`, `#${index + 1}`)}
                 </text>
               </g>
             );
@@ -416,17 +422,22 @@ function TrendChart({
       </div>
 
       <div className="mt-3 border-t border-[var(--border)] pt-3">
-        <div className="mb-2 text-[13px] font-semibold">GW{activeGw} 순위</div>
+        <div className="mb-2 text-[13px] font-semibold">{tr(`GW${activeGw} 순위`, `GW${activeGw} ranks`)}</div>
         <ol className="grid grid-cols-2 gap-1.5 md:grid-cols-3 xl:grid-cols-4">
           {activeRows.map(({ manager, point }) => (
             <li
               key={manager.entry}
               className="flex min-w-0 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white px-2 py-1.5 text-[12px]"
             >
-              <span className="w-6 shrink-0 font-semibold tabular-nums">{point.rank}위</span>
+              <span className="w-6 shrink-0 font-semibold tabular-nums">
+                {tr(`${point.rank}위`, `#${point.rank}`)}
+              </span>
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: manager.color }} />
               <span className="min-w-0 flex-1 truncate">{manager.playerName}</span>
-              <span className="shrink-0 tabular-nums text-[var(--muted)]">{point.eventPoints}점</span>
+              <span className="shrink-0 tabular-nums text-[var(--muted)]">
+                {point.eventPoints}
+                {tr("점", " pts")}
+              </span>
             </li>
           ))}
         </ol>
@@ -436,16 +447,17 @@ function TrendChart({
 }
 
 const PERIODS = [
-  { id: "5", label: "최근 5", size: 5 },
-  { id: "10", label: "최근 10", size: 10 },
-  { id: "all", label: "전체", size: null }
+  { id: "5", ko: "최근 5", en: "Last 5", size: 5 },
+  { id: "10", ko: "최근 10", en: "Last 10", size: 10 },
+  { id: "all", ko: "전체", en: "All", size: null }
 ] as const;
 
 type PeriodId = (typeof PERIODS)[number]["id"];
 
 function PeriodTabs({ value, onChange }: { value: PeriodId; onChange: (value: PeriodId) => void }) {
+  const { tr } = useLocale();
   return (
-    <div role="group" aria-label="표시 기간" className="flex gap-1 rounded-full border border-[var(--border)] bg-white p-0.5">
+    <div role="group" aria-label={tr("표시 기간", "Period shown")} className="flex gap-1 rounded-full border border-[var(--border)] bg-white p-0.5">
       {PERIODS.map((period) => (
         <button
           key={period.id}
@@ -456,7 +468,7 @@ function PeriodTabs({ value, onChange }: { value: PeriodId; onChange: (value: Pe
             value === period.id ? "bg-[var(--text)] text-white" : "text-[var(--muted)] hover:text-[var(--text)]"
           }`}
         >
-          {period.label}
+          {tr(period.ko, period.en)}
         </button>
       ))}
     </div>
@@ -468,6 +480,7 @@ function PeriodTabs({ value, onChange }: { value: PeriodId; onChange: (value: Pe
  * The shade is one blue ramp (never green against red) and the number is always printed.
  */
 function GwHeatmap({ managers, gameweeks }: { managers: TrendManager[]; gameweeks: number[] }) {
+  const { tr } = useLocale();
   const rows = [...managers].sort(
     (a, b) => (a.latestRank ?? Number.MAX_SAFE_INTEGER) - (b.latestRank ?? Number.MAX_SAFE_INTEGER)
   );
@@ -486,9 +499,12 @@ function GwHeatmap({ managers, gameweeks }: { managers: TrendManager[]; gameweek
   return (
     <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-4">
       <div className="mb-3">
-        <div className="text-[1.05rem] font-semibold">GW별 점수 히트맵</div>
+        <div className="text-[1.05rem] font-semibold">{tr("GW별 점수 히트맵", "GW score heatmap")}</div>
         <div className="text-[12px] leading-5 text-[var(--muted)]">
-          진할수록 그 주 점수가 높습니다. 옆으로 밀어 모든 게임위크를 볼 수 있어요.
+          {tr(
+            "진할수록 그 주 점수가 높습니다. 옆으로 밀어 모든 게임위크를 볼 수 있어요.",
+            "Darker means a higher score that week. Scroll sideways to see every gameweek."
+          )}
         </div>
       </div>
       <div className="overflow-x-auto">
@@ -522,7 +538,7 @@ function GwHeatmap({ managers, gameweeks }: { managers: TrendManager[]; gameweek
                   return (
                     <td
                       key={gameweeks[index]}
-                      title={`GW${gameweeks[index]} · ${point.eventPoints}점`}
+                      title={tr(`GW${gameweeks[index]} · ${point.eventPoints}점`, `GW${gameweeks[index]} · ${point.eventPoints} pts`)}
                       className="h-8 min-w-8 rounded-md text-center font-semibold tabular-nums"
                       style={{
                         backgroundColor: `color-mix(in srgb, var(--chart-in) ${Math.round(10 + t * 80)}%, white)`,
@@ -543,12 +559,13 @@ function GwHeatmap({ managers, gameweeks }: { managers: TrendManager[]; gameweek
 }
 
 function StandingsSoFar({ managers, currentGw }: { managers: TrendManager[]; currentGw: number }) {
+  const { tr } = useLocale();
   return (
     <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-4">
       <div className="mb-3">
-        <div className="text-[1.05rem] font-semibold">GW{currentGw} 현재 순위</div>
+        <div className="text-[1.05rem] font-semibold">{tr(`GW${currentGw} 현재 순위`, `GW${currentGw} current ranks`)}</div>
         <div className="text-[12px] leading-5 text-[var(--muted)]">
-          게임위크가 2주차에 접어들면 순위 변화 차트가 여기에 표시됩니다.
+          {tr("게임위크가 2주차에 접어들면 순위 변화 차트가 여기에 표시됩니다.", "The rank trend chart appears here once gameweek 2 begins.")}
         </div>
       </div>
       <ol className="grid gap-1.5">
@@ -566,7 +583,10 @@ function StandingsSoFar({ managers, currentGw }: { managers: TrendManager[]; cur
               <span className="block truncate text-[11px] text-[var(--muted)]">{manager.playerName}</span>
             </span>
             <span className="text-right text-[13px] tabular-nums">
-              <span className="font-semibold">{manager.totalPoints}점</span>
+              <span className="font-semibold">
+                {manager.totalPoints}
+                {tr("점", " pts")}
+              </span>
               <span className="ml-2 text-[11px] text-[var(--muted)]">GW {manager.gwPoints}</span>
             </span>
           </li>
@@ -577,6 +597,7 @@ function StandingsSoFar({ managers, currentGw }: { managers: TrendManager[]; cur
 }
 
 export function RankChangePanel({ data }: { data: RankChangeResponse }) {
+  const { tr, locale } = useLocale();
   const trendManagers = useMemo(
     () => buildSeasonTrend(data.managers, data.trend.gameweeks),
     [data.managers, data.trend.gameweeks]
@@ -631,21 +652,21 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
   const selector = hasChart ? (
         <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
           <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div className="text-[1rem] font-semibold">매니저 선택</div>
+            <div className="text-[1rem] font-semibold">{tr("매니저 선택", "Select managers")}</div>
             <div className="flex gap-2">
               <button
                 type="button"
                 className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[12px] font-semibold transition hover:border-[var(--accent)]"
                 onClick={() => setSelectedEntries(data.managers.map((manager) => manager.entry))}
               >
-                전체 선택
+                {tr("전체 선택", "Select all")}
               </button>
               <button
                 type="button"
                 className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[12px] font-semibold transition hover:border-[var(--accent)]"
                 onClick={() => setSelectedEntries([])}
               >
-                전체 해제
+                {tr("전체 해제", "Clear all")}
               </button>
             </div>
           </div>
@@ -681,8 +702,8 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
                       <RankDelta from={manager.previousRank} to={manager.latestRank} className="text-[12px]" />
                     ) : null}
                     {manager.seasonChange !== null ? (
-                      <span className="ml-1.5" title="첫 게임위크 대비">
-                        시즌 {manager.seasonChange > 0 ? "+" : ""}
+                      <span className="ml-1.5" title={tr("첫 게임위크 대비", "Since the first gameweek")}>
+                        {tr("시즌", "Season")} {manager.seasonChange > 0 ? "+" : ""}
                         {manager.seasonChange}
                       </span>
                     ) : null}
@@ -697,23 +718,27 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
   const sideContent = (
     <>
       {hasChart ? (
-        <KpiGrid label="순위 추이 요약">
+        <KpiGrid label={tr("순위 추이 요약", "Rank trend summary")}>
           <KpiCard
-            label="현재 1위"
-            value={summary.leader ? `${summary.leader.totalPoints}점` : "-"}
+            label={tr("현재 1위", "Current leader")}
+            value={summary.leader ? `${summary.leader.totalPoints}${tr("점", " pts")}` : "-"}
             sub={summary.leader?.playerName ?? ""}
           />
           <KpiCard
-            label="최고 GW 득점"
-            value={topScore ? `${topScore.value}점` : "-"}
+            label={tr("최고 GW 득점", "Best GW score")}
+            value={topScore ? `${topScore.value}${tr("점", " pts")}` : "-"}
             sub={topScore ? `${topScore.playerName} · GW${topScore.gw}` : ""}
           />
           <KpiCard
-            label="최대 순위 상승"
+            label={tr("최대 순위 상승", "Biggest climb")}
             value={topJump ? `+${topJump.value}` : "-"}
             sub={topJump ? `${topJump.playerName} · GW${topJump.gw}` : ""}
           />
-          <KpiCard label="GW 평균" value={`${summary.average}점`} sub={`${stats.trackedGameweeks}개 GW 기준`} />
+          <KpiCard
+            label={tr("GW 평균", "GW average")}
+            value={`${summary.average}${tr("점", " pts")}`}
+            sub={tr(`${stats.trackedGameweeks}개 GW 기준`, `${stats.trackedGameweeks} GWs`)}
+          />
         </KpiGrid>
       ) : null}
       {selector}
@@ -738,7 +763,7 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
         />
       ) : (
         <section className="grid min-h-[220px] place-items-center rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-4 text-center text-[14px] text-[var(--muted)]">
-          매니저를 하나 이상 선택해 주세요.
+          {tr("매니저를 하나 이상 선택해 주세요.", "Select at least one manager.")}
         </section>
       )}
 
@@ -746,47 +771,56 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
 
       <ChipStatusPanel managers={trendManagers} />
 
-      <CollapsibleSection title="시즌 기록" subtitle="게임위크 수와 무관하게 시즌 누적으로 집계됩니다.">
+      <CollapsibleSection
+        title={tr("시즌 기록", "Season records")}
+        subtitle={tr("게임위크 수와 무관하게 시즌 누적으로 집계됩니다.", "Counted over the whole season, however many gameweeks have been played.")}
+      >
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <StatCard
-            title="벤치에 버린 점수"
-            subtitle="시즌 누적 벤치 점수 Top 5"
+            title={tr("벤치에 버린 점수", "Points left on the bench")}
+            subtitle={tr("시즌 누적 벤치 점수 Top 5", "Top 5 season bench points")}
             items={stats.benchWasteTop}
-            formatter={(item) => `${item.value}점`}
+            formatter={(item) => `${item.value}${tr("점", " pts")}`}
           />
           <StatCard
-            title="이적 히트 최다"
-            subtitle="시즌 누적 차감 점수 Top 5"
+            title={tr("이적 히트 최다", "Most transfer hits")}
+            subtitle={tr("시즌 누적 차감 점수 Top 5", "Top 5 season points deducted")}
             items={stats.hitCostTop}
-            formatter={(item) => `−${item.value}점`}
+            formatter={(item) => `−${item.value}${tr("점", " pts")}`}
           />
           <StatCard
-            title="팀 가치 최고"
-            subtitle="현재 스쿼드 가치 Top 5"
+            title={tr("팀 가치 최고", "Highest team value")}
+            subtitle={tr("현재 스쿼드 가치 Top 5", "Top 5 current squad value")}
             items={stats.squadValueTop}
             formatter={(item) => formatMoney(item.value)}
           />
           <StatCard
-            title="전 세계 순위 최고"
-            subtitle="현재 FPL 전체 순위 Top 5"
+            title={tr("전 세계 순위 최고", "Best global rank")}
+            subtitle={tr("현재 FPL 전체 순위 Top 5", "Top 5 current overall FPL rank")}
             items={stats.overallRankTop}
-            formatter={(item) => `${item.value.toLocaleString("ko-KR")}위`}
+            formatter={(item) => tr(`${item.value.toLocaleString("ko-KR")}위`, `#${item.value.toLocaleString("en-GB")}`)}
           />
           <StatCard
-            title="역대 최고 순위"
-            subtitle="지난 시즌들 중 최고 기록 Top 5"
+            title={tr("역대 최고 순위", "Best past finish")}
+            subtitle={tr("지난 시즌들 중 최고 기록 Top 5", "Top 5 best result from past seasons")}
             items={stats.veteranBestTop}
-            formatter={(item) => `${item.value.toLocaleString("ko-KR")}위`}
+            formatter={(item) => tr(`${item.value.toLocaleString("ko-KR")}위`, `#${item.value.toLocaleString("en-GB")}`)}
           />
         </div>
       </CollapsibleSection>
 
       <CollapsibleSection
-        title="GW 통계"
+        title={tr("GW 통계", "GW statistics")}
         subtitle={
           statsReady
-            ? `GW1부터 현재까지 ${stats.trackedGameweeks}개 게임위크 기준입니다.`
-            : `게임위크 ${MIN_GW_FOR_STATS}주차부터 의미 있는 값이 나옵니다. 현재 ${stats.trackedGameweeks}주차.`
+            ? tr(
+                `GW1부터 현재까지 ${stats.trackedGameweeks}개 게임위크 기준입니다.`,
+                `Based on ${stats.trackedGameweeks} gameweeks, GW1 to now.`
+              )
+            : tr(
+                `게임위크 ${MIN_GW_FOR_STATS}주차부터 의미 있는 값이 나옵니다. 현재 ${stats.trackedGameweeks}주차.`,
+                `Meaningful from gameweek ${MIN_GW_FOR_STATS}. Currently ${stats.trackedGameweeks}.`
+              )
         }
       >
         {!statsReady ? (
@@ -795,21 +829,21 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
             onClick={() => setShowStats((current) => !current)}
             className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-[12px] font-semibold transition hover:border-[var(--accent)]"
           >
-            {showStats ? "접기" : "그래도 보기"}
+            {showStats ? tr("접기", "Hide") : tr("그래도 보기", "Show anyway")}
           </button>
         ) : null}
 
         {statsReady || showStats ? (
           <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard title="개별 GW 1위 최다" subtitle="각 GW 종료 시점 1등 횟수 Top 5" items={stats.firstPlaceTop} formatter={(item) => `${item.value}회`} />
-            <StatCard title="개별 GW 2위 최다" subtitle="각 GW 종료 시점 2등 횟수 Top 5" items={stats.secondPlaceTop} formatter={(item) => `${item.value}회`} />
-            <StatCard title="포디움 최다" subtitle="주차별 3위 이내 진입 횟수 Top 5" items={stats.podiumTop} formatter={(item) => `${item.value}회`} />
-            <StatCard title="Top5 유지 최다" subtitle="주차별 5위 이내 유지 횟수 Top 5" items={stats.topFiveTop} formatter={(item) => `${item.value}회`} />
-            <StatCard title="누적점수 최고" subtitle="현재 누적점수 Top 5" items={stats.bestTotalPointsTop} formatter={(item) => `${item.value}점`} />
-            <StatCard title="개별 GW 최고득점" subtitle="단일 GW 득점 기록 Top 5" items={stats.weeklyHighScoresTop} formatter={(item) => `GW${item.gw} · ${item.value}점`} />
-            <StatCard title="주간 평균점수" subtitle="GW 평균 득점 Top 5" items={stats.averageEventPointsTop} formatter={(item) => `${item.value}점`} />
-            <StatCard title="평균 순위 최고" subtitle="시즌 평균 리그 순위 Top 5" items={stats.averageRankTop} formatter={(item) => `${item.value}위`} />
-            <StatCard title="최대 순위 점프" subtitle="직전 GW 대비 상승폭 Top 5" items={stats.rankJumpTop} formatter={(item) => `GW${item.gw} · +${item.value}`} />
+            <StatCard title={tr("개별 GW 1위 최다", "Most GW wins")} subtitle={tr("각 GW 종료 시점 1등 횟수 Top 5", "Top 5 times ranked 1st after a GW")} items={stats.firstPlaceTop} formatter={(item) => tr(`${item.value}회`, `${item.value}×`)} />
+            <StatCard title={tr("개별 GW 2위 최다", "Most GW runner-ups")} subtitle={tr("각 GW 종료 시점 2등 횟수 Top 5", "Top 5 times ranked 2nd after a GW")} items={stats.secondPlaceTop} formatter={(item) => tr(`${item.value}회`, `${item.value}×`)} />
+            <StatCard title={tr("포디움 최다", "Most podiums")} subtitle={tr("주차별 3위 이내 진입 횟수 Top 5", "Top 5 weeks spent in the top 3")} items={stats.podiumTop} formatter={(item) => tr(`${item.value}회`, `${item.value}×`)} />
+            <StatCard title={tr("Top5 유지 최다", "Most weeks in the top 5")} subtitle={tr("주차별 5위 이내 유지 횟수 Top 5", "Top 5 weeks spent in the top 5")} items={stats.topFiveTop} formatter={(item) => tr(`${item.value}회`, `${item.value}×`)} />
+            <StatCard title={tr("누적점수 최고", "Highest total")} subtitle={tr("현재 누적점수 Top 5", "Top 5 current total points")} items={stats.bestTotalPointsTop} formatter={(item) => `${item.value}${tr("점", " pts")}`} />
+            <StatCard title={tr("개별 GW 최고득점", "Best single GW")} subtitle={tr("단일 GW 득점 기록 Top 5", "Top 5 single-GW scores")} items={stats.weeklyHighScoresTop} formatter={(item) => `GW${item.gw} · ${item.value}${tr("점", " pts")}`} />
+            <StatCard title={tr("주간 평균점수", "Weekly average")} subtitle={tr("GW 평균 득점 Top 5", "Top 5 average GW score")} items={stats.averageEventPointsTop} formatter={(item) => `${item.value}${tr("점", " pts")}`} />
+            <StatCard title={tr("평균 순위 최고", "Best average rank")} subtitle={tr("시즌 평균 리그 순위 Top 5", "Top 5 season-average league rank")} items={stats.averageRankTop} formatter={(item) => tr(`${item.value}위`, `#${item.value}`)} />
+            <StatCard title={tr("최대 순위 점프", "Biggest rank jump")} subtitle={tr("직전 GW 대비 상승폭 Top 5", "Top 5 climbs versus the previous GW")} items={stats.rankJumpTop} formatter={(item) => `GW${item.gw} · +${item.value}`} />
           </div>
         ) : null}
       </CollapsibleSection>

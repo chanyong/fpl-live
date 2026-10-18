@@ -7,6 +7,7 @@ import type { LeagueLiveResponse, PlayerStatsResponse, RankChangeResponse } from
 import { CaptainStats } from "@/components/captain-stats";
 import { DeadlineBanner } from "@/components/deadline-banner";
 import { FixturesPanel } from "@/components/fixtures-panel";
+import { LocaleToggle, useLocale } from "@/components/locale-provider";
 import { LeagueKpis } from "@/components/league-kpis";
 import { LeagueTable } from "@/components/league-table";
 import { PlayerTrendsPanel } from "@/components/player-trends-panel";
@@ -14,36 +15,36 @@ import { RankChangePanel } from "@/components/rank-change-panel";
 import { SidePanelLayout } from "@/components/side-panel-layout";
 import { RefreshIndicator } from "@/components/refresh-indicator";
 
-async function fetchLeagueLive(leagueId: string, refresh = false) {
+async function fetchLeagueLive(leagueId: string, fallbackError: string, refresh = false) {
   const response = await fetch(
     `/api/league-live?leagueId=${leagueId}&gw=current${refresh ? "&refresh=1" : ""}`
   );
 
   if (!response.ok) {
     const payload = (await response.json()) as { error?: string };
-    throw new Error(payload.error ?? "리그 데이터를 불러오지 못했습니다.");
+    throw new Error(payload.error ?? fallbackError);
   }
 
   return (await response.json()) as LeagueLiveResponse;
 }
 
-async function fetchRankChange(leagueId: string) {
+async function fetchRankChange(leagueId: string, fallbackError: string) {
   const response = await fetch(`/api/league-rank-change?leagueId=${leagueId}`);
 
   if (!response.ok) {
     const payload = (await response.json()) as { error?: string };
-    throw new Error(payload.error ?? "순위 추이 데이터를 불러오지 못했습니다.");
+    throw new Error(payload.error ?? fallbackError);
   }
 
   return (await response.json()) as RankChangeResponse;
 }
 
-async function fetchPlayerStats(leagueId: string) {
+async function fetchPlayerStats(leagueId: string, fallbackError: string) {
   const response = await fetch(`/api/player-stats?leagueId=${leagueId}&gw=current`);
 
   if (!response.ok) {
     const payload = (await response.json()) as { error?: string };
-    throw new Error(payload.error ?? "선수 데이터를 불러오지 못했습니다.");
+    throw new Error(payload.error ?? fallbackError);
   }
 
   return (await response.json()) as PlayerStatsResponse;
@@ -52,12 +53,13 @@ async function fetchPlayerStats(leagueId: string) {
 type Tab = "standings" | "fixtures" | "rank-change" | "player-trends";
 
 export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; buildId: string }) {
+  const { tr } = useLocale();
   const [tab, setTab] = useState<Tab>("standings");
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: ["league-live", leagueId],
-    queryFn: () => fetchLeagueLive(leagueId),
+    queryFn: () => fetchLeagueLive(leagueId, tr("리그 데이터를 불러오지 못했습니다.", "Could not load league data.")),
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
@@ -66,7 +68,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
   const rankChangeQuery = useQuery({
     queryKey: ["league-rank-change", leagueId],
-    queryFn: () => fetchRankChange(leagueId),
+    queryFn: () => fetchRankChange(leagueId, tr("순위 추이 데이터를 불러오지 못했습니다.", "Could not load rank trend data.")),
     enabled: tab === "rank-change",
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -75,7 +77,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
   const playerStatsQuery = useQuery({
     queryKey: ["player-stats", leagueId],
-    queryFn: () => fetchPlayerStats(leagueId),
+    queryFn: () => fetchPlayerStats(leagueId, tr("선수 데이터를 불러오지 못했습니다.", "Could not load player data.")),
     enabled: tab === "player-trends",
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -84,17 +86,21 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
   const tabs = useMemo(
     () => [
-      { id: "standings", label: "주간 순위" },
-      { id: "fixtures", label: "경기 일정" },
-      { id: "rank-change", label: "순위 추이" },
-      { id: "player-trends", label: "선수 추이" }
+      { id: "standings", label: tr("주간 순위", "Standings") },
+      { id: "fixtures", label: tr("경기 일정", "Fixtures") },
+      { id: "rank-change", label: tr("순위 추이", "Rank trend") },
+      { id: "player-trends", label: tr("선수 추이", "Players") }
     ] as const,
-    []
+    [tr]
   );
 
   // Force-refresh bypasses the server's 30s memo so the button means something.
   async function handleRefresh() {
-    const fresh = await fetchLeagueLive(leagueId, true);
+    const fresh = await fetchLeagueLive(
+      leagueId,
+      tr("리그 데이터를 불러오지 못했습니다.", "Could not load league data."),
+      true
+    );
     queryClient.setQueryData(["league-live", leagueId], fresh);
     if (tab === "rank-change") {
       await rankChangeQuery.refetch();
@@ -121,26 +127,38 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
     <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-1.5 py-1.5 sm:px-2 md:px-3 md:py-2">
       <div className="mb-2 flex flex-col gap-2 md:mb-3 md:flex-row md:items-end md:justify-between md:gap-3">
         <div className="min-w-0">
-          <Link
-            href="/"
-            className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)] transition hover:text-[var(--accent)] md:text-xs"
-          >
-            다른 리그 검색
-          </Link>
+          <div className="flex items-center justify-between gap-2">
+            <Link
+              href="/"
+              className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)] transition hover:text-[var(--accent)] md:text-xs"
+            >
+              {tr("다른 리그 검색", "Search another league")}
+            </Link>
+            <LocaleToggle />
+          </div>
           <h1 className="mt-1 text-2xl font-semibold leading-none md:text-3xl">
             {query.data?.league.name ??
               rankChangeQuery.data?.league.name ??
               playerStatsQuery.data?.league.name ??
-              `리그 ${leagueId}`}
+              tr(`리그 ${leagueId}`, `League ${leagueId}`)}
           </h1>
           <p className="text-sm text-[var(--muted)]">
             {query.data
-              ? `게임위크 ${query.data.league.currentGw} 라이브 대시보드`
+              ? tr(
+                  `게임위크 ${query.data.league.currentGw} 라이브 대시보드`,
+                  `Gameweek ${query.data.league.currentGw} live dashboard`
+                )
               : rankChangeQuery.data
-                ? `게임위크 ${rankChangeQuery.data.league.currentGw} 순위 기록`
+                ? tr(
+                    `게임위크 ${rankChangeQuery.data.league.currentGw} 순위 기록`,
+                    `Gameweek ${rankChangeQuery.data.league.currentGw} rank history`
+                  )
                 : playerStatsQuery.data
-                  ? `게임위크 ${playerStatsQuery.data.league.currentGw} 선수 데이터`
-                  : "공식 FPL 데이터를 불러오는 중"}
+                  ? tr(
+                      `게임위크 ${playerStatsQuery.data.league.currentGw} 선수 데이터`,
+                      `Gameweek ${playerStatsQuery.data.league.currentGw} player data`
+                    )
+                  : tr("공식 FPL 데이터를 불러오는 중", "Loading official FPL data")}
           </p>
         </div>
 
@@ -175,7 +193,10 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
       {query.data && query.data.rows.length === 0 ? (
         <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6">
-          이 리그의 순위 데이터가 비어 있습니다. 공개 클래식 리그 ID인지 확인해 주세요.
+          {tr(
+            "이 리그의 순위 데이터가 비어 있습니다. 공개 클래식 리그 ID인지 확인해 주세요.",
+            "This league has no standings data. Check that it is a public classic league ID."
+          )}
         </div>
       ) : null}
 
@@ -183,7 +204,10 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
         <>
           {query.data && query.data.errors.length > 0 && !isRankChangeTab && !isPlayerTab ? (
             <div className="mb-4 rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-[var(--warning)]">
-              매니저 {query.data.errors.length}명의 데이터를 불러오지 못했습니다. 킥오프 후 자동 반영됩니다.
+              {tr(
+                `매니저 ${query.data.errors.length}명의 데이터를 불러오지 못했습니다. 킥오프 후 자동 반영됩니다.`,
+                `Could not load data for ${query.data.errors.length} manager(s). It will appear automatically after kickoff.`
+              )}
             </div>
           ) : null}
 
@@ -196,7 +220,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
           <div
             role="tablist"
-            aria-label="대시보드 보기"
+            aria-label={tr("대시보드 보기", "Dashboard views")}
             className="mb-2 flex w-full gap-1 overflow-x-auto rounded-[1rem] border border-[var(--border)] bg-[var(--surface)] p-1 md:w-auto"
           >
             {tabs.map((item) => {
@@ -252,7 +276,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
         </>
       ) : null}
 
-      <footer className="mt-auto pt-8 text-center text-[11px] text-[var(--muted)] opacity-70" title="배포 버전">
+      <footer className="mt-auto pt-8 text-center text-[11px] text-[var(--muted)] opacity-70" title={tr("배포 버전", "Deployed version")}>
         build {buildId}
       </footer>
     </main>

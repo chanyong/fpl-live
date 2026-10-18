@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/components/locale-provider";
+
 export type SeriesPoint = {
   label: string;
   value: number;
@@ -31,8 +33,9 @@ export function BarSeries({
   format?: (value: number) => string;
   diverging?: boolean;
 }) {
+  const { tr } = useLocale();
   if (points.length === 0) {
-    return <p className="py-6 text-center text-[12px] text-[var(--muted)]">기록 없음</p>;
+    return <p className="py-6 text-center text-[12px] text-[var(--muted)]">{tr("기록 없음", "No data")}</p>;
   }
 
   const values = points.map((point) => point.value);
@@ -96,8 +99,9 @@ export function LineSeries({
   points: SeriesPoint[];
   format?: (value: number) => string;
 }) {
+  const { tr } = useLocale();
   if (points.length === 0) {
-    return <p className="py-6 text-center text-[12px] text-[var(--muted)]">기록 없음</p>;
+    return <p className="py-6 text-center text-[12px] text-[var(--muted)]">{tr("기록 없음", "No data")}</p>;
   }
 
   const values = points.map((point) => point.value);

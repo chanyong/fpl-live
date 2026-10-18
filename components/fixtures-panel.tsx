@@ -8,42 +8,43 @@ import { RemoteImage, crestUrl } from "@/components/remote-image";
 import { hasFixtureEnded, isFixtureInPlay } from "@/lib/fixture-status";
 import { countdownLabel } from "@/lib/time-format";
 import type { LeagueFixture, LeagueRow } from "@/lib/types";
+import { useLocale } from "@/components/locale-provider";
 
 /** Rows of a stat group shown before the "show all" toggle. */
 const STAT_PREVIEW = 5;
 
-const KOREAN_DATE_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
-  timeZone: "Asia/Seoul",
-  month: "long",
-  day: "numeric"
-});
+type Tr = <T = string>(ko: T, en: T) => T;
 
-const KOREAN_WEEKDAY_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
-  timeZone: "Asia/Seoul",
-  weekday: "short"
-});
+/** Kickoffs are always shown in Korea time, spelled in the language on screen. */
+const DATE_FORMATTERS = {
+  ko: new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric" }),
+  en: new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", day: "numeric", month: "short" })
+};
 
-const KOREAN_TIME_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
-  timeZone: "Asia/Seoul",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false
-});
+const WEEKDAY_FORMATTERS = {
+  ko: new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", weekday: "short" }),
+  en: new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", weekday: "short" })
+};
 
-function fixtureStatus(fixture: LeagueFixture) {
+const TIME_FORMATTERS = {
+  ko: new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false }),
+  en: new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false })
+};
+
+function fixtureStatus(fixture: LeagueFixture, tr: Tr) {
   if (hasFixtureEnded(fixture)) {
-    return "종료";
+    return tr("종료", "Finished");
   }
 
   if (isFixtureInPlay(fixture)) {
-    return "진행 중";
+    return tr("진행 중", "Live");
   }
 
   if (!fixture.kickoffTime) {
-    return "미정";
+    return tr("미정", "TBC");
   }
 
-  return "예정";
+  return tr("예정", "Upcoming");
 }
 
 function fixtureStatusClass(fixture: LeagueFixture) {
@@ -74,29 +75,29 @@ function toKstDate(kickoffTime: string | null) {
   return new Date(kickoffTime);
 }
 
-function formatKoreanDate(date: Date) {
-  const dateLabel = KOREAN_DATE_FORMATTER.format(date).replace(/\s+/g, " ").trim();
-  const weekdayLabel = KOREAN_WEEKDAY_FORMATTER.format(date).replace(/\s+/g, "").trim();
+function formatDate(date: Date, locale: "ko" | "en") {
+  const dateLabel = DATE_FORMATTERS[locale].format(date).replace(/\s+/g, " ").trim();
+  const weekdayLabel = WEEKDAY_FORMATTERS[locale].format(date).replace(/\s+/g, "").trim();
 
-  return `${dateLabel}(${weekdayLabel})`;
+  return locale === "ko" ? `${dateLabel}(${weekdayLabel})` : `${weekdayLabel} ${dateLabel}`;
 }
 
-function kickoffDateLabel(kickoffTime: string | null) {
+function kickoffDateLabel(kickoffTime: string | null, tr: Tr, locale: "ko" | "en") {
   const date = toKstDate(kickoffTime);
   if (!date) {
-    return "일정 미정";
+    return tr("일정 미정", "Date TBC");
   }
 
-  return formatKoreanDate(date);
+  return formatDate(date, locale);
 }
 
-function kickoffDateTimeLabel(kickoffTime: string | null) {
+function kickoffDateTimeLabel(kickoffTime: string | null, tr: Tr, locale: "ko" | "en") {
   const date = toKstDate(kickoffTime);
   if (!date) {
-    return "일정 미정";
+    return tr("일정 미정", "Date TBC");
   }
 
-  return `${formatKoreanDate(date)} ${KOREAN_TIME_FORMATTER.format(date)} KST`;
+  return `${formatDate(date, locale)} ${TIME_FORMATTERS[locale].format(date)} KST`;
 }
 
 type StatusFilter = "all" | "live" | "upcoming" | "ended";
@@ -109,11 +110,11 @@ function fixtureCategory(fixture: LeagueFixture): Exclude<StatusFilter, "all"> {
   return isFixtureInPlay(fixture) ? "live" : "upcoming";
 }
 
-const STATUS_FILTERS: Array<{ id: StatusFilter; label: string }> = [
-  { id: "all", label: "전체" },
-  { id: "live", label: "진행 중" },
-  { id: "upcoming", label: "예정" },
-  { id: "ended", label: "종료" }
+const STATUS_FILTERS: Array<{ id: StatusFilter; ko: string; en: string }> = [
+  { id: "all", ko: "전체", en: "All" },
+  { id: "live", ko: "진행 중", en: "Live" },
+  { id: "upcoming", ko: "예정", en: "Upcoming" },
+  { id: "ended", ko: "종료", en: "Finished" }
 ];
 
 type OwnedPlayer = {
@@ -192,6 +193,7 @@ function StatGroup({
   away: StatSide;
   ownedElementIds: Set<number>;
 }) {
+  const { tr } = useLocale();
   const [showAll, setShowAll] = useState(false);
   const hidden = Math.max(home.length - STAT_PREVIEW, 0) + Math.max(away.length - STAT_PREVIEW, 0);
 
@@ -207,7 +209,7 @@ function StatGroup({
             <div key={item.elementId} className="flex items-center justify-between gap-2 text-[13px]">
               <span
                 className={`min-w-0 truncate ${owned ? "font-semibold text-[var(--accent)]" : ""}`}
-                title={owned ? "우리 리그 보유 선수" : undefined}
+                title={owned ? tr("우리 리그 보유 선수", "Owned in our league") : undefined}
               >
                 {item.playerName}
               </span>
@@ -233,7 +235,7 @@ function StatGroup({
           onClick={() => setShowAll((current) => !current)}
           className="w-full border-t border-[var(--border)] bg-stone-50 py-2 text-[12px] font-semibold text-[var(--accent)] transition hover:bg-stone-100"
         >
-          {showAll ? "접기" : `${hidden}명 더 보기`}
+          {showAll ? tr("접기", "Show less") : tr(`${hidden}명 더 보기`, `Show ${hidden} more`)}
         </button>
       ) : null}
     </div>
@@ -264,6 +266,7 @@ export function FixturesPanel({
   currentGw: number;
   rows: LeagueRow[];
 }) {
+  const { tr, locale } = useLocale();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -304,19 +307,21 @@ export function FixturesPanel({
     const groups = new Map<string, LeagueFixture[]>();
 
     for (const fixture of visibleFixtures) {
-      const key = kickoffDateLabel(fixture.kickoffTime);
+      const key = kickoffDateLabel(fixture.kickoffTime, tr, locale);
       const existing = groups.get(key) ?? [];
       existing.push(fixture);
       groups.set(key, existing);
     }
 
     return Array.from(groups.entries()).map(([label, items]) => ({ label, items }));
-  }, [visibleFixtures]);
+  }, [visibleFixtures, tr, locale]);
 
   if (fixtures.length === 0) {
     return (
       <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
-        <div className="text-sm text-[var(--muted)]">게임위크 {currentGw} 경기가 없습니다.</div>
+        <div className="text-sm text-[var(--muted)]">
+          {tr(`게임위크 ${currentGw} 경기가 없습니다.`, `No fixtures in gameweek ${currentGw}.`)}
+        </div>
       </section>
     );
   }
@@ -324,14 +329,26 @@ export function FixturesPanel({
   return (
     <SidePanelLayout
       side={
-    <KpiGrid label={`게임위크 ${currentGw} 경기 요약`}>
-      <KpiCard label="진행 중" value={`${statusCounts.live}경기`} sub="지금 뛰는 경기" />
-      <KpiCard label="예정" value={`${statusCounts.upcoming}경기`} sub="아직 킥오프 전" />
-      <KpiCard label="종료" value={`${statusCounts.ended}경기`} sub={`GW ${currentGw}`} />
+    <KpiGrid label={tr(`게임위크 ${currentGw} 경기 요약`, `Gameweek ${currentGw} fixtures summary`)}>
       <KpiCard
-        label="리그 보유 경기"
+        label={tr("진행 중", "Live")}
+        value={tr(`${statusCounts.live}경기`, String(statusCounts.live))}
+        sub={tr("지금 뛰는 경기", "Matches in play")}
+      />
+      <KpiCard
+        label={tr("예정", "Upcoming")}
+        value={tr(`${statusCounts.upcoming}경기`, String(statusCounts.upcoming))}
+        sub={tr("아직 킥오프 전", "Before kickoff")}
+      />
+      <KpiCard
+        label={tr("종료", "Finished")}
+        value={tr(`${statusCounts.ended}경기`, String(statusCounts.ended))}
+        sub={`GW ${currentGw}`}
+      />
+      <KpiCard
+        label={tr("리그 보유 경기", "League-owned matches")}
         value={`${heldFixtures}/${fixtures.length}`}
-        sub="우리 리그 선수가 뛰는 경기"
+        sub={tr("우리 리그 선수가 뛰는 경기", "Our players are involved")}
       />
     </KpiGrid>
       }
@@ -339,9 +356,9 @@ export function FixturesPanel({
     <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-2">
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5 px-1.5">
         <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-          게임위크 {currentGw} 경기
+          {tr(`게임위크 ${currentGw} 경기`, `Gameweek ${currentGw} fixtures`)}
         </div>
-        <div role="group" aria-label="경기 상태 필터" className="flex flex-wrap gap-1.5">
+        <div role="group" aria-label={tr("경기 상태 필터", "Fixture status filter")} className="flex flex-wrap gap-1.5">
           {STATUS_FILTERS.map((item) => (
             <button
               key={item.id}
@@ -354,14 +371,16 @@ export function FixturesPanel({
                   : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--accent)]"
               }`}
             >
-              {item.label} <span className="tabular-nums">{statusCounts[item.id]}</span>
+              {tr(item.ko, item.en)} <span className="tabular-nums">{statusCounts[item.id]}</span>
             </button>
           ))}
         </div>
       </div>
 
       {groupedFixtures.length === 0 ? (
-        <div className="px-2 py-6 text-center text-sm text-[var(--muted)]">해당하는 경기가 없습니다.</div>
+        <div className="px-2 py-6 text-center text-sm text-[var(--muted)]">
+          {tr("해당하는 경기가 없습니다.", "No matching fixtures.")}
+        </div>
       ) : null}
 
       <div className="space-y-4">
@@ -376,7 +395,7 @@ export function FixturesPanel({
                 const countdown =
                   isFixtureInPlay(fixture) || hasFixtureEnded(fixture)
                     ? null
-                    : countdownLabel(fixture.kickoffTime, now);
+                    : countdownLabel(fixture.kickoffTime, now, locale);
 
                 return (
                   <article
@@ -395,13 +414,13 @@ export function FixturesPanel({
                     >
                       <div className="flex items-center justify-between gap-2 text-[11px] text-[var(--muted)]">
                         <span className="min-w-0 truncate">
-                          {kickoffDateTimeLabel(fixture.kickoffTime)}
+                          {kickoffDateTimeLabel(fixture.kickoffTime, tr, locale)}
                           {countdown ? (
                             <span className="ml-1.5 font-semibold text-[var(--accent)]">{countdown}</span>
                           ) : null}
                         </span>
                         <span className={`shrink-0 rounded-full px-2 py-0.5 font-semibold ${fixtureStatusClass(fixture)}`}>
-                          {fixtureStatus(fixture)}
+                          {fixtureStatus(fixture, tr)}
                         </span>
                       </div>
 
@@ -417,21 +436,26 @@ export function FixturesPanel({
                         <span className="shrink-0">{isSelected ? <CaretDown /> : <CaretRight />}</span>
                         {owned && owned.managerCount > 0 ? (
                           <span className="min-w-0 flex-1 truncate">
-                            우리 리그 <b className="font-semibold text-[var(--text)]">{owned.managerCount}명</b> 보유
+                            {tr("우리 리그", "Our league:")} <b className="font-semibold text-[var(--text)]">{tr(`${owned.managerCount}명`, String(owned.managerCount))}</b> {tr("보유", "own")}
                             {topOwned && topOwned.captains > 0 ? (
-                              <span> · {topOwned.webName} 주장 {topOwned.captains}명</span>
+                              <span>
+                                {" "}· {topOwned.webName} {tr("주장", "captained by")} {topOwned.captains}{tr("명", "")}
+                              </span>
                             ) : null}
                           </span>
                         ) : (
-                          <span>보유 선수 없음</span>
+                          <span>{tr("보유 선수 없음", "No owned players")}</span>
                         )}
                         {owned && owned.managerCount > 0 && rows.length > 0 ? (
                           <span
                             className="ml-auto flex shrink-0 items-center gap-1.5"
-                            title={`리그 ${rows.length}명 중 ${owned.managerCount}명이 이 경기 선수를 보유`}
+                            title={tr(
+                              `리그 ${rows.length}명 중 ${owned.managerCount}명이 이 경기 선수를 보유`,
+                              `${owned.managerCount} of ${rows.length} managers own a player in this match`
+                            )}
                           >
                             <span className="tabular-nums">
-                              보유율 <b className="font-semibold text-[var(--text)]">{Math.round((owned.managerCount / rows.length) * 100)}%</b>
+                              {tr("보유율", "Owned")} <b className="font-semibold text-[var(--text)]">{Math.round((owned.managerCount / rows.length) * 100)}%</b>
                             </span>
                             <span aria-hidden="true" className="h-1.5 w-14 overflow-hidden rounded-full bg-[var(--chart-mute-soft)]">
                               <span
@@ -449,7 +473,7 @@ export function FixturesPanel({
                         {owned && owned.players.length > 0 ? (
                           <div className="rounded-[0.9rem] border border-[var(--border)] bg-white px-3 py-2.5">
                             <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
-                              우리 리그 보유 현황
+                              {tr("우리 리그 보유 현황", "Owned in our league")}
                             </div>
                             <div className="mt-2 space-y-1">
                               {owned.players.slice(0, 6).map((player) => (
@@ -459,9 +483,11 @@ export function FixturesPanel({
                                     <span className="ml-1 text-[11px] text-[var(--muted)]">{player.teamShortName}</span>
                                   </span>
                                   <span className="shrink-0 text-[12px] tabular-nums text-[var(--muted)]">
-                                    {player.owners}명
+                                    {tr(`${player.owners}명`, String(player.owners))}
                                     {player.captains > 0 ? (
-                                      <span className="ml-1 font-semibold text-rose-700">주장 {player.captains}</span>
+                                      <span className="ml-1 font-semibold text-rose-700">
+                                        {tr("주장", "C")} {player.captains}
+                                      </span>
                                     ) : null}
                                   </span>
                                 </div>
@@ -473,7 +499,7 @@ export function FixturesPanel({
                         <div className="mt-3 space-y-2">
                           {fixture.stats.length === 0 ? (
                             <div className="rounded-[0.9rem] border border-[var(--border)] bg-stone-50 px-3 py-3 text-sm text-[var(--muted)]">
-                              아직 선수 기록이 없습니다.
+                              {tr("아직 선수 기록이 없습니다.", "No player stats yet.")}
                             </div>
                           ) : (
                             fixture.stats.map((stat) => (

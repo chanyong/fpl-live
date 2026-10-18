@@ -1,5 +1,6 @@
 ﻿import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
+import { LocaleProvider } from "@/components/locale-provider";
 import { QueryProvider } from "@/components/query-provider";
 import "./globals.css";
 
@@ -20,7 +21,9 @@ export default function RootLayout({
   return (
     <html lang="ko" className={manrope.variable}>
       <body>
-        <QueryProvider>{children}</QueryProvider>
+        <LocaleProvider>
+          <QueryProvider>{children}</QueryProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

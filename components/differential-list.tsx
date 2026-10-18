@@ -6,6 +6,7 @@ import { FdrAverage, FdrStrip } from "@/components/fdr-strip";
 import { availability, averageDifficulty } from "@/lib/player-metrics";
 import { formatMoney } from "@/lib/season-summary";
 import type { PlayerStat, TeamFixtureOutlook } from "@/lib/types";
+import { useLocale } from "@/components/locale-provider";
 
 /** Fixture difficulty is not in PlayerStat, so it is joined on for the table. */
 type Row = PlayerStat & { fixtures: TeamFixtureOutlook[]; avgDifficulty: number | null };
@@ -19,19 +20,23 @@ type SortKey =
   | "cost"
   | "avgDifficulty";
 
-const COLUMNS: Array<{ key: SortKey; label: string; format: (player: Row) => string }> = [
-  { key: "selectedByPercent", label: "소유율", format: (player) => `${player.selectedByPercent}%` },
-  { key: "form", label: "폼", format: (player) => player.form.toFixed(1) },
-  { key: "eventPoints", label: "GW 점수", format: (player) => String(player.eventPoints) },
-  { key: "totalPoints", label: "누적", format: (player) => String(player.totalPoints) },
-  { key: "pointsPerGame", label: "경기당", format: (player) => player.pointsPerGame.toFixed(1) },
-  { key: "cost", label: "가격", format: (player) => formatMoney(player.cost) },
-  {
-    key: "avgDifficulty",
-    label: "평균 난이도",
-    format: (player) => (player.avgDifficulty === null ? "-" : player.avgDifficulty.toFixed(1))
-  }
-];
+type Tr = <T = string>(ko: T, en: T) => T;
+
+function buildColumns(tr: Tr): Array<{ key: SortKey; label: string; format: (player: Row) => string }> {
+  return [
+    { key: "selectedByPercent", label: tr("소유율", "Owned %"), format: (player) => `${player.selectedByPercent}%` },
+    { key: "form", label: tr("폼", "Form"), format: (player) => player.form.toFixed(1) },
+    { key: "eventPoints", label: tr("GW 점수", "GW pts"), format: (player) => String(player.eventPoints) },
+    { key: "totalPoints", label: tr("누적", "Season"), format: (player) => String(player.totalPoints) },
+    { key: "pointsPerGame", label: tr("경기당", "Pts/game"), format: (player) => player.pointsPerGame.toFixed(1) },
+    { key: "cost", label: tr("가격", "Price"), format: (player) => formatMoney(player.cost) },
+    {
+      key: "avgDifficulty",
+      label: tr("평균 난이도", "Avg difficulty"),
+      format: (player) => (player.avgDifficulty === null ? "-" : player.avgDifficulty.toFixed(1))
+    }
+  ];
+}
 
 /** These read better small-first: a cheap player, a light owner base, an easy run. */
 const ASCENDING: SortKey[] = ["selectedByPercent", "cost", "avgDifficulty"];
@@ -47,6 +52,8 @@ export function DifferentialList({
   ownedIds: Set<number>;
   onSelect: (elementId: number) => void;
 }) {
+  const { tr, locale } = useLocale();
+  const columns = useMemo(() => buildColumns(tr), [tr]);
   const [sortKey, setSortKey] = useState<SortKey>("form");
 
   const rows = useMemo(() => {
@@ -68,7 +75,7 @@ export function DifferentialList({
   if (rows.length === 0) {
     return (
       <p className="py-6 text-center text-[13px] text-[var(--muted)]">
-        지금은 조건을 만족하는 선수가 없습니다. 경기가 진행되면 채워집니다.
+        {tr("지금은 조건을 만족하는 선수가 없습니다. 경기가 진행되면 채워집니다.", "No player meets the criteria yet. This fills in as matches are played.")}
       </p>
     );
   }
@@ -78,16 +85,19 @@ export function DifferentialList({
   return (
     <div className="flex flex-col gap-2">
       <p className="text-[12px] text-[var(--muted)]">
-        {rows.length}명 · 이 중 우리 리그가 이미 가진 선수는 {ownedCount}명입니다.
+        {tr(
+          `${rows.length}명 · 이 중 우리 리그가 이미 가진 선수는 ${ownedCount}명입니다.`,
+          `${rows.length} players · ${ownedCount} of them are already owned in our league.`
+        )}
       </p>
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[800px] border-collapse text-[13px]">
           <thead>
             <tr className="border-b border-[var(--border)] text-[10px] uppercase tracking-[0.08em] text-[var(--muted)]">
-              <th className="px-2 py-2 text-left">선수</th>
-              <th className="px-2 py-2 text-left">포지션</th>
-              {COLUMNS.map((column) => {
+              <th className="px-2 py-2 text-left">{tr("선수", "Player")}</th>
+              <th className="px-2 py-2 text-left">{tr("포지션", "Position")}</th>
+              {columns.map((column) => {
                 const active = sortKey === column.key;
 
                 return (
@@ -104,12 +114,12 @@ export function DifferentialList({
                   </th>
                 );
               })}
-              <th className="px-2 py-2 text-left">다음 5경기</th>
+              <th className="px-2 py-2 text-left">{tr("다음 5경기", "Next 5")}</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((player) => {
-              const health = availability(player.status);
+              const health = availability(player.status, locale);
               const owned = ownedIds.has(player.id);
 
               return (
@@ -132,16 +142,16 @@ export function DifferentialList({
                       <span className="text-[11px] text-[var(--muted)]">{player.teamShortName}</span>
                       {owned ? (
                         <span
-                          title="우리 리그가 이미 보유"
+                          title={tr("우리 리그가 이미 보유", "Already owned in our league")}
                           className="rounded-full bg-[var(--accent-soft)] px-1.5 text-[10px] font-semibold text-[var(--accent)]"
                         >
-                          리그
+                          {tr("리그", "League")}
                         </span>
                       ) : null}
                     </span>
                   </td>
                   <td className="px-2 py-1.5 text-[12px] text-[var(--muted)]">{player.position}</td>
-                  {COLUMNS.map((column) => (
+                  {columns.map((column) => (
                     <td key={column.key} className="px-2 py-1.5 text-right tabular-nums">
                       {column.key === "avgDifficulty" ? (
                         <FdrAverage value={player.avgDifficulty} count={player.fixtures.length} />

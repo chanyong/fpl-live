@@ -1,4 +1,5 @@
 import type { FplPosition, PlayerStat, TeamFixtureOutlook } from "@/lib/types";
+import type { Locale } from "@/lib/locale";
 
 /** Below this many minutes a form figure is noise, not a signal. */
 export const DIFFERENTIAL_MIN_MINUTES = 45;
@@ -66,17 +67,19 @@ export function differentialSwing(points: number, ownershipPercent: number) {
   return points * (1 - ownershipPercent / 100);
 }
 
-const AVAILABILITY: Record<string, { label: string; tone: "ok" | "warn" | "out" }> = {
-  a: { label: "출전 가능", tone: "ok" },
-  d: { label: "출전 의심", tone: "warn" },
-  i: { label: "부상", tone: "out" },
-  s: { label: "출전 정지", tone: "out" },
-  u: { label: "출전 불가", tone: "out" },
-  n: { label: "스쿼드 제외", tone: "out" }
+const AVAILABILITY: Record<string, { label: string; labelEn: string; tone: "ok" | "warn" | "out" }> = {
+  a: { label: "출전 가능", labelEn: "Available", tone: "ok" },
+  d: { label: "출전 의심", labelEn: "Doubtful", tone: "warn" },
+  i: { label: "부상", labelEn: "Injured", tone: "out" },
+  s: { label: "출전 정지", labelEn: "Suspended", tone: "out" },
+  u: { label: "출전 불가", labelEn: "Unavailable", tone: "out" },
+  n: { label: "스쿼드 제외", labelEn: "Not in squad", tone: "out" }
 };
 
-export function availability(status: string) {
-  return AVAILABILITY[status] ?? AVAILABILITY.a;
+export function availability(status: string, locale: Locale = "ko") {
+  const entry = AVAILABILITY[status] ?? AVAILABILITY.a;
+
+  return { label: locale === "en" ? entry.labelEn : entry.label, tone: entry.tone };
 }
 
 /** Highest-first ranking that drops zero/negative values rather than padding the list. */
@@ -124,24 +127,46 @@ const POINT_LABELS: Record<string, string> = {
   bps: "BPS"
 };
 
-export function pointsLabel(identifier: string) {
-  return POINT_LABELS[identifier] ?? identifier.replace(/_/g, " ");
+const POINT_LABELS_EN: Record<string, string> = {
+  minutes: "Minutes played",
+  starts: "Started",
+  goals_scored: "Goals scored",
+  assists: "Assists",
+  clean_sheets: "Clean sheet",
+  goals_conceded: "Goals conceded",
+  own_goals: "Own goals",
+  penalties_saved: "Penalties saved",
+  penalties_missed: "Penalties missed",
+  yellow_cards: "Yellow cards",
+  red_cards: "Red cards",
+  saves: "Saves",
+  defensive_contribution: "Defensive contribution",
+  bonus: "Bonus",
+  bps: "BPS"
+};
+
+export function pointsLabel(identifier: string, locale: Locale = "ko") {
+  const labels = locale === "en" ? POINT_LABELS_EN : POINT_LABELS;
+
+  return labels[identifier] ?? identifier.replace(/_/g, " ");
 }
 
 /** How the recorded figure reads next to its label: "90분", "1골", "3점". */
-export function pointsValueLabel(identifier: string, value: number) {
+export function pointsValueLabel(identifier: string, value: number, locale: Locale = "ko") {
+  const en = locale === "en";
+
   switch (identifier) {
     case "minutes":
-      return `${value}분`;
+      return en ? `${value} min` : `${value}분`;
     case "goals_scored":
-      return `${value}골`;
+      return en ? `${value} ${value === 1 ? "goal" : "goals"}` : `${value}골`;
     case "assists":
-      return `${value}도움`;
+      return en ? `${value} ${value === 1 ? "assist" : "assists"}` : `${value}도움`;
     case "saves":
-      return `${value}선방`;
+      return en ? `${value} ${value === 1 ? "save" : "saves"}` : `${value}선방`;
     case "starts":
     case "clean_sheets":
-      return value > 0 ? "예" : "아니오";
+      return value > 0 ? (en ? "Yes" : "예") : en ? "No" : "아니오";
     default:
       return String(value);
   }

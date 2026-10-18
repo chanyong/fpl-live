@@ -2,15 +2,16 @@
 
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { pointsValueLabel } from "@/lib/player-metrics";
+import { pointsLabel, pointsValueLabel } from "@/lib/player-metrics";
 import type { PlayerPointsFixture, PlayerPointsResponse } from "@/lib/types";
+import { useLocale } from "@/components/locale-provider";
 
-async function fetchPoints(elementId: number, gw: number) {
+async function fetchPoints(elementId: number, gw: number, fallbackError: string) {
   const response = await fetch(`/api/player-points?elementId=${elementId}&gw=${gw}`);
 
   if (!response.ok) {
     const payload = (await response.json()) as { error?: string };
-    throw new Error(payload.error ?? "득점 내역을 불러오지 못했습니다.");
+    throw new Error(payload.error ?? fallbackError);
   }
 
   return (await response.json()) as PlayerPointsResponse;
@@ -28,15 +29,22 @@ function Points({ value }: { value: number }) {
 }
 
 function FixtureLedger({ fixture }: { fixture: PlayerPointsFixture }) {
+  const { tr, locale } = useLocale();
   return (
     <div className="rounded-[0.7rem] border border-[var(--border)] bg-white">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] px-2.5 py-1.5">
         <span className="text-[12px] font-semibold">
           {fixture.home ? "vs" : "@"} {fixture.opponent}
-          <span className="ml-1.5 font-normal text-[var(--muted)]">{fixture.minutes}분</span>
+          <span className="ml-1.5 font-normal text-[var(--muted)]">
+            {tr(`${fixture.minutes}분`, `${fixture.minutes} min`)}
+          </span>
         </span>
         <span className="text-[11px] text-[var(--muted)]">
-          {fixture.settled ? "종료" : fixture.started ? "진행 중" : "경기 전"}
+          {fixture.settled
+            ? tr("종료", "Finished")
+            : fixture.started
+              ? tr("진행 중", "Live")
+              : tr("경기 전", "Not started")}
         </span>
       </div>
 
@@ -44,9 +52,9 @@ function FixtureLedger({ fixture }: { fixture: PlayerPointsFixture }) {
         <tbody>
           {fixture.lines.map((line) => (
             <tr key={line.identifier} className="border-b border-dashed border-[var(--border)]">
-              <td className="px-2.5 py-1.5">{line.label}</td>
+              <td className="px-2.5 py-1.5">{pointsLabel(line.identifier, locale)}</td>
               <td className="px-2.5 py-1.5 text-right tabular-nums text-[var(--muted)]">
-                {pointsValueLabel(line.identifier, line.value)}
+                {pointsValueLabel(line.identifier, line.value, locale)}
               </td>
               <td className="w-14 px-2.5 py-1.5 text-right">
                 <Points value={line.points} />
@@ -57,12 +65,14 @@ function FixtureLedger({ fixture }: { fixture: PlayerPointsFixture }) {
           {fixture.provisionalBonus > 0 ? (
             <tr className="border-b border-dashed border-[var(--border)]">
               <td className="px-2.5 py-1.5">
-                보너스
+                {tr("보너스", "Bonus")}
                 <span className="ml-1.5 rounded-full bg-[var(--accent-soft)] px-1.5 text-[10px] font-semibold text-[var(--accent)]">
-                  잠정
+                  {tr("잠정", "Provisional")}
                 </span>
               </td>
-              <td className="px-2.5 py-1.5 text-right tabular-nums text-[var(--muted)]">BPS 예상</td>
+              <td className="px-2.5 py-1.5 text-right tabular-nums text-[var(--muted)]">
+                {tr("BPS 예상", "Projected from BPS")}
+              </td>
               <td className="px-2.5 py-1.5 text-right">
                 <Points value={fixture.provisionalBonus} />
               </td>
@@ -72,14 +82,14 @@ function FixtureLedger({ fixture }: { fixture: PlayerPointsFixture }) {
           {fixture.lines.length === 0 && fixture.provisionalBonus === 0 ? (
             <tr>
               <td colSpan={3} className="px-2.5 py-3 text-center text-[12px] text-[var(--muted)]">
-                아직 기록된 득점 항목이 없습니다.
+                {tr("아직 기록된 득점 항목이 없습니다.", "No scoring events yet.")}
               </td>
             </tr>
           ) : null}
 
           <tr className="bg-[var(--surface-strong)]/40">
             <td className="px-2.5 py-1.5 text-[12px] font-semibold" colSpan={2}>
-              소계
+              {tr("소계", "Subtotal")}
             </td>
             <td className="px-2.5 py-1.5 text-right">
               <Points value={fixture.points} />
@@ -106,9 +116,10 @@ export function PointsBreakdown({
   gw: number;
   multiplier?: number;
 }) {
+  const { tr, locale } = useLocale();
   const query = useQuery({
     queryKey: ["player-points", elementId, gw],
-    queryFn: () => fetchPoints(elementId, gw),
+    queryFn: () => fetchPoints(elementId, gw, tr("득점 내역을 불러오지 못했습니다.", "Could not load the points breakdown.")),
     staleTime: 30_000
   });
 
@@ -132,7 +143,7 @@ export function PointsBreakdown({
   if (data.fixtures.length === 0) {
     return (
       <p className="py-4 text-center text-[13px] text-[var(--muted)]">
-        GW{data.gw}에 이 선수의 경기가 없습니다.
+        {tr(`GW${data.gw}에 이 선수의 경기가 없습니다.`, `No fixtures for this player in GW${data.gw}.`)}
       </p>
     );
   }
@@ -147,21 +158,31 @@ export function PointsBreakdown({
 
       <div className="rounded-[0.7rem] border border-[var(--border)] bg-[var(--surface-strong)]/50 px-2.5 py-2">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-[13px] font-semibold">GW{data.gw} 합계</span>
-          <span className="text-[17px] font-semibold tabular-nums">{data.points}점</span>
+          <span className="text-[13px] font-semibold">{tr(`GW${data.gw} 합계`, `GW${data.gw} total`)}</span>
+          <span className="text-[17px] font-semibold tabular-nums">
+            {data.points}
+            {tr("점", " pts")}
+          </span>
         </div>
         {multiplier > 1 ? (
           <div className="mt-1 flex items-baseline justify-between gap-2 border-t border-[var(--border)] pt-1">
             <span className="text-[12px] text-[var(--muted)]">
-              {multiplier === 3 ? "트리플 캡틴 ×3" : "주장 ×2"} 적용
+              {multiplier === 3
+                ? tr("트리플 캡틴 ×3 적용", "Triple Captain ×3 applied")
+                : tr("주장 ×2 적용", "Captain ×2 applied")}
             </span>
-            <span className="text-[15px] font-semibold tabular-nums">{data.points * multiplier}점</span>
+            <span className="text-[15px] font-semibold tabular-nums">
+              {data.points * multiplier}
+              {tr("점", " pts")}
+            </span>
           </div>
         ) : null}
         {data.provisionalBonus > 0 ? (
           <p className="mt-1 text-[11px] leading-relaxed text-[var(--muted)]">
-            보너스 {data.provisionalBonus}점은 현재 BPS 순위로 예상한 잠정 점수입니다. 경기가 끝나고 FPL이
-            보너스를 확정하면 그 값으로 바뀝니다.
+            {tr(
+              `보너스 ${data.provisionalBonus}점은 현재 BPS 순위로 예상한 잠정 점수입니다. 경기가 끝나고 FPL이 보너스를 확정하면 그 값으로 바뀝니다.`,
+              `The ${data.provisionalBonus} bonus points are projected from the current BPS ranking and will be replaced once FPL confirms bonus after the match.`
+            )}
           </p>
         ) : null}
       </div>
@@ -185,6 +206,7 @@ export function PointsBreakdownModal({
   multiplier?: number;
   onClose: () => void;
 }) {
+  const { tr } = useLocale();
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -201,7 +223,7 @@ export function PointsBreakdownModal({
       className="fixed inset-0 z-40 flex items-end justify-center bg-black/35 p-0 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
-      aria-label={`${webName} 득점 상세`}
+      aria-label={tr(`${webName} 득점 상세`, `${webName} points breakdown`)}
       onClick={onClose}
     >
       <div
@@ -211,14 +233,14 @@ export function PointsBreakdownModal({
         <div className="mb-2.5 flex items-start justify-between gap-2">
           <div>
             <h3 className="text-[1.05rem] font-semibold">{webName}</h3>
-            <p className="text-[12px] text-[var(--muted)]">{teamShortName} · 득점 상세</p>
+            <p className="text-[12px] text-[var(--muted)]">{teamShortName} · {tr("득점 상세", "Points breakdown")}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             className="rounded-full border border-[var(--border)] px-2.5 py-1 text-[12px] text-[var(--muted)] transition hover:text-[var(--text)]"
           >
-            닫기
+            {tr("닫기", "Close")}
           </button>
         </div>
 

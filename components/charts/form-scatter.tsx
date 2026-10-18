@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { DIFFERENTIAL_MIN_MINUTES } from "@/lib/player-metrics";
 import type { PlayerStat } from "@/lib/types";
+import { useLocale } from "@/components/locale-provider";
 
 const WIDTH = 720;
 const HEIGHT = 400;
@@ -26,6 +27,7 @@ type Props = {
 type Box = { x1: number; x2: number; y1: number; y2: number };
 
 export function FormScatter({ players, ownershipCut, formCut, ownedIds, onSelect }: Props) {
+  const { tr } = useLocale();
   const model = useMemo(() => {
     const visible = players.filter((player) => player.minutes >= MIN_MINUTES && player.form > 0);
     const formMax = Math.max(6, ...visible.map((player) => player.form)) * 1.06;
@@ -90,7 +92,10 @@ export function FormScatter({ players, ownershipCut, formCut, ownedIds, onSelect
   if (model.visible.length === 0) {
     return (
       <p className="py-8 text-center text-[13px] text-[var(--muted)]">
-        아직 {MIN_MINUTES}분 이상 출전한 선수가 없습니다. 첫 경기가 끝나면 채워집니다.
+        {tr(
+          `아직 ${MIN_MINUTES}분 이상 출전한 선수가 없습니다. 첫 경기가 끝나면 채워집니다.`,
+          `No player has played ${MIN_MINUTES}+ minutes yet. This fills in after the first match.`
+        )}
       </p>
     );
   }
@@ -102,7 +107,10 @@ export function FormScatter({ players, ownershipCut, formCut, ownedIds, onSelect
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       className="w-full"
       role="img"
-      aria-label={`가로축 전체 소유율, 세로축 최근 폼. 소유율 ${ownershipCut}% 이하이면서 폼 ${formCut} 이상인 차별화 후보 ${model.inZoneCount}명이 강조되어 있습니다.`}
+      aria-label={tr(
+        `가로축 전체 소유율, 세로축 최근 폼. 소유율 ${ownershipCut}% 이하이면서 폼 ${formCut} 이상인 차별화 후보 ${model.inZoneCount}명이 강조되어 있습니다.`,
+        `Overall ownership on the x-axis, recent form on the y-axis. ${model.inZoneCount} differentials (owned by ${ownershipCut}% or less, form ${formCut}+) are highlighted.`
+      )}
     >
       <rect
         x={M.left}
@@ -149,10 +157,10 @@ export function FormScatter({ players, ownershipCut, formCut, ownedIds, onSelect
       />
 
       <text x={M.left + 6} y={M.top + 14} fontSize={10.5} fill="var(--muted)" letterSpacing="0.06em">
-        차별화 후보
+        {tr("차별화 후보", "Differentials")}
       </text>
       <text x={WIDTH - M.right - 6} y={M.top + 14} textAnchor="end" fontSize={10.5} fill="var(--muted)" letterSpacing="0.06em">
-        템플릿 핵심
+        {tr("템플릿 핵심", "Template core")}
       </text>
       <text
         x={WIDTH - M.right - 6}
@@ -162,11 +170,11 @@ export function FormScatter({ players, ownershipCut, formCut, ownedIds, onSelect
         fill="var(--muted)"
         letterSpacing="0.06em"
       >
-        탈출 후보
+        {tr("탈출 후보", "Sell candidates")}
       </text>
 
       <text x={M.left + PLOT_W / 2} y={HEIGHT - 6} textAnchor="middle" fontSize={10} fill="var(--muted)">
-        전체 소유율 (제곱근 척도)
+        {tr("전체 소유율 (제곱근 척도)", "Overall ownership (square-root scale)")}
       </text>
       <text
         transform={`translate(11, ${M.top + PLOT_H / 2}) rotate(-90)`}
@@ -174,7 +182,7 @@ export function FormScatter({ players, ownershipCut, formCut, ownedIds, onSelect
         fontSize={10}
         fill="var(--muted)"
       >
-        최근 폼
+        {tr("최근 폼", "Recent form")}
       </text>
 
       {model.ordered.map((player) => {
@@ -195,7 +203,10 @@ export function FormScatter({ players, ownershipCut, formCut, ownedIds, onSelect
             onClick={onSelect ? () => onSelect(player.id) : undefined}
           >
             <title>
-              {`${player.webName} · ${player.teamShortName} ${player.position} · 폼 ${player.form} · 소유율 ${player.selectedByPercent}%${owned ? " · 리그 보유" : ""}`}
+              {tr(
+                `${player.webName} · ${player.teamShortName} ${player.position} · 폼 ${player.form} · 소유율 ${player.selectedByPercent}%${owned ? " · 리그 보유" : ""}`,
+                `${player.webName} · ${player.teamShortName} ${player.position} · form ${player.form} · owned ${player.selectedByPercent}%${owned ? " · owned in league" : ""}`
+              )}
             </title>
           </circle>
         );

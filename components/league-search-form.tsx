@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseLeagueId } from "@/lib/request-params";
+import { useLocale } from "@/components/locale-provider";
 
 const STORAGE_KEY = "recentLeagueId";
 
 export function LeagueSearchForm() {
+  const { tr } = useLocale();
   const router = useRouter();
   const [leagueId, setLeagueId] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,10 @@ export function LeagueSearchForm() {
 
           if ("error" in parsed) {
             setError(
-              "리그 ID는 숫자입니다. bfwf45 같은 초대 코드가 아니라, FPL 주소 fantasy.premierleague.com/leagues/915874/ 의 숫자를 입력해 주세요."
+              tr(
+                "리그 ID는 숫자입니다. bfwf45 같은 초대 코드가 아니라, FPL 주소 fantasy.premierleague.com/leagues/915874/ 의 숫자를 입력해 주세요.",
+                "A league ID is a number. Enter the number from the FPL address (fantasy.premierleague.com/leagues/915874/), not an invite code like bfwf45."
+              )
             );
             return;
           }
@@ -55,10 +60,10 @@ export function LeagueSearchForm() {
             }
           }}
           inputMode="numeric"
-          aria-label="공개 클래식 리그 ID"
+          aria-label={tr("공개 클래식 리그 ID", "Public classic league ID")}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? "league-id-error" : undefined}
-          placeholder="공개 클래식 리그 ID (예: 915874)"
+          placeholder={tr("공개 클래식 리그 ID (예: 915874)", "Public classic league ID (e.g. 915874)")}
           className={`min-h-14 flex-1 rounded-full border bg-white px-6 text-lg outline-none transition focus:border-[var(--accent)] ${
             error ? "border-red-400" : "border-[var(--border)]"
           }`}
@@ -67,7 +72,7 @@ export function LeagueSearchForm() {
           type="submit"
           className="min-h-14 rounded-full bg-[var(--accent)] px-8 font-semibold text-white transition hover:opacity-90"
         >
-          대시보드 열기
+          {tr("대시보드 열기", "Open dashboard")}
         </button>
       </form>
 
@@ -83,7 +88,7 @@ export function LeagueSearchForm() {
           className="w-fit text-sm text-[var(--muted)] underline underline-offset-4 transition hover:text-[var(--accent)]"
           onClick={() => openLeague(recentLeagueId)}
         >
-          최근 본 리그 {recentLeagueId} 다시 열기
+          {tr(`최근 본 리그 ${recentLeagueId} 다시 열기`, `Reopen recent league ${recentLeagueId}`)}
         </button>
       ) : null}
     </div>

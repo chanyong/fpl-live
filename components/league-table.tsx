@@ -16,23 +16,26 @@ import { GwPoints, LeagueRow, LeagueRowExpanded } from "@/components/league-row"
 import { chipLabel } from "@/lib/chips";
 import { RankDelta } from "@/components/rank-delta";
 import { SquadCompareDialog } from "@/components/squad-compare-dialog";
+import { useLocale } from "@/components/locale-provider";
 
 const columnHelper = createColumnHelper<LeagueRowType>();
 
 /** Columns that only hold a short value shrink to fit, leaving the slack to the name columns. */
 const NARROW_COLUMNS = new Set(["projectedRank", "movement", "chip", "playersPlayed", "gwPoints", "totalPoints"]);
 
-const columns = [
-  columnHelper.accessor("projectedRank", { header: "순위" }),
-  columnHelper.display({ id: "movement", header: "변동" }),
-  columnHelper.accessor("teamName", { header: "팀" }),
-  columnHelper.accessor("managerName", { header: "매니저" }),
-  columnHelper.accessor("captainName", { header: "주장" }),
-  columnHelper.accessor("chip", { header: "칩" }),
-  columnHelper.accessor("playersPlayed", { header: "출전" }),
-  columnHelper.accessor("gwPoints", { header: "GW 점수" }),
-  columnHelper.accessor("totalPoints", { header: "총점" })
-];
+function buildColumns(tr: <T = string>(ko: T, en: T) => T) {
+  return [
+    columnHelper.accessor("projectedRank", { header: tr("순위", "Rank") }),
+    columnHelper.display({ id: "movement", header: tr("변동", "Move") }),
+    columnHelper.accessor("teamName", { header: tr("팀", "Team") }),
+    columnHelper.accessor("managerName", { header: tr("매니저", "Manager") }),
+    columnHelper.accessor("captainName", { header: tr("주장", "Captain") }),
+    columnHelper.accessor("chip", { header: tr("칩", "Chip") }),
+    columnHelper.accessor("playersPlayed", { header: tr("출전", "Played") }),
+    columnHelper.accessor("gwPoints", { header: tr("GW 점수", "GW pts") }),
+    columnHelper.accessor("totalPoints", { header: tr("총점", "Total") })
+  ];
+}
 
 function buildRankTone(rows: LeagueRowType[]) {
   if (rows.length === 0) {
@@ -59,11 +62,13 @@ function gwClassName(row: LeagueRowType, lowCut: number, highCut: number) {
 }
 
 export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
+  const { tr, locale } = useLocale();
   const [sorting, setSorting] = useState<SortingState>([{ id: "projectedRank", desc: false }]);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [chipOnly, setChipOnly] = useState(false);
   const [topN, setTopN] = useState("all");
+  const columns = useMemo(() => buildColumns(tr), [tr]);
   const [quick, setQuick] = useState<"all" | "up" | "down">("all");
   const [compareMode, setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -185,7 +190,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
           setTopN={setTopN}
         />
         <div className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] px-4 py-10 text-center text-sm text-[var(--muted)]">
-          조건에 맞는 매니저가 없습니다. 검색어나 필터를 바꿔 보세요.
+          {tr("조건에 맞는 매니저가 없습니다. 검색어나 필터를 바꿔 보세요.", "No managers match. Try a different search or filter.")}
         </div>
       </div>
     );
@@ -204,14 +209,16 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
 
       <div className="flex flex-wrap items-center justify-between gap-1.5">
         {compareMode ? (
-          <p className="text-[12px] text-[var(--muted)] md:text-[13px]">비교할 매니저 2명을 선택하세요.</p>
+          <p className="text-[12px] text-[var(--muted)] md:text-[13px]">
+            {tr("비교할 매니저 2명을 선택하세요.", "Pick two managers to compare.")}
+          </p>
         ) : (
-          <div role="group" aria-label="순위 변동 필터" className="flex flex-wrap gap-1.5">
+          <div role="group" aria-label={tr("순위 변동 필터", "Rank movement filter")} className="flex flex-wrap gap-1.5">
             {(
               [
-                { id: "all", label: "전체", count: quickCounts.all },
-                { id: "up", label: "▲ 상승", count: quickCounts.up },
-                { id: "down", label: "▼ 하락", count: quickCounts.down }
+                { id: "all", label: tr("전체", "All"), count: quickCounts.all },
+                { id: "up", label: tr("▲ 상승", "▲ Up"), count: quickCounts.up },
+                { id: "down", label: tr("▼ 하락", "▼ Down"), count: quickCounts.down }
               ] as const
             ).map((item) => (
               <button
@@ -240,7 +247,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
               : "border-[var(--border)] bg-white text-[var(--text)] hover:border-[var(--accent)]"
           }`}
         >
-          {compareMode ? "비교 종료" : "스쿼드 비교"}
+          {compareMode ? tr("비교 종료", "Exit compare") : tr("스쿼드 비교", "Compare squads")}
         </button>
       </div>
 
@@ -249,11 +256,11 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
           <table className="min-w-full border-collapse text-[12px]">
             <thead>
               <tr className="border-b border-[var(--border)] bg-[var(--surface-strong)]/40 text-[10px] uppercase tracking-[0.08em] text-[var(--muted)]">
-                <th className="w-[48px] px-1 py-2 text-left">순위</th>
-                <th className="px-1 py-2 text-left">팀</th>
-                <th className="px-1 py-2 text-left">주장</th>
+                <th className="w-[48px] px-1 py-2 text-left">{tr("순위", "Rank")}</th>
+                <th className="px-1 py-2 text-left">{tr("팀", "Team")}</th>
+                <th className="px-1 py-2 text-left">{tr("주장", "Captain")}</th>
                 <th className="w-[48px] px-1 py-2 text-right">GW</th>
-                <th className="w-[50px] px-1 py-2 text-right">총점</th>
+                <th className="w-[50px] px-1 py-2 text-right">{tr("총점", "Total")}</th>
               </tr>
             </thead>
             <tbody>
@@ -290,7 +297,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                       <td className="px-1 py-1.5 align-top">
                         <div className="truncate text-[13px] font-semibold leading-4">{row.captainName}</div>
                         <div className="mt-0.5 truncate text-[10px] leading-4 text-[var(--muted)]">
-                          {row.chip ? chipLabel(row.chip, true) : `${row.playersPlayed}명 출전`}
+                          {row.chip ? chipLabel(row.chip, true, locale) : tr(`${row.playersPlayed}명 출전`, `${row.playersPlayed} played`)}
                         </div>
                       </td>
                       <td className={`px-1 py-1.5 text-right align-top font-semibold ${tone}`}>
@@ -378,7 +385,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
         <div className="sticky bottom-3 z-40 flex items-center justify-between gap-3 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2 shadow-[0_10px_30px_rgba(55,40,20,0.2)]">
           <div className="min-w-0 truncate text-sm">
             {selectedRows.length === 0
-              ? "0/2 선택"
+              ? tr("0/2 선택", "0/2 selected")
               : selectedRows.map((row) => row.teamName).join(" vs ")}
           </div>
           <button
@@ -387,7 +394,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
             onClick={() => setCompareOpen(true)}
             className="min-h-10 shrink-0 rounded-full bg-[var(--text)] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            비교하기 ({selectedRows.length}/2)
+            {tr("비교하기", "Compare")} ({selectedRows.length}/2)
           </button>
         </div>
       ) : null}

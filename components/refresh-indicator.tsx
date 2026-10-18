@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { RefreshIcon } from "@/components/icons";
 import { relativeTimeLabel } from "@/lib/time-format";
+import { useLocale } from "@/components/locale-provider";
 
 type RefreshIndicatorProps = {
   lastUpdated: string | null;
@@ -17,6 +18,7 @@ export function RefreshIndicator({
   isProvisional,
   onRefresh
 }: RefreshIndicatorProps) {
+  const { tr, locale } = useLocale();
   // Re-render on a timer so "3분 전" keeps counting between fetches.
   const [now, setNow] = useState(() => Date.now());
 
@@ -32,15 +34,20 @@ export function RefreshIndicator({
           className={`h-2 w-2 rounded-full ${isFetching ? "animate-pulse bg-[var(--accent)]" : "bg-emerald-500"}`}
           aria-hidden="true"
         />
-        {isFetching ? "갱신 중" : `${relativeTimeLabel(lastUpdated, now)} 기준`}
+        {isFetching
+          ? tr("갱신 중", "Updating")
+          : tr(`${relativeTimeLabel(lastUpdated, now, locale)} 기준`, `as of ${relativeTimeLabel(lastUpdated, now, locale)}`)}
       </span>
 
       {isProvisional ? (
         <span
           className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800"
-          title="보너스 포인트와 자동 교체는 FPL이 게임위크를 확정한 뒤 바뀔 수 있습니다"
+          title={tr(
+            "보너스 포인트와 자동 교체는 FPL이 게임위크를 확정한 뒤 바뀔 수 있습니다",
+            "Bonus points and auto-subs may change once FPL finalises the gameweek"
+          )}
         >
-          잠정 집계
+          {tr("잠정 집계", "Provisional")}
         </span>
       ) : null}
 
@@ -51,7 +58,7 @@ export function RefreshIndicator({
         className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-[var(--border)] bg-white px-3 font-semibold text-[var(--text)] transition hover:border-[var(--accent)] disabled:opacity-50"
       >
         <RefreshIcon className={isFetching ? "animate-spin" : undefined} />
-        새로고침
+        {tr("새로고침", "Refresh")}
       </button>
     </div>
   );
