@@ -40,18 +40,28 @@ export function DeadlineBanner({ gw, deadlineTime }: { gw: number; deadlineTime:
   return (
     <section
       aria-label={`게임위크 ${gw} 마감`}
-      className={`mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-0.5 rounded-xl border px-3 py-2 ${
-        urgent ? "border-amber-300 bg-amber-50" : "border-[var(--border)] bg-[var(--surface)]"
+      className={`mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-0.5 rounded-xl border-2 px-3 py-2 shadow-sm md:flex-nowrap md:gap-x-3 md:py-1.5 ${
+        urgent
+          ? "border-amber-500 bg-amber-50"
+          : "border-[var(--accent)] bg-[var(--accent-soft)]/60"
       }`}
     >
-      <div className="min-w-0">
-        <div className="text-[11px] font-semibold text-[var(--muted)]">GW{gw} 마감 (한국 시간)</div>
-        <div className="text-[15px] font-semibold md:text-base">{KST_FORMATTER.format(new Date(deadline))}</div>
+      <div className="min-w-0 md:flex md:items-baseline md:gap-3">
+        <div className="whitespace-nowrap text-[11px] font-semibold text-[var(--muted)] md:text-xs">
+          GW{gw} 마감 (한국 시간)
+        </div>
+        <div className="whitespace-nowrap text-[15px] font-semibold md:text-lg">{KST_FORMATTER.format(new Date(deadline))}</div>
       </div>
-      <div className="text-right">
-        <div className="text-[11px] font-semibold text-[var(--muted)]">남은 시간</div>
+      <div
+        aria-hidden="true"
+        className={`hidden h-px min-w-8 flex-1 border-t border-dashed md:block ${
+          urgent ? "border-amber-400" : "border-[var(--accent)]/40"
+        }`}
+      />
+      <div className="text-right md:flex md:items-baseline md:gap-3">
+        <div className="whitespace-nowrap text-[11px] font-semibold text-[var(--muted)] md:text-xs">남은 시간</div>
         <div
-          className={`text-lg font-semibold tabular-nums leading-tight md:text-xl ${
+          className={`whitespace-nowrap text-lg font-semibold tabular-nums leading-tight md:text-xl ${
             urgent ? "text-amber-800" : "text-[var(--accent)]"
           }`}
         >
