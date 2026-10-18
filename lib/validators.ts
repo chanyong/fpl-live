@@ -215,6 +215,8 @@ export const fixturesSchema = z.array(
     started: z.boolean().nullable(),
     finished: z.boolean(),
     finished_provisional: z.boolean(),
+    // Match clock as of the last FPL refresh; 0 before kickoff.
+    minutes: z.number().optional().default(0),
     // Fixture difficulty ships with every fixture; the schema used to drop it.
     team_h_difficulty: z.number().optional().default(3),
     team_a_difficulty: z.number().optional().default(3),

@@ -40,7 +40,7 @@ function fixtureStatus(fixture: LeagueFixture, tr: Tr) {
   }
 
   if (isFixtureInPlay(fixture)) {
-    return tr("진행 중", "Live");
+    return fixture.minutes > 0 ? `${tr("진행 중", "Live")} ${fixture.minutes}'` : tr("진행 중", "Live");
   }
 
   if (!fixture.kickoffTime) {

@@ -70,6 +70,7 @@ export type FixtureWithStats = {
   started: boolean | null;
   finished: boolean;
   finished_provisional: boolean;
+  minutes?: number;
   stats: Array<{
     identifier: string;
     h: Array<{ value: number; element: number }>;
@@ -310,6 +311,7 @@ function buildFixturesPayload(
         started: Boolean(fixture.started),
         finished: fixture.finished,
         finishedProvisional: fixture.finished_provisional,
+        minutes: fixture.minutes ?? 0,
         stats: buildFixtureStats(fixture, elementsById, teamsById)
       };
     })

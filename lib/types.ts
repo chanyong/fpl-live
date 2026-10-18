@@ -67,6 +67,7 @@ export type LeagueFixture = {
   started: boolean;
   finished: boolean;
   finishedProvisional: boolean;
+  minutes: number;
   stats: LeagueFixtureStat[];
 };
 
