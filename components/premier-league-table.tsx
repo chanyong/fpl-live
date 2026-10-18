@@ -38,7 +38,7 @@ function Crest({ name, code }: { name: string; code: number }) {
 
 export function PremierLeagueTable({ table }: { table: PremierLeagueTableRow[] }) {
   const { tr } = useLocale();
-  const numberHead = "w-[54px] px-1 py-2 text-center";
+  const numberHead = "w-[50px] px-1 py-2 text-center";
   const numberCell = "px-1 py-2.5 text-center text-[16px] tabular-nums";
 
   return (
@@ -56,11 +56,11 @@ export function PremierLeagueTable({ table }: { table: PremierLeagueTableRow[] }
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-[16px]">
+        <table className="w-full min-w-[800px] text-[16px]">
           <thead>
             <tr className="text-[13px] font-semibold text-[var(--muted)]">
-              <th className="w-[64px] px-2 py-2 text-left">{tr("순위", "Pos")}</th>
-              <th className="px-2 py-2 text-left">{tr("팀", "Team")}</th>
+              <th className="w-[56px] px-2 py-2 text-left">{tr("순위", "Pos")}</th>
+              <th className="w-[200px] px-2 py-2 text-left">{tr("팀", "Team")}</th>
               <th className={numberHead} title={tr("경기 수", "Played")}>Pl</th>
               <th className={numberHead} title={tr("승", "Won")}>W</th>
               <th className={numberHead} title={tr("무", "Drawn")}>D</th>
@@ -69,8 +69,8 @@ export function PremierLeagueTable({ table }: { table: PremierLeagueTableRow[] }
               <th className={numberHead} title={tr("실점", "Goals against")}>GA</th>
               <th className={numberHead} title={tr("골득실", "Goal difference")}>GD</th>
               <th className={numberHead} title={tr("승점", "Points")}>Pts</th>
-              <th className="w-[170px] px-1 py-2 text-center">{tr("최근 5경기", "Form")}</th>
-              <th className="w-[96px] px-1 py-2 text-center">{tr("다음", "Next")}</th>
+              <th className="w-[240px] px-1 py-2 text-center">{tr("최근 5경기", "Form")}</th>
+              <th className="w-[120px] px-1 py-2 text-center">{tr("다음", "Next")}</th>
             </tr>
           </thead>
           <tbody>
@@ -93,7 +93,7 @@ export function PremierLeagueTable({ table }: { table: PremierLeagueTableRow[] }
                 <td className={numberCell}>{row.goalsAgainst}</td>
                 <td className={numberCell}>{row.goalDifference > 0 ? `+${row.goalDifference}` : row.goalDifference}</td>
                 <td className={`${numberCell} font-bold`}>{row.points}</td>
-                <td className="px-1 py-2.5">
+                <td className="px-6 py-2.5">
                   <span className="flex justify-center gap-1">
                     {row.form.map((result, index) => (
                       <span
