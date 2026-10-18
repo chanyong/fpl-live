@@ -65,6 +65,9 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
   const { tr } = useLocale();
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: "average", dir: "asc" });
 
+  // Gameweeks left out of the average (and so out of the "Avg" sort); all five count by default.
+  const [excluded, setExcluded] = useState<ReadonlySet<number>>(() => new Set());
+
   const firstGw = data.league.currentGw + 1;
   const gameweeks = useMemo(() => Array.from({ length: WINDOW }, (_, index) => firstGw + index), [firstGw]);
 
@@ -81,7 +84,12 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
         byGw.set(fixture.gw, [...(byGw.get(fixture.gw) ?? []), fixture]);
       }
 
-      return { team, teamCode: codeByTeam.get(team) ?? 0, byGw, average: averageDifficulty(inWindow) };
+      return {
+        team,
+        teamCode: codeByTeam.get(team) ?? 0,
+        byGw,
+        average: averageDifficulty(inWindow.filter((fixture) => !excluded.has(fixture.gw)))
+      };
     });
 
     const value = (row: Row) =>
@@ -106,7 +114,16 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
       }
       return sign * (a - b) || left.team.localeCompare(right.team);
     });
-  }, [data.fdr, data.players, firstGw, sort]);
+  }, [data.fdr, data.players, firstGw, sort, excluded]);
+
+  const toggleGameweek = (gw: number) =>
+    setExcluded((current) => {
+      const next = new Set(current);
+      if (!next.delete(gw)) {
+        next.add(gw);
+      }
+      return next;
+    });
 
   const toggleSort = (key: SortKey) =>
     setSort((current) =>
@@ -169,12 +186,22 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
                 {headerButton(
                   "average",
                   tr("평균", "Avg"),
-                  tr(`다음 ${WINDOW}개 게임위크 평균 (낮을수록 쉬움)`, `Average over the next ${WINDOW} gameweeks (lower is easier)`)
+                  tr("체크한 게임위크의 평균 (낮을수록 쉬움)", "Average over the ticked gameweeks (lower is easier)")
                 )}
               </th>
               {gameweeks.map((gw) => (
                 <th key={gw} className="px-1 py-1 text-center" aria-sort={sort.key === gw ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
-                  {headerButton(gw, `GW${gw}`, tr(`GW${gw} 난이도 순 정렬`, `Sort by GW${gw} difficulty`))}
+                  <span className="inline-flex items-center gap-0.5">
+                    <input
+                      type="checkbox"
+                      checked={!excluded.has(gw)}
+                      onChange={() => toggleGameweek(gw)}
+                      aria-label={tr(`GW${gw}를 평균에 포함`, `Include GW${gw} in the average`)}
+                      title={tr("체크하면 평균에 포함, 해제하면 제외", "Checked: counted in the average")}
+                      className="h-3.5 w-3.5 cursor-pointer accent-[var(--accent)]"
+                    />
+                    {headerButton(gw, `GW${gw}`, tr(`GW${gw} 난이도 순 정렬`, `Sort by GW${gw} difficulty`))}
+                  </span>
                 </th>
               ))}
             </tr>
@@ -207,7 +234,7 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
                   )}
                 </td>
                 {gameweeks.map((gw) => (
-                  <td key={gw} className="px-1 py-0.5">
+                  <td key={gw} className={`px-1 py-0.5 transition-opacity ${excluded.has(gw) ? "opacity-35" : ""}`}>
                     <FixtureCell fixtures={row.byGw.get(gw)} />
                   </td>
                 ))}
