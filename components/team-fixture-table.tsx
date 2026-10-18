@@ -10,7 +10,9 @@ import type { PlayerStatsResponse, TeamFixtureOutlook } from "@/lib/types";
 /** Gameweeks shown after the current one. */
 const WINDOW = 5;
 
-type SortKey = "difficulty" | "team";
+/** "average" and "team" are the fixed columns; a number is a gameweek. */
+type SortKey = "average" | "team" | number;
+type SortDir = "asc" | "desc";
 
 type Row = {
   team: string;
@@ -61,7 +63,7 @@ function FixtureCell({ fixtures }: { fixtures: TeamFixtureOutlook[] | undefined 
  */
 export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
   const { tr } = useLocale();
-  const [sortKey, setSortKey] = useState<SortKey>("difficulty");
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: "average", dir: "asc" });
 
   const firstGw = data.league.currentGw + 1;
   const gameweeks = useMemo(() => Array.from({ length: WINDOW }, (_, index) => firstGw + index), [firstGw]);
@@ -82,32 +84,56 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
       return { team, teamCode: codeByTeam.get(team) ?? 0, byGw, average: averageDifficulty(inWindow) };
     });
 
-    return built.sort((left, right) => {
-      if (sortKey === "team") {
-        return left.team.localeCompare(right.team);
-      }
-      // Teams with nothing scheduled sort last rather than looking like the easiest run.
-      if (left.average === null || right.average === null) {
-        return (left.average === null ? 1 : 0) - (right.average === null ? 1 : 0) || left.team.localeCompare(right.team);
-      }
-      return left.average - right.average || left.team.localeCompare(right.team);
-    });
-  }, [data.fdr, data.players, firstGw, sortKey]);
+    const value = (row: Row) =>
+      sort.key === "average"
+        ? row.average
+        : typeof sort.key === "number"
+          ? averageDifficulty(row.byGw.get(sort.key) ?? [])
+          : null;
+    const sign = sort.dir === "asc" ? 1 : -1;
 
-  const sortButton = (key: SortKey, label: string) => (
-    <button
-      type="button"
-      aria-pressed={sortKey === key}
-      onClick={() => setSortKey(key)}
-      className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-3 text-[12px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
-        sortKey === key
-          ? "border-[var(--text)] bg-[var(--text)] text-white"
-          : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--accent)]"
-      }`}
-    >
-      {label}
-    </button>
-  );
+    return built.sort((left, right) => {
+      if (sort.key === "team") {
+        return sign * left.team.localeCompare(right.team);
+      }
+
+      const a = value(left);
+      const b = value(right);
+      // Blank gameweeks and teams with nothing left sort last in either direction rather than
+      // posing as the easiest run.
+      if (a === null || b === null) {
+        return (a === null ? 1 : 0) - (b === null ? 1 : 0) || left.team.localeCompare(right.team);
+      }
+      return sign * (a - b) || left.team.localeCompare(right.team);
+    });
+  }, [data.fdr, data.players, firstGw, sort]);
+
+  const toggleSort = (key: SortKey) =>
+    setSort((current) =>
+      current.key === key
+        ? { key, dir: current.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: "asc" }
+    );
+
+  const headerButton = (key: SortKey, label: string, title?: string) => {
+    const active = sort.key === key;
+
+    return (
+      <button
+        type="button"
+        title={title}
+        onClick={() => toggleSort(key)}
+        className={`inline-flex items-center gap-0.5 rounded px-1 py-0.5 font-semibold transition hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+          active ? "text-[var(--text)]" : ""
+        }`}
+      >
+        {label}
+        <span aria-hidden="true" className={active ? "" : "opacity-30"}>
+          {active ? (sort.dir === "asc" ? "▲" : "▼") : "↕"}
+        </span>
+      </button>
+    );
+  };
 
   return (
     <section className="mt-3 rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-2">
@@ -130,23 +156,25 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
             <span>{tr("어려움 · 상대 팀 기준 FPL 난이도", "Hard · FPL rating of the opponent")}</span>
           </div>
         </div>
-        <div role="group" aria-label={tr("정렬", "Sort")} className="flex gap-1.5">
-          {sortButton("difficulty", tr("쉬운 일정 순", "Easiest first"))}
-          {sortButton("team", tr("팀 이름 순", "Team name"))}
-        </div>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] border-separate border-spacing-y-[3px] px-1 text-left">
           <thead>
             <tr className="text-[11px] font-semibold text-[var(--muted)]">
-              <th className="px-2 py-1">{tr("팀", "Team")}</th>
-              <th className="px-1 py-1 text-center" title={tr(`다음 ${WINDOW}개 게임위크 평균 (낮을수록 쉬움)`, `Average over the next ${WINDOW} gameweeks (lower is easier)`)}>
-                {tr("평균", "Avg")}
+              <th className="px-1 py-1" aria-sort={sort.key === "team" ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
+                {headerButton("team", tr("팀", "Team"))}
+              </th>
+              <th className="px-1 py-1 text-center" aria-sort={sort.key === "average" ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
+                {headerButton(
+                  "average",
+                  tr("평균", "Avg"),
+                  tr(`다음 ${WINDOW}개 게임위크 평균 (낮을수록 쉬움)`, `Average over the next ${WINDOW} gameweeks (lower is easier)`)
+                )}
               </th>
               {gameweeks.map((gw) => (
-                <th key={gw} className="px-1 py-1 text-center">
-                  GW{gw}
+                <th key={gw} className="px-1 py-1 text-center" aria-sort={sort.key === gw ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
+                  {headerButton(gw, `GW${gw}`, tr(`GW${gw} 난이도 순 정렬`, `Sort by GW${gw} difficulty`))}
                 </th>
               ))}
             </tr>
