@@ -74,7 +74,7 @@ export function DeadlineBanner({ gw, deadlineTime }: { gw: number; deadlineTime:
       <div className="min-w-0 md:flex md:items-baseline md:gap-3">
         <div className="whitespace-nowrap text-[11px] font-semibold text-[var(--muted)] md:text-xs">
           <span className="text-[15px] font-extrabold text-[var(--text)] md:text-base">GW{gw}</span>{" "}
-          {tr("마감 (내 시간대)", "deadline (your time)")}
+          {tr("마감 (내 시간대)", "deadline (local time)")}
         </div>
         <div className="whitespace-nowrap text-[15px] font-semibold md:text-lg">
           {LOCAL_FORMATTERS[locale].format(new Date(deadline))}
