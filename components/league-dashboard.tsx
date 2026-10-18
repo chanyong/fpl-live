@@ -11,6 +11,7 @@ import { LocaleToggle, useLocale } from "@/components/locale-provider";
 import { LeagueKpis } from "@/components/league-kpis";
 import { LeagueTable } from "@/components/league-table";
 import { PlayerTrendsPanel } from "@/components/player-trends-panel";
+import { PremierLeagueTable } from "@/components/premier-league-table";
 import { RankChangePanel } from "@/components/rank-change-panel";
 import { SidePanelLayout } from "@/components/side-panel-layout";
 import { TeamFixtureTable } from "@/components/team-fixture-table";
@@ -267,7 +268,10 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
                 rows={query.data.rows}
               />
               {playerStatsQuery.data ? (
-                <TeamFixtureTable data={playerStatsQuery.data} />
+                <>
+                  <TeamFixtureTable data={playerStatsQuery.data} />
+                  <PremierLeagueTable table={playerStatsQuery.data.table} />
+                </>
               ) : (
                 <div className="mt-3 rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] px-4 py-6 text-center text-sm text-[var(--muted)]">
                   {playerStatsQuery.error

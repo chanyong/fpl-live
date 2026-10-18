@@ -257,6 +257,25 @@ export type LeaguePlayerStat = {
   seasonSwing: number;
 };
 
+export type PremierLeagueTableRow = {
+  position: number;
+  team: string;
+  shortName: string;
+  teamCode: number;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
+  /** Last five results, oldest first. */
+  form: Array<"W" | "D" | "L">;
+  /** The team's next unstarted fixture, if one is scheduled. */
+  next: { opponent: string; opponentCode: number; home: boolean } | null;
+};
+
 export type PlayerStatsResponse = {
   league: {
     id: number;
@@ -272,6 +291,8 @@ export type PlayerStatsResponse = {
   fdr: Record<string, TeamFixtureOutlook[]>;
   /** Every fixture in the next seven gameweeks per team, keyed by short name; blanks and doubles intact. */
   outlook: Record<string, TeamFixtureOutlook[]>;
+  /** Premier League standings from the season's results, a match in play included. */
+  table: PremierLeagueTableRow[];
   leaguePlayers: LeaguePlayerStat[];
 };
 

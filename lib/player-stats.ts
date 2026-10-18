@@ -1,4 +1,5 @@
 import { getBootstrapStatic, getFixtures } from "@/lib/fpl-client";
+import { buildPremierLeagueTable } from "@/lib/pl-table";
 import { buildProvisionalBonusByElement, getLeagueLivePayload } from "@/lib/league-aggregator";
 import {
   POSITION_BY_TYPE,
@@ -237,6 +238,7 @@ export async function getPlayerStatsPayload({
     players,
     fdr,
     outlook,
+    table: buildPremierLeagueTable(bootstrap.teams, fixtures),
     leaguePlayers
   };
 
