@@ -13,6 +13,7 @@ import { LeagueTable } from "@/components/league-table";
 import { PlayerTrendsPanel } from "@/components/player-trends-panel";
 import { RankChangePanel } from "@/components/rank-change-panel";
 import { SidePanelLayout } from "@/components/side-panel-layout";
+import { TeamFixtureTable } from "@/components/team-fixture-table";
 import { RefreshIndicator } from "@/components/refresh-indicator";
 
 async function fetchLeagueLive(leagueId: string, fallbackError: string, refresh = false) {
@@ -78,7 +79,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
   const playerStatsQuery = useQuery({
     queryKey: ["player-stats", leagueId],
     queryFn: () => fetchPlayerStats(leagueId, tr("선수 데이터를 불러오지 못했습니다.", "Could not load player data.")),
-    enabled: tab === "player-trends",
+    enabled: tab === "player-trends" || tab === "fixtures",
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false
@@ -259,11 +260,22 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
           ) : null}
 
           {tab === "fixtures" && query.data ? (
-            <FixturesPanel
-              fixtures={query.data.fixtures}
-              currentGw={query.data.league.currentGw}
-              rows={query.data.rows}
-            />
+            <>
+              <FixturesPanel
+                fixtures={query.data.fixtures}
+                currentGw={query.data.league.currentGw}
+                rows={query.data.rows}
+              />
+              {playerStatsQuery.data ? (
+                <TeamFixtureTable data={playerStatsQuery.data} />
+              ) : (
+                <div className="mt-3 rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] px-4 py-6 text-center text-sm text-[var(--muted)]">
+                  {playerStatsQuery.error
+                    ? tr("팀별 일정 난이도를 불러오지 못했습니다.", "Could not load team fixture difficulty.")
+                    : tr("팀별 일정 난이도를 불러오는 중…", "Loading team fixture difficulty…")}
+                </div>
+              )}
+            </>
           ) : null}
 
           {tab === "rank-change" && rankChangeQuery.data ? (
