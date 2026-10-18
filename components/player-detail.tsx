@@ -187,7 +187,7 @@ export function PlayerDetail({
           {query.data ? (
             <>
               <Panel title={tr("게임위크별 획득 점수", "Points per gameweek")}>
-                <BarSeries points={history.map((row) => ({ label: `${row.gw}`, value: row.points }))} />
+                <BarSeries showValues points={history.map((row) => ({ label: `${row.gw}`, value: row.points }))} />
               </Panel>
 
               <Panel

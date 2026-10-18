@@ -10,7 +10,7 @@ export type SeriesPoint = {
 
 const WIDTH = 640;
 const HEIGHT = 150;
-const M = { left: 42, right: 10, top: 10, bottom: 22 };
+const M = { left: 42, right: 10, top: 18, bottom: 22 };
 const PLOT_W = WIDTH - M.left - M.right;
 const PLOT_H = HEIGHT - M.top - M.bottom;
 
@@ -27,11 +27,14 @@ function niceMax(value: number) {
 export function BarSeries({
   points,
   format = (value: number) => String(value),
-  diverging = false
+  diverging = false,
+  showValues = false
 }: {
   points: SeriesPoint[];
   format?: (value: number) => string;
   diverging?: boolean;
+  /** Print each bar's value next to it, for series where the exact figure matters. */
+  showValues?: boolean;
 }) {
   const { tr } = useLocale();
   if (points.length === 0) {
@@ -81,6 +84,18 @@ export function BarSeries({
             >
               <title>{point.tooltip ?? `${point.label} · ${format(point.value)}`}</title>
             </rect>
+            {showValues ? (
+              <text
+                x={cx}
+                y={negative ? zero + height + 13 : valueY - 5}
+                textAnchor="middle"
+                fontSize={12}
+                fontWeight={600}
+                fill="var(--text)"
+              >
+                {format(point.value)}
+              </text>
+            ) : null}
             <text x={cx} y={HEIGHT - 7} textAnchor="middle" fontSize={10} fill="var(--muted)">
               {point.label}
             </text>
