@@ -6,7 +6,7 @@ import {
   getEventLive,
   getFixtures
 } from "@/lib/fpl-client";
-import { getCurrentGw } from "@/lib/gameweek";
+import { getCurrentGw, getNextDeadline } from "@/lib/gameweek";
 import {
   calculateLiveScore,
   computePlayersPlayed,
@@ -497,7 +497,8 @@ export async function getLeagueLivePayload({
       name: standings.league.name,
       currentGw,
       lastUpdated: new Date().toISOString(),
-      isProvisional: true
+      isProvisional: true,
+      nextDeadline: getNextDeadline(bootstrap.events, Date.now())
     },
     captainStats: buildCaptainStats(rows, context.elementsById),
     fixtures: buildFixturesPayload(currentGwFixtures, teamsById, context.elementsById),

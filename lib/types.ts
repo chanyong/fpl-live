@@ -96,6 +96,8 @@ export type LeagueLiveResponse = {
     currentGw: number;
     lastUpdated: string;
     isProvisional: boolean;
+    /** The next transfer deadline still ahead, or null once the season is over. */
+    nextDeadline: { gw: number; deadlineTime: string } | null;
   };
   captainStats: CaptainStat[];
   fixtures: LeagueFixture[];

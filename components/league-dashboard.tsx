@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import type { LeagueLiveResponse, PlayerStatsResponse, RankChangeResponse } from "@/lib/types";
 import { CaptainStats } from "@/components/captain-stats";
+import { DeadlineBanner } from "@/components/deadline-banner";
 import { FixturesPanel } from "@/components/fixtures-panel";
 import { LeagueKpis } from "@/components/league-kpis";
 import { LeagueTable } from "@/components/league-table";
@@ -184,6 +185,13 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
             <div className="mb-4 rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-[var(--warning)]">
               매니저 {query.data.errors.length}명의 데이터를 불러오지 못했습니다. 킥오프 후 자동 반영됩니다.
             </div>
+          ) : null}
+
+          {query.data?.league.nextDeadline ? (
+            <DeadlineBanner
+              gw={query.data.league.nextDeadline.gw}
+              deadlineTime={query.data.league.nextDeadline.deadlineTime}
+            />
           ) : null}
 
           <div
