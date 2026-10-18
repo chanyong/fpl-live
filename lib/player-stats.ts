@@ -24,6 +24,8 @@ const CACHE_TTL_MS = 30_000;
 const CACHE_MAX_ENTRIES = 20;
 /** How many upcoming fixtures the difficulty strip shows. */
 const FDR_WINDOW = 5;
+/** Gameweeks the team fixture table spans after the current one. */
+const OUTLOOK_GAMEWEEKS = 7;
 
 const playerStatsCache = new Map<string, { data: PlayerStatsResponse; expiresAt: number }>();
 
@@ -198,14 +200,14 @@ export async function getPlayerStatsPayload({
     .sort((left, right) => right.ownedBy - left.ownedBy || right.seasonPoints - left.seasonPoints);
 
   const fdr: Record<string, TeamFixtureOutlook[]> = {};
+  const outlook: Record<string, TeamFixtureOutlook[]> = {};
   const upcoming = fixtures
     .filter((fixture) => fixture.event !== null && fixture.event > currentGw)
     .sort((left, right) => (left.event ?? 0) - (right.event ?? 0));
 
   for (const team of bootstrap.teams) {
-    fdr[team.short_name] = upcoming
+    const fixturesOfTeam = upcoming
       .filter((fixture) => fixture.team_h === team.id || fixture.team_a === team.id)
-      .slice(0, FDR_WINDOW)
       .map((fixture) => {
         const home = fixture.team_h === team.id;
         const opponentId = home ? fixture.team_a : fixture.team_h;
@@ -217,6 +219,9 @@ export async function getPlayerStatsPayload({
           difficulty: home ? fixture.team_h_difficulty : fixture.team_a_difficulty
         };
       });
+
+    fdr[team.short_name] = fixturesOfTeam.slice(0, FDR_WINDOW);
+    outlook[team.short_name] = fixturesOfTeam.filter((fixture) => fixture.gw <= currentGw + OUTLOOK_GAMEWEEKS);
   }
 
   const result: PlayerStatsResponse = {
@@ -231,6 +236,7 @@ export async function getPlayerStatsPayload({
     managers,
     players,
     fdr,
+    outlook,
     leaguePlayers
   };
 

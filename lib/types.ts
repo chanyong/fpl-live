@@ -270,6 +270,8 @@ export type PlayerStatsResponse = {
   players: PlayerStat[];
   /** Next five fixtures per team, keyed by short name. */
   fdr: Record<string, TeamFixtureOutlook[]>;
+  /** Every fixture in the next seven gameweeks per team, keyed by short name; blanks and doubles intact. */
+  outlook: Record<string, TeamFixtureOutlook[]>;
   leaguePlayers: LeaguePlayerStat[];
 };
 

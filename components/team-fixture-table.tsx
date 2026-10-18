@@ -8,7 +8,7 @@ import { averageDifficulty } from "@/lib/player-metrics";
 import type { PlayerStatsResponse, TeamFixtureOutlook } from "@/lib/types";
 
 /** Gameweeks shown after the current one. */
-const WINDOW = 5;
+const WINDOW = 7;
 
 /** "average" and "team" are the fixed columns; a number is a gameweek. */
 type SortKey = "average" | "team" | number;
@@ -65,7 +65,7 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
   const { tr } = useLocale();
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: "average", dir: "asc" });
 
-  // Gameweeks left out of the average (and so out of the "Avg" sort); all five count by default.
+  // Gameweeks left out of the average (and so out of the "Avg" sort); every gameweek counts by default.
   const [excluded, setExcluded] = useState<ReadonlySet<number>>(() => new Set());
 
   const firstGw = data.league.currentGw + 1;
@@ -77,7 +77,7 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
       codeByTeam.set(player.teamShortName, player.teamCode);
     }
 
-    const built: Row[] = Object.entries(data.fdr).map(([team, fixtures]) => {
+    const built: Row[] = Object.entries(data.outlook).map(([team, fixtures]) => {
       const inWindow = fixtures.filter((fixture) => fixture.gw >= firstGw && fixture.gw < firstGw + WINDOW);
       const byGw = new Map<number, TeamFixtureOutlook[]>();
       for (const fixture of inWindow) {
@@ -114,7 +114,7 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
       }
       return sign * (a - b) || left.team.localeCompare(right.team);
     });
-  }, [data.fdr, data.players, firstGw, sort, excluded]);
+  }, [data.outlook, data.players, firstGw, sort, excluded]);
 
   const toggleGameweek = (gw: number) =>
     setExcluded((current) => {
@@ -176,7 +176,7 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px] border-separate border-spacing-y-[3px] px-1 text-left">
+        <table className="w-full min-w-[720px] border-separate border-spacing-y-[3px] px-1 text-left">
           <thead>
             <tr className="text-[11px] font-semibold text-[var(--muted)]">
               <th className="px-1 py-1" aria-sort={sort.key === "team" ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
