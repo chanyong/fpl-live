@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import { useLocale } from "@/components/locale-provider";
 
-/** The deadline is always shown in Korea time, in the language on screen. */
-const KST_FORMATTERS = {
+/**
+ * The deadline is shown in the viewer's own time zone, so someone in London and someone in
+ * Seoul each read it as their own clock. The zone is read from the browser, which is safe here
+ * because the banner only renders after the league data has loaded on the client.
+ */
+const LOCAL_FORMATTERS = {
   ko: new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "Asia/Seoul",
     month: "long",
     day: "numeric",
     weekday: "short",
@@ -15,7 +18,6 @@ const KST_FORMATTERS = {
     hour12: false
   }),
   en: new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Asia/Seoul",
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -24,6 +26,15 @@ const KST_FORMATTERS = {
     hour12: false
   })
 };
+
+/** "GMT+9" for the viewer's zone, so the clock time is never ambiguous. */
+function zoneLabel(date: Date) {
+  const part = new Intl.DateTimeFormat("en-GB", { timeZoneName: "short" })
+    .formatToParts(date)
+    .find((item) => item.type === "timeZoneName");
+
+  return part?.value ?? "";
+}
 
 /** "2일 3시간 15분" — whole units left until the deadline, never rounded up. */
 function remainingParts(deadline: number, now: number) {
@@ -62,10 +73,14 @@ export function DeadlineBanner({ gw, deadlineTime }: { gw: number; deadlineTime:
     >
       <div className="min-w-0 md:flex md:items-baseline md:gap-3">
         <div className="whitespace-nowrap text-[11px] font-semibold text-[var(--muted)] md:text-xs">
-          {tr(`GW${gw} 마감 (한국 시간)`, `GW${gw} deadline (Korea time)`)}
+          <span className="text-[15px] font-extrabold text-[var(--text)] md:text-base">GW{gw}</span>{" "}
+          {tr("마감 (내 시간대)", "deadline (your time)")}
         </div>
-        <div className="whitespace-nowrap text-[15px] font-semibold md:text-lg">{KST_FORMATTERS[locale].format(new Date(deadline))}
-          {locale === "en" ? " KST" : ""}
+        <div className="whitespace-nowrap text-[15px] font-semibold md:text-lg">
+          {LOCAL_FORMATTERS[locale].format(new Date(deadline))}
+          <span className="ml-1.5 text-[11px] font-medium text-[var(--muted)] md:text-xs">
+            {zoneLabel(new Date(deadline))}
+          </span>
         </div>
       </div>
       <div
