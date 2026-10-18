@@ -15,20 +15,23 @@ const STAT_PREVIEW = 5;
 
 type Tr = <T = string>(ko: T, en: T) => T;
 
-/** Kickoffs are always shown in Korea time, spelled in the language on screen. */
+/**
+ * Kickoffs follow the viewer's own time zone, spelled in the language on screen. The panel only
+ * renders after the league data has loaded in the browser, so reading the zone here is safe.
+ */
 const DATE_FORMATTERS = {
-  ko: new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", month: "long", day: "numeric" }),
-  en: new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", day: "numeric", month: "short" })
+  ko: new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric" }),
+  en: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" })
 };
 
 const WEEKDAY_FORMATTERS = {
-  ko: new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", weekday: "short" }),
-  en: new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", weekday: "short" })
+  ko: new Intl.DateTimeFormat("ko-KR", { weekday: "short" }),
+  en: new Intl.DateTimeFormat("en-GB", { weekday: "short" })
 };
 
 const TIME_FORMATTERS = {
-  ko: new Intl.DateTimeFormat("ko-KR", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false }),
-  en: new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit", hour12: false })
+  ko: new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false }),
+  en: new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })
 };
 
 function fixtureStatus(fixture: LeagueFixture, tr: Tr) {
@@ -75,6 +78,15 @@ function toKstDate(kickoffTime: string | null) {
   return new Date(kickoffTime);
 }
 
+/** "GMT+9" for the viewer's zone, so a clock time is never ambiguous. */
+function zoneLabel(date: Date) {
+  const part = new Intl.DateTimeFormat("en-GB", { timeZoneName: "short" })
+    .formatToParts(date)
+    .find((item) => item.type === "timeZoneName");
+
+  return part?.value ?? "";
+}
+
 function formatDate(date: Date, locale: "ko" | "en") {
   const dateLabel = DATE_FORMATTERS[locale].format(date).replace(/\s+/g, " ").trim();
   const weekdayLabel = WEEKDAY_FORMATTERS[locale].format(date).replace(/\s+/g, "").trim();
@@ -97,7 +109,7 @@ function kickoffDateTimeLabel(kickoffTime: string | null, tr: Tr, locale: "ko" |
     return tr("일정 미정", "Date TBC");
   }
 
-  return `${formatDate(date, locale)} ${TIME_FORMATTERS[locale].format(date)} KST`;
+  return `${formatDate(date, locale)} ${TIME_FORMATTERS[locale].format(date)} ${zoneLabel(date)}`;
 }
 
 type StatusFilter = "all" | "live" | "upcoming" | "ended";
