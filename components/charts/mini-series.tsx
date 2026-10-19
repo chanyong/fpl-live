@@ -10,7 +10,7 @@ export type SeriesPoint = {
 
 const WIDTH = 640;
 const HEIGHT = 150;
-const M = { left: 42, right: 10, top: 18, bottom: 22 };
+const M = { left: 42, right: 10, top: 26, bottom: 22 };
 const PLOT_W = WIDTH - M.left - M.right;
 const PLOT_H = HEIGHT - M.top - M.bottom;
 
@@ -87,10 +87,10 @@ export function BarSeries({
             {showValues ? (
               <text
                 x={cx}
-                y={negative ? zero + height + 13 : valueY - 5}
+                y={negative ? zero + height + 17 : valueY - 6}
                 textAnchor="middle"
-                fontSize={12}
-                fontWeight={600}
+                fontSize={16}
+                fontWeight={700}
                 fill="var(--text)"
               >
                 {format(point.value)}
