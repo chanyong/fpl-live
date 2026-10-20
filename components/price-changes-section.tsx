@@ -150,6 +150,15 @@ export function PriceChangesSection({ players, onSelect }: { players: PlayerStat
     { id: "fall", label: `▼ ${tr("하락", "Fall")}` }
   ];
 
+  function resetFilters() {
+    setProgressFilter("all");
+    setProjectedFilter("all");
+    setOutlookFilter("all");
+    setChangeFilter("all");
+    setSearch("");
+    setShown(PAGE_SIZE);
+  }
+
   function reset(nextShown = PAGE_SIZE) {
     setShown(nextShown);
   }
@@ -199,12 +208,7 @@ export function PriceChangesSection({ players, onSelect }: { players: PlayerStat
         <span className="ml-auto text-[12px] text-[var(--muted)]">{tr(`${rows.length}명`, `${rows.length} players`)}</span>
       </div>
 
-      {rows.length === 0 ? (
-        <p className="py-4 text-center text-sm text-[var(--muted)]">
-          {tr("조건에 맞는 선수가 없습니다.", "No players match.")}
-        </p>
-      ) : (
-        <div className="overflow-x-auto">
+      <div className="overflow-x-auto">
           <table className="w-full min-w-[460px] border-separate border-spacing-0 text-left text-[13px]">
             <thead className="text-[11px] uppercase tracking-wide text-[var(--muted)]">
               <tr>
@@ -249,6 +253,20 @@ export function PriceChangesSection({ players, onSelect }: { players: PlayerStat
               </tr>
             </thead>
             <tbody>
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={view === "predictions" ? 5 : 3} className="border-t border-[var(--border)] py-6 text-center text-sm text-[var(--muted)]">
+                    {tr("조건에 맞는 선수가 없습니다. 위의 필터를 바꿔 보세요.", "No players match. Change the filters above.")}
+                    <button
+                      type="button"
+                      onClick={resetFilters}
+                      className="ml-2 font-semibold text-[var(--accent)] underline underline-offset-4"
+                    >
+                      {tr("필터 초기화", "Clear filters")}
+                    </button>
+                  </td>
+                </tr>
+              ) : null}
               {rows.slice(0, shown).map((player) => {
                 const trend: Trend =
                   (view === "predictions" ? player.projectedPercent : player.costChangeEvent) >= 0 ? "rise" : "fall";
@@ -307,8 +325,7 @@ export function PriceChangesSection({ players, onSelect }: { players: PlayerStat
               })}
             </tbody>
           </table>
-        </div>
-      )}
+      </div>
 
       {rows.length > shown ? (
         <button
