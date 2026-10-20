@@ -1,6 +1,7 @@
 "use client";
 
 import { LeagueSearchForm } from "@/components/league-search-form";
+import { LeagueIdLinks } from "@/components/league-id-links";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
 
 export function HomeHero() {
@@ -24,6 +25,7 @@ export function HomeHero() {
         )}
       </p>
       <LeagueSearchForm />
+      <LeagueIdLinks />
     </section>
   );
 }
