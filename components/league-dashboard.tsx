@@ -196,8 +196,8 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
       {query.data && query.data.rows.length === 0 ? (
         <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6">
           {tr(
-            "이 리그의 순위 데이터가 비어 있습니다. 공개 클래식 리그 ID인지 확인해 주세요.",
-            "This league has no standings data. Check that it is a public classic league ID."
+            "FPL이 이 리그의 순위를 아직 내려주지 않고 있습니다. 순위 갱신 중이면 잠시 후 새로고침하면 나타납니다. 계속 비어 있으면 공개 클래식 리그 ID인지 확인해 주세요.",
+            "FPL is not returning standings for this league yet. If it is mid-update, refresh in a few minutes. If it stays empty, check that it is a public classic league ID."
           )}
         </div>
       ) : null}

@@ -508,8 +508,11 @@ export async function getLeagueLivePayload({
     errors
   };
 
-  pruneLeagueLiveCache();
-  leagueLiveCache.set(cacheKey, { data: result, expiresAt: Date.now() + CACHE_TTL_MS });
+  // FPL briefly serves empty standings while it rebuilds them; don't pin that for the TTL.
+  if (result.rows.length > 0) {
+    pruneLeagueLiveCache();
+    leagueLiveCache.set(cacheKey, { data: result, expiresAt: Date.now() + CACHE_TTL_MS });
+  }
 
   return result;
 }
