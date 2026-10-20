@@ -26,7 +26,7 @@ const LINKS: LinkItem[] = [
   },
   {
     href: "https://play.google.com/store/apps/details?id=com.pl.premierleague",
-    ko: "구글 EPL 앱",
+    ko: "구글 EPL App",
     en: "Google Play app",
     icon: (
       <svg viewBox="0 0 24 24" className={iconClass} fill="currentColor" aria-hidden="true">
@@ -36,7 +36,7 @@ const LINKS: LinkItem[] = [
   },
   {
     href: "https://apps.apple.com/app/id1138895159",
-    ko: "애플 EPL 앱",
+    ko: "애플 EPL App",
     en: "App Store app",
     icon: (
       <svg viewBox="0 0 24 24" className={iconClass} fill="currentColor" aria-hidden="true">
@@ -53,7 +53,7 @@ export function LeagueIdLinks() {
     <div className="mt-6">
       <p className="text-sm text-[var(--muted)]">
         {tr(
-          "리그 ID가 기억나지 않나요? FPL 홈페이지나 앱에서 내 리그 주소의 숫자를 확인하세요.",
+          "리그 ID가 기억나지 않나요? FPL 홈페이지나 App에서 내 리그 주소의 숫자를 확인하세요.",
           "Not sure of your league ID? Open FPL on the web or in the app and read the number in your league's address."
         )}
       </p>
