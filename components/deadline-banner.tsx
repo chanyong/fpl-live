@@ -65,10 +65,10 @@ export function DeadlineBanner({ gw, deadlineTime }: { gw: number; deadlineTime:
   return (
     <section
       aria-label={tr(`게임위크 ${gw} 마감`, `Gameweek ${gw} deadline`)}
-      className={`mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-0.5 rounded-xl border-2 px-3 py-2 shadow-sm md:flex-nowrap md:gap-x-3 md:py-1.5 ${
+      className={`mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-0.5 rounded-xl border px-3 py-2 shadow-sm md:flex-nowrap md:gap-x-3 md:py-1.5 ${
         urgent
           ? "border-amber-500 bg-amber-50"
-          : "border-[var(--accent)] bg-[var(--accent-soft)]/60"
+          : "border-[var(--info-border)] bg-[var(--info-soft)]"
       }`}
     >
       <div className="min-w-0 md:flex md:items-baseline md:gap-3">
@@ -86,7 +86,7 @@ export function DeadlineBanner({ gw, deadlineTime }: { gw: number; deadlineTime:
       <div
         aria-hidden="true"
         className={`hidden h-px min-w-8 flex-1 border-t border-dashed md:block ${
-          urgent ? "border-amber-400" : "border-[var(--accent)]/40"
+          urgent ? "border-amber-400" : "border-[var(--info-border)]"
         }`}
       />
       <div className="text-right md:flex md:items-baseline md:gap-3">
@@ -95,7 +95,7 @@ export function DeadlineBanner({ gw, deadlineTime }: { gw: number; deadlineTime:
         </div>
         <div
           className={`whitespace-nowrap text-lg font-semibold tabular-nums leading-tight md:text-xl ${
-            urgent ? "text-amber-800" : "text-[var(--accent)]"
+            urgent ? "text-amber-800" : "text-[var(--info)]"
           }`}
         >
           {passed ? (
