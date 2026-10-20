@@ -21,6 +21,8 @@ function player(overrides: Partial<PlayerStat> & { webName: string }): PlayerSta
     cost: 60,
     costChangeEvent: 0,
     priceChangePercent: 0,
+    projectedPercent: 0,
+    priceLockedUntil: null,
     totalPoints: 10,
     eventPoints: 0,
     form: 0,

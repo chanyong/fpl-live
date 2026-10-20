@@ -9,6 +9,7 @@ import { DifferentialList } from "@/components/differential-list";
 import { LeaguePlayersPanel } from "@/components/league-players-panel";
 import { PlayerDetail } from "@/components/player-detail";
 import { PlayerTable } from "@/components/player-table";
+import { PriceChangesSection } from "@/components/price-changes-section";
 import { DIFFERENTIAL_MIN_MINUTES, selectDifferentials } from "@/lib/player-metrics";
 import type { FplPosition, PlayerStatsResponse } from "@/lib/types";
 import { useLocale } from "@/components/locale-provider";
@@ -119,38 +120,6 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
       ),
     [transferRows]
   );
-
-  const priceRows: BarRow[] = useMemo(() => {
-    const risers = [...players]
-      .filter((player) => player.priceChangePercent > 0)
-      .sort((left, right) => right.priceChangePercent - left.priceChangePercent)
-      .slice(0, 5);
-    const fallers = [...players]
-      .filter((player) => player.priceChangePercent < 0)
-      .sort((left, right) => left.priceChangePercent - right.priceChangePercent)
-      .slice(0, 4);
-
-    return [...risers, ...fallers].map((player) => {
-      const rising = player.priceChangePercent >= 0;
-
-      return {
-        key: player.id,
-        label: player.webName,
-        sub: player.teamShortName,
-        left: rising ? 0 : Math.abs(player.priceChangePercent),
-        right: rising ? player.priceChangePercent : 0,
-        value: tr(
-          `${rising ? "상승" : "하락"} ${Math.abs(player.priceChangePercent).toFixed(0)}%`,
-          `${rising ? "Rise" : "Fall"} ${Math.abs(player.priceChangePercent).toFixed(0)}%`
-        ),
-        tooltip: tr(
-          `${player.webName} · 가격 ${rising ? "상승" : "하락"}까지 ${Math.abs(player.priceChangePercent).toFixed(1)}%`,
-          `${player.webName} · ${Math.abs(player.priceChangePercent).toFixed(1)}% of the way to a price ${rising ? "rise" : "fall"}`
-        ),
-        onSelect: () => setSelected(player.id)
-      };
-    });
-  }, [players, tr]);
 
   const differentials = useMemo(
     () => selectDifferentials(players, { ownershipCut: OWNERSHIP_CUT, formCut: FORM_CUT }),
@@ -274,24 +243,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
             </div>
           </Section>
 
-          {priceRows.length > 0 ? (
-            <Section
-              title={tr("가격 변동 임박", "Price changes due")}
-              hint={tr(
-                "FPL이 직접 제공하는 변동 진행률입니다. 100%에 닿으면 다음 갱신에서 가격이 움직입니다.",
-                "FPL's own progress meter. At 100% the price moves at the next update."
-              )}
-            >
-              <div className="overflow-x-auto">
-                <DivergingRows
-                  rows={priceRows}
-                  max={100}
-                  valueWidth="84px"
-                  scale={{ left: tr("← 하락 임박", "← Fall due"), mid: "0", right: tr("상승 임박 →", "Rise due →") }}
-                />
-              </div>
-            </Section>
-          ) : null}
+          <PriceChangesSection players={players} onSelect={setSelected} />
         </>
       ) : null}
 

@@ -207,6 +207,10 @@ export type PlayerStat = {
   costChangeEvent: number;
   /** −100…100 progress toward the next price move. */
   priceChangePercent: number;
+  /** FPL's own projection of the progress figure at the next price update. */
+  projectedPercent: number;
+  /** ISO time before which FPL will not move this price, or null. */
+  priceLockedUntil: string | null;
   totalPoints: number;
   eventPoints: number;
   form: number;

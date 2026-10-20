@@ -14,6 +14,7 @@ import { PlayerTrendsPanel } from "@/components/player-trends-panel";
 import { PremierLeagueTable } from "@/components/premier-league-table";
 import { RankChangePanel } from "@/components/rank-change-panel";
 import { SidePanelLayout } from "@/components/side-panel-layout";
+import { SubTabs } from "@/components/sub-tabs";
 import { TeamFixtureTable } from "@/components/team-fixture-table";
 import { RefreshIndicator } from "@/components/refresh-indicator";
 
@@ -52,11 +53,15 @@ async function fetchPlayerStats(leagueId: string, fallbackError: string) {
   return (await response.json()) as PlayerStatsResponse;
 }
 
-type Tab = "standings" | "fixtures" | "rank-change" | "player-trends";
+type Tab = "standings" | "team" | "player";
+type StandingsView = "table" | "rank-change";
+type TeamView = "fixtures" | "table";
 
 export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; buildId: string }) {
   const { tr } = useLocale();
   const [tab, setTab] = useState<Tab>("standings");
+  const [standingsView, setStandingsView] = useState<StandingsView>("table");
+  const [teamView, setTeamView] = useState<TeamView>("fixtures");
   const queryClient = useQueryClient();
 
   const query = useQuery({
@@ -71,7 +76,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
   const rankChangeQuery = useQuery({
     queryKey: ["league-rank-change", leagueId],
     queryFn: () => fetchRankChange(leagueId, tr("순위 추이 데이터를 불러오지 못했습니다.", "Could not load rank trend data.")),
-    enabled: tab === "rank-change",
+    enabled: tab === "standings" && standingsView === "rank-change",
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false
@@ -80,7 +85,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
   const playerStatsQuery = useQuery({
     queryKey: ["player-stats", leagueId],
     queryFn: () => fetchPlayerStats(leagueId, tr("선수 데이터를 불러오지 못했습니다.", "Could not load player data.")),
-    enabled: tab === "player-trends" || tab === "fixtures",
+    enabled: tab === "player" || tab === "team",
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false
@@ -89,12 +94,14 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
   const tabs = useMemo(
     () => [
       { id: "standings", label: tr("주간 순위", "Standings") },
-      { id: "fixtures", label: tr("경기 일정", "Fixtures") },
-      { id: "rank-change", label: tr("순위 추이", "Rank trend") },
-      { id: "player-trends", label: tr("선수 추이", "Players") }
+      { id: "team", label: tr("팀", "Teams") },
+      { id: "player", label: tr("선수", "Players") }
     ] as const,
     [tr]
   );
+
+  const isRankChangeTab = tab === "standings" && standingsView === "rank-change";
+  const isPlayerTab = tab === "player" || tab === "team";
 
   // Force-refresh bypasses the server's 30s memo so the button means something.
   async function handleRefresh() {
@@ -104,16 +111,14 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
       true
     );
     queryClient.setQueryData(["league-live", leagueId], fresh);
-    if (tab === "rank-change") {
+    if (isRankChangeTab) {
       await rankChangeQuery.refetch();
     }
-    if (tab === "player-trends") {
+    if (isPlayerTab) {
       await playerStatsQuery.refetch();
     }
   }
 
-  const isRankChangeTab = tab === "rank-change";
-  const isPlayerTab = tab === "player-trends";
   const activeError = isRankChangeTab
     ? rankChangeQuery.error
     : isPlayerTab
@@ -245,48 +250,75 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
             })}
           </div>
 
-          {tab === "standings" && query.data ? (
-            <>
-              <SidePanelLayout
-                side={
-                  <>
-                    <LeagueKpis rows={query.data.rows} gw={query.data.league.currentGw} />
-                    <CaptainStats stats={query.data.captainStats} layout="list" />
-                  </>
-                }
-              >
-                <LeagueTable data={query.data} />
-              </SidePanelLayout>
-            </>
-          ) : null}
-
-          {tab === "fixtures" && query.data ? (
-            <>
-              <FixturesPanel
-                fixtures={query.data.fixtures}
-                currentGw={query.data.league.currentGw}
-                rows={query.data.rows}
+          {tab === "standings" ? (
+            <div className="mb-2">
+              <SubTabs<StandingsView>
+                label={tr("주간 순위 보기", "Standings views")}
+                items={[
+                  { id: "table", label: tr("순위표", "Table") },
+                  { id: "rank-change", label: tr("순위 추이", "Rank trend") }
+                ]}
+                value={standingsView}
+                onChange={setStandingsView}
               />
-              {playerStatsQuery.data ? (
-                <>
-                  <TeamFixtureTable data={playerStatsQuery.data} />
-                  <PremierLeagueTable table={playerStatsQuery.data.table} />
-                </>
-              ) : (
-                <div className="mt-3 rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] px-4 py-6 text-center text-sm text-[var(--muted)]">
-                  {playerStatsQuery.error
-                    ? tr("팀별 일정 난이도를 불러오지 못했습니다.", "Could not load team fixture difficulty.")
-                    : tr("팀별 일정 난이도를 불러오는 중…", "Loading team fixture difficulty…")}
-                </div>
-              )}
-            </>
+            </div>
           ) : null}
 
-          {tab === "rank-change" && rankChangeQuery.data ? (
+          {tab === "team" ? (
+            <div className="mb-2">
+              <SubTabs<TeamView>
+                label={tr("팀 보기", "Team views")}
+                items={[
+                  { id: "fixtures", label: tr("경기 일정", "Fixtures") },
+                  { id: "table", label: tr("순위·일정 난이도", "Table & difficulty") }
+                ]}
+                value={teamView}
+                onChange={setTeamView}
+              />
+            </div>
+          ) : null}
+
+          {tab === "standings" && standingsView === "table" && query.data ? (
+            <SidePanelLayout
+              side={
+                <>
+                  <LeagueKpis rows={query.data.rows} gw={query.data.league.currentGw} />
+                  <CaptainStats stats={query.data.captainStats} layout="list" />
+                </>
+              }
+            >
+              <LeagueTable data={query.data} />
+            </SidePanelLayout>
+          ) : null}
+
+          {tab === "standings" && standingsView === "rank-change" && rankChangeQuery.data ? (
             <RankChangePanel data={rankChangeQuery.data} />
           ) : null}
 
-          {tab === "player-trends" && playerStatsQuery.data ? (
+          {tab === "team" && teamView === "fixtures" && query.data ? (
+            <FixturesPanel
+              fixtures={query.data.fixtures}
+              currentGw={query.data.league.currentGw}
+              rows={query.data.rows}
+            />
+          ) : null}
+
+          {tab === "team" && teamView === "table" ? (
+            playerStatsQuery.data ? (
+              <>
+                <TeamFixtureTable data={playerStatsQuery.data} />
+                <PremierLeagueTable table={playerStatsQuery.data.table} />
+              </>
+            ) : (
+              <div className="mt-3 rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] px-4 py-6 text-center text-sm text-[var(--muted)]">
+                {playerStatsQuery.error
+                  ? tr("팀별 일정 난이도를 불러오지 못했습니다.", "Could not load team fixture difficulty.")
+                  : tr("팀별 일정 난이도를 불러오는 중…", "Loading team fixture difficulty…")}
+              </div>
+            )
+          ) : null}
+
+          {tab === "player" && playerStatsQuery.data ? (
             <PlayerTrendsPanel data={playerStatsQuery.data} />
           ) : null}
         </>

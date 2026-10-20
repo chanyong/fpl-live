@@ -140,6 +140,11 @@ export async function getPlayerStatsPayload({
       cost: element.now_cost,
       costChangeEvent: element.cost_change_event,
       priceChangePercent: roundTo(element.price_change_percent),
+      projectedPercent: roundTo(
+        element.price_change_projections.find((projection) => projection.offset === 0)?.projected_percent ??
+          element.price_change_percent
+      ),
+      priceLockedUntil: element.price_change_locked_until,
       totalPoints: element.total_points,
       eventPoints: gwPointsOf(element),
       form: element.form,

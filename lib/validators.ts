@@ -58,6 +58,11 @@ export const bootstrapStaticSchema = z.object({
       transfers_in_event: z.number().optional().default(0),
       transfers_out_event: z.number().optional().default(0),
       price_change_percent: numeric,
+      price_change_projections: z
+        .array(z.object({ offset: z.number(), projected_percent: numeric }))
+        .optional()
+        .default([]),
+      price_change_locked_until: z.string().nullable().optional().default(null),
       form: numeric,
       points_per_game: numeric,
       selected_by_percent: numeric,
