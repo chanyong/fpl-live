@@ -131,7 +131,7 @@ export function PlayerTable({
                   setLimit(PAGE_SIZE);
                 }}
                 className={`rounded-full px-2.5 py-1 text-[12px] font-semibold transition ${
-                  position === item ? "bg-[var(--text)] text-white" : "text-[var(--muted)]"
+                  position === item ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] shadow-[inset_0_0_0_1px_var(--accent)]" : "text-[var(--muted)]"
                 }`}
               >
                 {item === "ALL" ? tr("전체", "All") : item}

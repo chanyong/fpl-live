@@ -241,7 +241,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
                   aria-selected={active}
                   onClick={() => setTab(item.id)}
                   className={`flex-1 whitespace-nowrap rounded-[0.8rem] px-3 py-1.5 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none md:px-4 ${
-                    active ? "bg-[var(--text)] text-white" : "text-[var(--muted)] hover:text-[var(--text)]"
+                    active ? "bg-[var(--accent)] text-white shadow-sm" : "text-[var(--muted)] hover:text-[var(--text)]"
                   }`}
                 >
                   {item.label}

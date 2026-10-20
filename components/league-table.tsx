@@ -228,7 +228,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                 onClick={() => setQuick(item.id)}
                 className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-2.5 text-[13px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
                   quick === item.id
-                    ? "border-[var(--text)] bg-[var(--text)] text-white"
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
                     : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--accent)]"
                 }`}
               >
@@ -392,7 +392,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
             type="button"
             disabled={selectedRows.length < 2}
             onClick={() => setCompareOpen(true)}
-            className="min-h-10 shrink-0 rounded-full bg-[var(--text)] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="min-h-10 shrink-0 rounded-full bg-[var(--accent)] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             {tr("비교하기", "Compare")} ({selectedRows.length}/2)
           </button>

@@ -217,7 +217,7 @@ export function LeaguePlayersPanel({
               type="button"
               onClick={() => setSwingWindow(option.id)}
               className={`rounded-full px-3 py-1 font-semibold transition ${
-                swingWindow === option.id ? "bg-[var(--text)] text-white" : "text-[var(--muted)]"
+                swingWindow === option.id ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] shadow-[inset_0_0_0_1px_var(--accent)]" : "text-[var(--muted)]"
               }`}
             >
               {option.label}

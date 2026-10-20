@@ -187,7 +187,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
               aria-selected={active}
               onClick={() => setView(item.id)}
               className={`flex-1 rounded-[0.7rem] px-3 py-1.5 text-[13px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none ${
-                active ? "bg-[var(--text)] text-white" : "text-[var(--muted)] hover:text-[var(--text)]"
+                active ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] shadow-[inset_0_0_0_1px_var(--accent)]" : "text-[var(--muted)] hover:text-[var(--text)]"
               }`}
             >
               {tr(item.ko, item.en)}
@@ -205,7 +205,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
             onClick={() => setPosition(item.id)}
             className={`min-h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
               position === item.id
-                ? "border-[var(--text)] bg-[var(--text)] text-white"
+                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
                 : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--accent)]"
             }`}
           >

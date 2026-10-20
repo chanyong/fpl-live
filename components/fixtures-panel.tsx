@@ -379,7 +379,7 @@ export function FixturesPanel({
               onClick={() => setStatusFilter(item.id)}
               className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-3 text-[12px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
                 statusFilter === item.id
-                  ? "border-[var(--text)] bg-[var(--text)] text-white"
+                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
                   : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--accent)]"
               }`}
             >

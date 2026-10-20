@@ -465,7 +465,7 @@ function PeriodTabs({ value, onChange }: { value: PeriodId; onChange: (value: Pe
           aria-pressed={value === period.id}
           onClick={() => onChange(period.id)}
           className={`rounded-full px-3 py-1 text-[12px] font-semibold transition ${
-            value === period.id ? "bg-[var(--text)] text-white" : "text-[var(--muted)] hover:text-[var(--text)]"
+            value === period.id ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] shadow-[inset_0_0_0_1px_var(--accent)]" : "text-[var(--muted)] hover:text-[var(--text)]"
           }`}
         >
           {tr(period.ko, period.en)}

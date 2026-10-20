@@ -12,7 +12,7 @@ type PriceView = "predictions" | "recent";
 const PAGE_SIZE = 20;
 
 const OUTLOOK_STYLE: Record<PriceOutlook, string> = {
-  "very-likely": "bg-[var(--text)] text-white",
+  "very-likely": "bg-[var(--accent)] text-white",
   likely: "bg-amber-100 text-amber-900",
   unlikely: "bg-[var(--border)] text-[var(--muted)]"
 };
