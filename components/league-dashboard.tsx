@@ -132,17 +132,17 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
   return (
     <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-1.5 py-1.5 sm:px-2 md:px-3 md:py-2">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <Link
+          href="/"
+          className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)] transition hover:text-[var(--accent)] md:text-xs"
+        >
+          {tr("다른 리그 검색", "Search another league")}
+        </Link>
+        <LocaleToggle />
+      </div>
       <div className="mb-2 flex flex-col gap-2 md:mb-3 md:flex-row md:items-end md:justify-between md:gap-3">
         <div className="min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <Link
-              href="/"
-              className="text-[11px] uppercase tracking-[0.18em] text-[var(--muted)] transition hover:text-[var(--accent)] md:text-xs"
-            >
-              {tr("다른 리그 검색", "Search another league")}
-            </Link>
-            <LocaleToggle />
-          </div>
           <h1 className="mt-1 text-2xl font-semibold leading-none md:text-3xl">
             {query.data?.league.name ??
               rankChangeQuery.data?.league.name ??

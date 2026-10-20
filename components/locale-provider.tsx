@@ -77,7 +77,7 @@ export function LocaleToggle({ className }: { className?: string }) {
           aria-pressed={locale === item.id}
           onClick={() => setLocale(item.id)}
           className={`rounded-full px-3 py-1 transition ${
-            locale === item.id ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] shadow-[inset_0_0_0_1px_var(--accent)]" : "text-[var(--muted)] hover:text-[var(--text)]"
+            locale === item.id ? "bg-[var(--info-soft)] text-[var(--info)] shadow-[inset_0_0_0_1px_var(--info)]" : "text-[var(--muted)] hover:text-[var(--text)]"
           }`}
         >
           {item.label}
