@@ -8,7 +8,9 @@ import type { PlayerStat } from "@/lib/types";
 import { useLocale } from "@/components/locale-provider";
 
 type PriceView = "predictions" | "recent";
-type Direction = "all" | "rise" | "fall" | "locked";
+type Direction = "all" | "rise" | "fall";
+type Magnitude = Direction | "p95" | "p100";
+type OutlookFilter = "all" | PriceOutlook | "locked";
 type Trend = "rise" | "fall";
 
 const PAGE_SIZE = 20;
@@ -38,6 +40,53 @@ function signed(value: number) {
   return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
 }
 
+/** Progress and projection are signed −100…100; the cuts look at the size of the move. */
+function matchesMagnitude(value: number, filter: Magnitude) {
+  switch (filter) {
+    case "rise":
+      return value > 0;
+    case "fall":
+      return value < 0;
+    case "p95":
+      return Math.abs(value) >= 95;
+    case "p100":
+      return Math.abs(value) >= 100;
+    default:
+      return true;
+  }
+}
+
+function ColumnFilter<T extends string>({
+  label,
+  value,
+  options,
+  onChange
+}: {
+  label: string;
+  value: T;
+  options: Array<{ id: T; label: string }>;
+  onChange: (next: T) => void;
+}) {
+  return (
+    <select
+      aria-label={label}
+      value={value}
+      onChange={(event) => onChange(event.target.value as T)}
+      className={`w-full max-w-[9rem] rounded-full border px-2.5 py-1 text-[12px] font-semibold normal-case tracking-normal outline-none transition focus:border-[var(--accent)] ${
+        value === "all"
+          ? "border-[var(--border)] bg-white text-[var(--muted)]"
+          : "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
+      }`}
+    >
+      {options.map((option) => (
+        <option key={option.id} value={option.id}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 function isLocked(player: PlayerStat) {
   return player.priceLockedUntil !== null && new Date(player.priceLockedUntil).getTime() > Date.now();
 }
@@ -45,24 +94,35 @@ function isLocked(player: PlayerStat) {
 export function PriceChangesSection({ players, onSelect }: { players: PlayerStat[]; onSelect: (id: number) => void }) {
   const { tr } = useLocale();
   const [view, setView] = useState<PriceView>("predictions");
-  const [direction, setDirection] = useState<Direction>("all");
+  const [progressFilter, setProgressFilter] = useState<Magnitude>("all");
+  const [projectedFilter, setProjectedFilter] = useState<Magnitude>("all");
+  const [outlookFilter, setOutlookFilter] = useState<OutlookFilter>("all");
+  const [changeFilter, setChangeFilter] = useState<Direction>("all");
   const [search, setSearch] = useState("");
   const [shown, setShown] = useState(PAGE_SIZE);
 
   const rows = useMemo(() => {
     const needle = search.trim().toLowerCase();
     const base = view === "predictions" ? selectPricePredictions(players) : selectRecentPriceChanges(players);
-    const trendOf = (player: PlayerStat) =>
-      (view === "predictions" ? player.projectedPercent : player.costChangeEvent) >= 0 ? "rise" : "fall";
 
     return base.filter((player) => {
-      if (direction === "locked" ? !isLocked(player) : direction !== "all" && trendOf(player) !== direction) {
+      if (needle !== "" && !player.webName.toLowerCase().includes(needle) && !player.teamShortName.toLowerCase().includes(needle)) {
         return false;
       }
 
-      return needle === "" || player.webName.toLowerCase().includes(needle) || player.teamShortName.toLowerCase().includes(needle);
+      if (view === "recent") {
+        return changeFilter === "all" || (player.costChangeEvent > 0 ? "rise" : "fall") === changeFilter;
+      }
+
+      const outlook = isLocked(player) ? "locked" : priceOutlook(player.projectedPercent);
+
+      return (
+        matchesMagnitude(player.priceChangePercent, progressFilter) &&
+        matchesMagnitude(player.projectedPercent, projectedFilter) &&
+        (outlookFilter === "all" || outlook === outlookFilter)
+      );
     });
-  }, [players, view, direction, search]);
+  }, [players, view, search, progressFilter, projectedFilter, outlookFilter, changeFilter]);
 
   const outlookLabel: Record<PriceOutlook, string> = {
     "very-likely": tr("매우 유력", "Very likely"),
@@ -70,11 +130,24 @@ export function PriceChangesSection({ players, onSelect }: { players: PlayerStat
     unlikely: tr("가능성 낮음", "Unlikely")
   };
 
-  const directions: Array<{ id: Direction; label: string }> = [
+  const magnitudeOptions: Array<{ id: Magnitude; label: string }> = [
     { id: "all", label: tr("전체", "All") },
     { id: "rise", label: `▲ ${tr("상승", "Rise")}` },
     { id: "fall", label: `▼ ${tr("하락", "Fall")}` },
-    ...(view === "predictions" ? [{ id: "locked" as const, label: tr("잠금", "Locked") }] : [])
+    { id: "p95", label: tr("±95% 이상", "±95%+") },
+    { id: "p100", label: tr("±100% 이상", "±100%+") }
+  ];
+  const outlookOptions: Array<{ id: OutlookFilter; label: string }> = [
+    { id: "all", label: tr("전체", "All") },
+    { id: "very-likely", label: outlookLabel["very-likely"] },
+    { id: "likely", label: outlookLabel.likely },
+    { id: "unlikely", label: outlookLabel.unlikely },
+    { id: "locked", label: tr("변동 잠금", "Locked") }
+  ];
+  const changeOptions: Array<{ id: Direction; label: string }> = [
+    { id: "all", label: tr("전체", "All") },
+    { id: "rise", label: `▲ ${tr("상승", "Rise")}` },
+    { id: "fall", label: `▼ ${tr("하락", "Fall")}` }
   ];
 
   function reset(nextShown = PAGE_SIZE) {
@@ -107,35 +180,12 @@ export function PriceChangesSection({ players, onSelect }: { players: PlayerStat
           value={view}
           onChange={(next) => {
             setView(next);
-            if (next === "recent" && direction === "locked") {
-              setDirection("all");
-            }
             reset();
           }}
         />
       </div>
 
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <div role="group" aria-label={tr("변동 방향 필터", "Direction filter")} className="flex flex-wrap gap-1.5">
-          {directions.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              aria-pressed={direction === item.id}
-              onClick={() => {
-                setDirection(item.id);
-                reset();
-              }}
-              className={`min-h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
-                direction === item.id
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
-                  : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--accent)]"
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
         <input
           value={search}
           onChange={(event) => {
@@ -144,7 +194,7 @@ export function PriceChangesSection({ players, onSelect }: { players: PlayerStat
           }}
           aria-label={tr("선수 또는 팀 검색", "Search player or team")}
           placeholder={tr("선수·팀 검색", "Search player or team")}
-          className="min-h-9 min-w-[10rem] flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-[13px] outline-none transition focus:border-[var(--accent)] md:max-w-[16rem]"
+          className="min-h-9 min-w-[10rem] flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-[13px] outline-none transition focus:border-[var(--accent)] md:max-w-[20rem]"
         />
         <span className="ml-auto text-[12px] text-[var(--muted)]">{tr(`${rows.length}명`, `${rows.length} players`)}</span>
       </div>
@@ -170,6 +220,30 @@ export function PriceChangesSection({ players, onSelect }: { players: PlayerStat
                   <>
                     <th className="px-2 py-1.5 font-semibold">{tr("변동", "Change")}</th>
                     <th className="py-1.5 pl-2 text-right font-semibold">{tr("이전 → 현재", "Was → Now")}</th>
+                  </>
+                )}
+              </tr>
+              <tr>
+                <th className="pb-1.5 pr-2" />
+                {view === "predictions" ? (
+                  <>
+                    <th className="px-2 pb-1.5">
+                      <ColumnFilter label={tr("진행률 필터", "Progress filter")} value={progressFilter} options={magnitudeOptions} onChange={(next) => { setProgressFilter(next); reset(); }} />
+                    </th>
+                    <th className="px-2 pb-1.5">
+                      <ColumnFilter label={tr("예상 필터", "Projected filter")} value={projectedFilter} options={magnitudeOptions} onChange={(next) => { setProjectedFilter(next); reset(); }} />
+                    </th>
+                    <th className="px-2 pb-1.5">
+                      <ColumnFilter label={tr("전망 필터", "Outlook filter")} value={outlookFilter} options={outlookOptions} onChange={(next) => { setOutlookFilter(next); reset(); }} />
+                    </th>
+                    <th className="pb-1.5 pl-2" />
+                  </>
+                ) : (
+                  <>
+                    <th className="px-2 pb-1.5">
+                      <ColumnFilter label={tr("변동 필터", "Change filter")} value={changeFilter} options={changeOptions} onChange={(next) => { setChangeFilter(next); reset(); }} />
+                    </th>
+                    <th className="pb-1.5 pl-2" />
                   </>
                 )}
               </tr>
