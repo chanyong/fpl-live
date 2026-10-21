@@ -16,6 +16,7 @@ import { RankChangePanel } from "@/components/rank-change-panel";
 import { SidePanelLayout } from "@/components/side-panel-layout";
 import { SubTabs } from "@/components/sub-tabs";
 import { TeamFixtureTable } from "@/components/team-fixture-table";
+import { ShareButton } from "@/components/share-button";
 import { RefreshIndicator } from "@/components/refresh-indicator";
 
 async function fetchLeagueLive(leagueId: string, fallbackError: string, refresh = false) {
@@ -133,6 +134,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
   return (
     <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-1.5 py-1.5 sm:px-2 md:px-3 md:py-2">
       <div className="mb-1 flex items-center justify-end gap-2">
+        <ShareButton leagueName={query.data?.league.name} />
         <Link
           href="/"
           className="inline-flex shrink-0 items-center rounded-full border border-[var(--border)] bg-white px-3.5 py-1.5 text-[12px] font-semibold text-[var(--text)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"

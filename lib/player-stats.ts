@@ -54,6 +54,48 @@ function photoUrl(photo: string) {
     : null;
 }
 
+type BootstrapElement = Awaited<ReturnType<typeof getBootstrapStatic>>["elements"][number];
+type BootstrapTeam = Awaited<ReturnType<typeof getBootstrapStatic>>["teams"][number];
+
+function buildPlayerStat(
+  element: BootstrapElement,
+  teamsById: Map<number, BootstrapTeam>,
+  eventPoints: number
+): PlayerStat {
+  const team = teamsById.get(element.team);
+
+  return {
+    id: element.id,
+    webName: element.web_name,
+    teamId: element.team,
+    teamShortName: team?.short_name ?? "-",
+    teamCode: team?.code ?? 0,
+    position: POSITION_BY_TYPE[element.element_type] ?? "MID",
+    cost: element.now_cost,
+    costChangeEvent: element.cost_change_event,
+    priceChangePercent: roundTo(element.price_change_percent),
+    projectedPercent: roundTo(
+      element.price_change_projections.find((projection) => projection.offset === 0)?.projected_percent ??
+        element.price_change_percent
+    ),
+    priceLockedUntil: element.price_change_locked_until,
+    totalPoints: element.total_points,
+    eventPoints,
+    form: element.form,
+    pointsPerGame: element.points_per_game,
+    selectedByPercent: element.selected_by_percent,
+    transfersInEvent: element.transfers_in_event,
+    transfersOutEvent: element.transfers_out_event,
+    netTransfers: element.transfers_in_event - element.transfers_out_event,
+    minutes: element.minutes,
+    ictIndex: element.ict_index,
+    expectedGoalInvolvements: element.expected_goal_involvements,
+    status: element.status,
+    news: element.news,
+    photoUrl: photoUrl(element.photo)
+  };
+}
+
 export async function getPlayerStatsPayload({
   leagueId,
   gw,
@@ -127,40 +169,8 @@ export async function getPlayerStatsPayload({
   const gwPointsOf = (element: { id: number; event_points: number }) =>
     element.event_points + (provisionalBonus.get(element.id) ?? 0);
 
-  const toPlayerStat = (element: (typeof bootstrap.elements)[number]): PlayerStat => {
-    const team = teamsById.get(element.team);
-
-    return {
-      id: element.id,
-      webName: element.web_name,
-      teamId: element.team,
-      teamShortName: team?.short_name ?? "-",
-      teamCode: team?.code ?? 0,
-      position: POSITION_BY_TYPE[element.element_type] ?? "MID",
-      cost: element.now_cost,
-      costChangeEvent: element.cost_change_event,
-      priceChangePercent: roundTo(element.price_change_percent),
-      projectedPercent: roundTo(
-        element.price_change_projections.find((projection) => projection.offset === 0)?.projected_percent ??
-          element.price_change_percent
-      ),
-      priceLockedUntil: element.price_change_locked_until,
-      totalPoints: element.total_points,
-      eventPoints: gwPointsOf(element),
-      form: element.form,
-      pointsPerGame: element.points_per_game,
-      selectedByPercent: element.selected_by_percent,
-      transfersInEvent: element.transfers_in_event,
-      transfersOutEvent: element.transfers_out_event,
-      netTransfers: element.transfers_in_event - element.transfers_out_event,
-      minutes: element.minutes,
-      ictIndex: element.ict_index,
-      expectedGoalInvolvements: element.expected_goal_involvements,
-      status: element.status,
-      news: element.news,
-      photoUrl: photoUrl(element.photo)
-    };
-  };
+  const toPlayerStat = (element: BootstrapElement) =>
+    buildPlayerStat(element, teamsById, gwPointsOf(element));
 
   // Anyone who has kicked a ball, plus everyone a league squad holds even if he has not.
   const players = bootstrap.elements
@@ -251,4 +261,26 @@ export async function getPlayerStatsPayload({
   playerStatsCache.set(cacheKey, { data: result, expiresAt: Date.now() + CACHE_TTL_MS });
 
   return result;
+}
+
+const PRICE_CACHE_TTL_MS = 60_000;
+let priceCache: { players: PlayerStat[]; expiresAt: number } | null = null;
+
+/**
+ * Every player's price-change figures, independent of any league — so the public price page
+ * works for visitors who have not entered a league ID.
+ */
+export async function getPriceChangePlayers(): Promise<PlayerStat[]> {
+  if (priceCache && priceCache.expiresAt > Date.now()) {
+    return priceCache.players;
+  }
+
+  const bootstrap = await getBootstrapStatic();
+  const teamsById = new Map(bootstrap.teams.map((team) => [team.id, team]));
+  const players = bootstrap.elements
+    .filter((element) => element.minutes > 0)
+    .map((element) => buildPlayerStat(element, teamsById, element.event_points));
+
+  priceCache = { players, expiresAt: Date.now() + PRICE_CACHE_TTL_MS };
+  return players;
 }

@@ -2,6 +2,7 @@
 
 import { LeagueSearchForm } from "@/components/league-search-form";
 import { LeagueIdLinks } from "@/components/league-id-links";
+import Link from "next/link";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
 
 export function HomeHero() {
@@ -26,6 +27,23 @@ export function HomeHero() {
       </p>
       <LeagueSearchForm />
       <LeagueIdLinks />
+      <div className="mt-6 rounded-2xl border border-[var(--info-border)] bg-[var(--info-soft)] p-4 text-sm">
+        <p className="font-semibold text-[var(--info)]">
+          {tr("리그 ID 없이 바로 보기", "No league ID? Start here")}
+        </p>
+        <p className="mt-1 text-[var(--muted)]">
+          {tr(
+            "이번 마감 전 가격이 오를 선수와 내릴 선수를 확인하세요.",
+            "See which players are about to rise or fall in price before the deadline."
+          )}
+        </p>
+        <Link
+          href="/price-changes"
+          className="mt-3 inline-flex rounded-full border border-[var(--info)] bg-white px-4 py-1.5 text-[13px] font-semibold text-[var(--info)] transition hover:bg-[var(--info-soft)]"
+        >
+          {tr("가격 변동 예측 보기", "View price change predictions")}
+        </Link>
+      </div>
     </section>
   );
 }
