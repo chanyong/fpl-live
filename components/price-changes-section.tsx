@@ -7,9 +7,8 @@ import type { PlayerStat } from "@/lib/types";
 import { useLocale } from "@/components/locale-provider";
 
 type PriceView = "predictions" | "recent";
-type Direction = "all" | "rise" | "fall";
-type Magnitude = Direction | "p95" | "p100";
-type OutlookFilter = "all" | PriceOutlook | "locked";
+type SortKey = "progress" | "projected" | "outlook" | "cost" | "change";
+type SortDir = "desc" | "asc";
 type Trend = "rise" | "fall";
 
 const PAGE_SIZE = 20;
@@ -39,50 +38,54 @@ function signed(value: number) {
   return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
 }
 
-/** Progress and projection are signed −100…100; the cuts look at the size of the move. */
-function matchesMagnitude(value: number, filter: Magnitude) {
-  switch (filter) {
-    case "rise":
-      return value > 0;
-    case "fall":
-      return value < 0;
-    case "p95":
-      return Math.abs(value) >= 95;
-    case "p100":
-      return Math.abs(value) >= 100;
-    default:
-      return true;
+const OUTLOOK_RANK: Record<PriceOutlook, number> = { "very-likely": 2, likely: 1, unlikely: 0 };
+
+/** Larger = stronger. Locked players sink below everything else. */
+function outlookScore(player: PlayerStat) {
+  return isLocked(player) ? -1 : OUTLOOK_RANK[priceOutlook(player.projectedPercent)];
+}
+
+function sortValue(player: PlayerStat, key: SortKey) {
+  switch (key) {
+    case "progress":
+      return player.priceChangePercent;
+    case "projected":
+      return player.projectedPercent;
+    case "outlook":
+      return outlookScore(player) * 1000 + Math.abs(player.projectedPercent);
+    case "cost":
+      return player.cost;
+    case "change":
+      return player.costChangeEvent;
   }
 }
 
-function ColumnFilter<T extends string>({
+function SortHeader({
   label,
-  value,
-  options,
-  onChange
+  active,
+  dir,
+  onSort,
+  align = "left"
 }: {
   label: string;
-  value: T;
-  options: Array<{ id: T; label: string }>;
-  onChange: (next: T) => void;
+  active: boolean;
+  dir: SortDir;
+  onSort: () => void;
+  align?: "left" | "right";
 }) {
   return (
-    <select
-      aria-label={label}
-      value={value}
-      onChange={(event) => onChange(event.target.value as T)}
-      className={`w-full max-w-[9rem] rounded-full border px-2.5 py-1 text-[12px] font-semibold normal-case tracking-normal outline-none transition focus:border-[var(--accent)] ${
-        value === "all"
-          ? "border-[var(--border)] bg-white text-[var(--muted)]"
-          : "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
-      }`}
+    <button
+      type="button"
+      onClick={onSort}
+      className={`inline-flex items-center gap-1 rounded-md px-1 py-0.5 font-semibold uppercase tracking-wide transition hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+        active ? "text-[var(--accent-ink)]" : ""
+      } ${align === "right" ? "flex-row-reverse" : ""}`}
     >
-      {options.map((option) => (
-        <option key={option.id} value={option.id}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+      {label}
+      <span aria-hidden="true" className={active ? "" : "opacity-30"}>
+        {active ? (dir === "desc" ? "▼" : "▲") : "⇅"}
+      </span>
+    </button>
   );
 }
 
@@ -92,35 +95,27 @@ function isLocked(player: PlayerStat) {
 
 function PriceTable({ view, players, onSelect }: { view: PriceView; players: PlayerStat[]; onSelect: (id: number) => void }) {
   const { tr } = useLocale();
-  const [progressFilter, setProgressFilter] = useState<Magnitude>("all");
-  const [projectedFilter, setProjectedFilter] = useState<Magnitude>("all");
-  const [outlookFilter, setOutlookFilter] = useState<OutlookFilter>("all");
-  const [changeFilter, setChangeFilter] = useState<Direction>("all");
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir } | null>(null);
   const [search, setSearch] = useState("");
   const [shown, setShown] = useState(PAGE_SIZE);
 
   const rows = useMemo(() => {
     const needle = search.trim().toLowerCase();
     const base = view === "predictions" ? selectPricePredictions(players) : selectRecentPriceChanges(players);
+    const matched = base.filter(
+      (player) =>
+        needle === "" ||
+        player.webName.toLowerCase().includes(needle) ||
+        player.teamShortName.toLowerCase().includes(needle)
+    );
 
-    return base.filter((player) => {
-      if (needle !== "" && !player.webName.toLowerCase().includes(needle) && !player.teamShortName.toLowerCase().includes(needle)) {
-        return false;
-      }
+    if (!sort) {
+      return matched;
+    }
 
-      if (view === "recent") {
-        return changeFilter === "all" || (player.costChangeEvent > 0 ? "rise" : "fall") === changeFilter;
-      }
-
-      const outlook = isLocked(player) ? "locked" : priceOutlook(player.projectedPercent);
-
-      return (
-        matchesMagnitude(player.priceChangePercent, progressFilter) &&
-        matchesMagnitude(player.projectedPercent, projectedFilter) &&
-        (outlookFilter === "all" || outlook === outlookFilter)
-      );
-    });
-  }, [players, view, search, progressFilter, projectedFilter, outlookFilter, changeFilter]);
+    const factor = sort.dir === "desc" ? -1 : 1;
+    return [...matched].sort((left, right) => factor * (sortValue(left, sort.key) - sortValue(right, sort.key)));
+  }, [players, view, search, sort]);
 
   const outlookLabel: Record<PriceOutlook, string> = {
     "very-likely": tr("매우 유력", "Very likely"),
@@ -128,38 +123,31 @@ function PriceTable({ view, players, onSelect }: { view: PriceView; players: Pla
     unlikely: tr("가능성 낮음", "Unlikely")
   };
 
-  const magnitudeOptions: Array<{ id: Magnitude; label: string }> = [
-    { id: "all", label: tr("전체", "All") },
-    { id: "rise", label: `▲ ${tr("상승", "Rise")}` },
-    { id: "fall", label: `▼ ${tr("하락", "Fall")}` },
-    { id: "p95", label: tr("±95% 이상", "±95%+") },
-    { id: "p100", label: tr("±100% 이상", "±100%+") }
-  ];
-  const outlookOptions: Array<{ id: OutlookFilter; label: string }> = [
-    { id: "all", label: tr("전체", "All") },
-    { id: "very-likely", label: outlookLabel["very-likely"] },
-    { id: "likely", label: outlookLabel.likely },
-    { id: "unlikely", label: outlookLabel.unlikely },
-    { id: "locked", label: tr("변동 잠금", "Locked") }
-  ];
-  const changeOptions: Array<{ id: Direction; label: string }> = [
-    { id: "all", label: tr("전체", "All") },
-    { id: "rise", label: `▲ ${tr("상승", "Rise")}` },
-    { id: "fall", label: `▼ ${tr("하락", "Fall")}` }
-  ];
-
-  function resetFilters() {
-    setProgressFilter("all");
-    setProjectedFilter("all");
-    setOutlookFilter("all");
-    setChangeFilter("all");
-    setSearch("");
-    setShown(PAGE_SIZE);
-  }
-
   function reset() {
     setShown(PAGE_SIZE);
   }
+
+  function resetSearch() {
+    setSearch("");
+    reset();
+  }
+
+  /** First click sorts high to low, a second flips it, a third returns to the default order. */
+  function toggleSort(key: SortKey) {
+    setSort((current) => {
+      if (!current || current.key !== key) {
+        return { key, dir: "desc" };
+      }
+      return current.dir === "desc" ? { key, dir: "asc" } : null;
+    });
+    reset();
+  }
+
+  const headerProps = (key: SortKey) => ({
+    active: sort?.key === key,
+    dir: (sort?.dir ?? "desc") as SortDir,
+    onSort: () => toggleSort(key)
+  });
 
   return (
     <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
@@ -201,39 +189,15 @@ function PriceTable({ view, players, onSelect }: { view: PriceView; players: Pla
                 <th className="py-1.5 pr-2 font-semibold">{tr("선수", "Player")}</th>
                 {view === "predictions" ? (
                   <>
-                    <th className="px-2 py-1.5 font-semibold">{tr("진행률", "Progress")}</th>
-                    <th className="px-2 py-1.5 font-semibold">{tr("예상", "Projected")}</th>
-                    <th className="px-2 py-1.5 font-semibold">{tr("전망", "Outlook")}</th>
-                    <th className="py-1.5 pl-2 text-right font-semibold">{tr("현재가", "Price")}</th>
+                    <th className="px-1 py-1.5"><SortHeader label={tr("진행률", "Progress")} {...headerProps("progress")} /></th>
+                    <th className="px-1 py-1.5"><SortHeader label={tr("예상", "Projected")} {...headerProps("projected")} /></th>
+                    <th className="px-1 py-1.5"><SortHeader label={tr("전망", "Outlook")} {...headerProps("outlook")} /></th>
+                    <th className="py-1.5 pl-1 text-right"><SortHeader label={tr("현재가", "Price")} align="right" {...headerProps("cost")} /></th>
                   </>
                 ) : (
                   <>
-                    <th className="px-2 py-1.5 font-semibold">{tr("변동", "Change")}</th>
+                    <th className="px-1 py-1.5"><SortHeader label={tr("변동", "Change")} {...headerProps("change")} /></th>
                     <th className="py-1.5 pl-2 text-right font-semibold">{tr("이전 → 현재", "Was → Now")}</th>
-                  </>
-                )}
-              </tr>
-              <tr>
-                <th className="pb-1.5 pr-2" />
-                {view === "predictions" ? (
-                  <>
-                    <th className="px-2 pb-1.5">
-                      <ColumnFilter label={tr("진행률 필터", "Progress filter")} value={progressFilter} options={magnitudeOptions} onChange={(next) => { setProgressFilter(next); reset(); }} />
-                    </th>
-                    <th className="px-2 pb-1.5">
-                      <ColumnFilter label={tr("예상 필터", "Projected filter")} value={projectedFilter} options={magnitudeOptions} onChange={(next) => { setProjectedFilter(next); reset(); }} />
-                    </th>
-                    <th className="px-2 pb-1.5">
-                      <ColumnFilter label={tr("전망 필터", "Outlook filter")} value={outlookFilter} options={outlookOptions} onChange={(next) => { setOutlookFilter(next); reset(); }} />
-                    </th>
-                    <th className="pb-1.5 pl-2" />
-                  </>
-                ) : (
-                  <>
-                    <th className="px-2 pb-1.5">
-                      <ColumnFilter label={tr("변동 필터", "Change filter")} value={changeFilter} options={changeOptions} onChange={(next) => { setChangeFilter(next); reset(); }} />
-                    </th>
-                    <th className="pb-1.5 pl-2" />
                   </>
                 )}
               </tr>
@@ -242,13 +206,13 @@ function PriceTable({ view, players, onSelect }: { view: PriceView; players: Pla
               {rows.length === 0 ? (
                 <tr>
                   <td colSpan={view === "predictions" ? 5 : 3} className="border-t border-[var(--border)] py-6 text-center text-sm text-[var(--muted)]">
-                    {tr("조건에 맞는 선수가 없습니다. 위의 필터를 바꿔 보세요.", "No players match. Change the filters above.")}
+                    {tr("검색에 맞는 선수가 없습니다.", "No players match your search.")}
                     <button
                       type="button"
-                      onClick={resetFilters}
+                      onClick={resetSearch}
                       className="ml-2 font-semibold text-[var(--accent)] underline underline-offset-4"
                     >
-                      {tr("필터 초기화", "Clear filters")}
+                      {tr("검색 지우기", "Clear search")}
                     </button>
                   </td>
                 </tr>
