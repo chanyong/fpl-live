@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { SubTabs } from "@/components/sub-tabs";
 import { priceOutlook, selectPricePredictions, selectRecentPriceChanges, type PriceOutlook } from "@/lib/price-changes";
 import { formatMoney } from "@/lib/season-summary";
 import type { PlayerStat } from "@/lib/types";
@@ -91,9 +90,8 @@ function isLocked(player: PlayerStat) {
   return player.priceLockedUntil !== null && new Date(player.priceLockedUntil).getTime() > Date.now();
 }
 
-export function PriceChangesSection({ players, onSelect }: { players: PlayerStat[]; onSelect: (id: number) => void }) {
+function PriceTable({ view, players, onSelect }: { view: PriceView; players: PlayerStat[]; onSelect: (id: number) => void }) {
   const { tr } = useLocale();
-  const [view, setView] = useState<PriceView>("predictions");
   const [progressFilter, setProgressFilter] = useState<Magnitude>("all");
   const [projectedFilter, setProjectedFilter] = useState<Magnitude>("all");
   const [outlookFilter, setOutlookFilter] = useState<OutlookFilter>("all");
@@ -159,39 +157,27 @@ export function PriceChangesSection({ players, onSelect }: { players: PlayerStat
     setShown(PAGE_SIZE);
   }
 
-  function reset(nextShown = PAGE_SIZE) {
-    setShown(nextShown);
+  function reset() {
+    setShown(PAGE_SIZE);
   }
 
   return (
     <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
-      <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h3 className="text-[1rem] font-semibold">{tr("가격 변동", "Price changes")}</h3>
-          <p className="text-[12px] leading-relaxed text-[var(--muted)]">
-            {view === "predictions"
-              ? tr(
-                  "FPL이 제공하는 진행률과 다음 갱신 예상치입니다. 100%에 닿으면 상승, −100%에 닿으면 하락합니다.",
-                  "FPL's progress meter and its projection for the next update. +100% means a rise, −100% a fall."
-                )
-              : tr(
-                  "직전 데드라인 이후 이미 가격이 움직인 선수입니다. FPL 공개 데이터에는 변동 날짜가 없습니다.",
-                  "Players whose price has moved since the last deadline. FPL's public data carries no change dates."
-                )}
-          </p>
-        </div>
-        <SubTabs<PriceView>
-          label={tr("가격 변동 보기", "Price change views")}
-          items={[
-            { id: "predictions", label: tr("예측", "Predictions") },
-            { id: "recent", label: tr("최근 변동", "Recent changes") }
-          ]}
-          value={view}
-          onChange={(next) => {
-            setView(next);
-            reset();
-          }}
-        />
+      <div className="mb-2">
+        <h3 className="text-[1rem] font-semibold">
+          {view === "predictions" ? tr("가격 변동 예측", "Price change predictions") : tr("최근 가격 변동", "Recent price changes")}
+        </h3>
+        <p className="text-[12px] leading-relaxed text-[var(--muted)]">
+          {view === "predictions"
+            ? tr(
+                "FPL이 제공하는 진행률과 다음 갱신 예상치입니다. 100%에 닿으면 상승, −100%에 닿으면 하락합니다.",
+                "FPL's progress meter and its projection for the next update. +100% means a rise, −100% a fall."
+              )
+            : tr(
+                "직전 데드라인 이후 이미 가격이 움직인 선수입니다. FPL 공개 데이터에는 변동 날짜가 없습니다.",
+                "Players whose price has moved since the last deadline. FPL's public data carries no change dates."
+              )}
+        </p>
       </div>
 
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
@@ -337,5 +323,15 @@ export function PriceChangesSection({ players, onSelect }: { players: PlayerStat
         </button>
       ) : null}
     </section>
+  );
+}
+
+/** Predictions and recent changes are separate tables, stacked, rather than tabs of one. */
+export function PriceChangesSection({ players, onSelect }: { players: PlayerStat[]; onSelect: (id: number) => void }) {
+  return (
+    <div className="grid gap-3">
+      <PriceTable view="predictions" players={players} onSelect={onSelect} />
+      <PriceTable view="recent" players={players} onSelect={onSelect} />
+    </div>
   );
 }
