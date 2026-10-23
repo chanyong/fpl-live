@@ -40,11 +40,12 @@ export const metadata: Metadata = {
     locale: "en_US",
     alternateLocale: ["ko_KR"]
   },
-  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION }
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
+  verification: { google: "xvAnUUfmT3__qox3MlY5TFmG735TP1rwejDi5cOrmHA" }
 };
 
 const PLAUSIBLE_DOMAIN = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
-const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-NNCTLJCYPY";
 
 const STRUCTURED_DATA = {
   "@context": "https://schema.org",
