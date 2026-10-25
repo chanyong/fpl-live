@@ -55,14 +55,12 @@ async function fetchPlayerStats(leagueId: string, fallbackError: string) {
 }
 
 type Tab = "standings" | "team" | "player";
-type StandingsView = "table" | "rank-change";
-type TeamView = "fixtures" | "table";
+type StandingsView = "table" | "rank-change" | "fixtures";
 
 export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; buildId: string }) {
   const { tr } = useLocale();
   const [tab, setTab] = useState<Tab>("standings");
   const [standingsView, setStandingsView] = useState<StandingsView>("table");
-  const [teamView, setTeamView] = useState<TeamView>("fixtures");
   const queryClient = useQueryClient();
 
   const query = useQuery({
@@ -258,24 +256,11 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
                 label={tr("주간 순위 보기", "Standings views")}
                 items={[
                   { id: "table", label: tr("순위표", "Table") },
-                  { id: "rank-change", label: tr("순위 추이", "Rank trend") }
+                  { id: "rank-change", label: tr("순위 추이", "Rank trend") },
+                  { id: "fixtures", label: tr("경기 일정", "Fixtures") }
                 ]}
                 value={standingsView}
                 onChange={setStandingsView}
-              />
-            </div>
-          ) : null}
-
-          {tab === "team" ? (
-            <div className="mb-2">
-              <SubTabs<TeamView>
-                label={tr("팀 보기", "Team views")}
-                items={[
-                  { id: "fixtures", label: tr("경기 일정", "Fixtures") },
-                  { id: "table", label: tr("순위·일정 난이도", "Table & difficulty") }
-                ]}
-                value={teamView}
-                onChange={setTeamView}
               />
             </div>
           ) : null}
@@ -297,7 +282,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
             <RankChangePanel data={rankChangeQuery.data} />
           ) : null}
 
-          {tab === "team" && teamView === "fixtures" && query.data ? (
+          {tab === "standings" && standingsView === "fixtures" && query.data ? (
             <FixturesPanel
               fixtures={query.data.fixtures}
               currentGw={query.data.league.currentGw}
@@ -305,7 +290,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
             />
           ) : null}
 
-          {tab === "team" && teamView === "table" ? (
+          {tab === "team" ? (
             playerStatsQuery.data ? (
               <>
                 <TeamFixtureTable data={playerStatsQuery.data} />
