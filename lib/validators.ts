@@ -11,6 +11,16 @@ const numeric = z
   });
 
 export const bootstrapStaticSchema = z.object({
+  // The next few price-update times FPL has scheduled (UTC); the official countdown reads [0].
+  game_config: z
+    .object({
+      settings: z
+        .object({ price_change_deadlines: z.array(z.string()).optional().default([]) })
+        .optional()
+        .default({})
+    })
+    .optional()
+    .default({}),
   // Every chip the season grants, split into first/second half windows.
   chips: z
     .array(
@@ -59,10 +69,12 @@ export const bootstrapStaticSchema = z.object({
       transfers_out_event: z.number().optional().default(0),
       price_change_percent: numeric,
       price_change_projections: z
-        .array(z.object({ offset: z.number(), projected_percent: numeric }))
+        // likelihood is FPL's own status: ±5 very likely, ±4 likely, anything else no change.
+        .array(z.object({ offset: z.number(), projected_percent: numeric, likelihood: z.number().optional().default(0) }))
         .optional()
         .default([]),
       price_change_locked_until: z.string().nullable().optional().default(null),
+      price_change_calibrating: z.boolean().optional().default(false),
       form: numeric,
       points_per_game: numeric,
       selected_by_percent: numeric,
@@ -252,3 +264,14 @@ export const elementSummarySchema = z.object({
     })
   )
 });
+/** `stats/price-changes/` — every price move FPL has recorded recently, with its timestamp. */
+export const priceChangeHistorySchema = z.array(
+  z.object({
+    element: z.number(),
+    team: z.number(),
+    event: z.number().nullable().optional().default(null),
+    changed_at: z.string(),
+    cost_before: z.number(),
+    cost_after: z.number()
+  })
+);

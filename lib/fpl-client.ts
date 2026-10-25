@@ -6,6 +6,7 @@ import {
   fixturesSchema,
   liveSchema,
   picksSchema,
+  priceChangeHistorySchema,
   standingsPageSchema
 } from "@/lib/validators";
 
@@ -152,6 +153,10 @@ export function getEventLive(gw: number) {
 
 export function getFixtures() {
   return fetchJson("/fixtures/", fixturesSchema);
+}
+
+export function getPriceChangeHistory() {
+  return fetchJson("/stats/price-changes/", priceChangeHistorySchema);
 }
 
 export function getElementSummary(elementId: number) {

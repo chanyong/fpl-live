@@ -243,7 +243,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
             </div>
           </Section>
 
-          <PriceChangesSection players={players} onSelect={setSelected} />
+          <PriceChangesSection onSelect={setSelected} />
         </>
       ) : null}
 

@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { getPriceChangePlayers } from "@/lib/player-stats";
+import { getPriceChangeData } from "@/lib/player-stats";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
   try {
-    const players = await getPriceChangePlayers();
+    const data = await getPriceChangeData();
 
     return NextResponse.json(
-      { players },
+      data,
       { headers: { "Cache-Control": "public, max-age=30, s-maxage=60" } }
     );
   } catch (error) {

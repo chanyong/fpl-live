@@ -16,6 +16,7 @@ Next.js App Router MVP that uses official FPL public JSON endpoints to show a pu
 - `https://fantasy.premierleague.com/api/entry/{entryId}/event/{gw}/picks/`
 - `https://fantasy.premierleague.com/api/event/{gw}/live/`
 - `https://fantasy.premierleague.com/api/fixtures/`
+- `https://fantasy.premierleague.com/api/stats/price-changes/`
 - `https://fantasy.premierleague.com/api/element-summary/{playerId}/` — only when a
   player is opened in the player tab, never in bulk.
 
@@ -137,6 +138,18 @@ reachable from any squad card in the standings tab and from the player detail sh
   the season figure uses today's roster share, because past lineups are not kept.
 - The global player table is trimmed to players with minutes, plus everyone a league
   squad holds, so a benched unused player still has a row.
+
+## Price changes
+
+`/api/price-changes` mirrors fantasy.premierleague.com/price-changes and backs both the
+public `/price-changes` page and the player tab:
+
+- Predictions cover every player FPL has not marked unavailable (`status !== "u"`), ordered
+  by the size of the current progress. The status is FPL's own call from
+  `price_change_projections[0].likelihood` (±5 very likely, ±4 likely, otherwise no change);
+  locked and calibrating players are labelled as such.
+- Recent changes come from FPL's dated log, `stats/price-changes/`, newest first.
+- The countdown targets the first future entry of `game_config.settings.price_change_deadlines`.
 
 ## Assumptions for v1
 

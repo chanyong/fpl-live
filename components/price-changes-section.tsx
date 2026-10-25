@@ -1,63 +1,114 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { priceOutlook, selectPricePredictions, selectRecentPriceChanges, type PriceOutlook } from "@/lib/price-changes";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  PRICE_STATUS_ORDER,
+  daysUntilUnlock,
+  matchesDirection,
+  ownershipTrend,
+  priceStatus,
+  selectPricePredictions,
+  selectRecentPriceChanges,
+  type PriceDirection,
+  type PriceStatus
+} from "@/lib/price-changes";
 import { formatMoney } from "@/lib/season-summary";
-import type { PlayerStat } from "@/lib/types";
+import type { FplPosition, PlayerStat, PriceChangeEvent, PriceChangesResponse } from "@/lib/types";
 import { useLocale } from "@/components/locale-provider";
 
-type PriceView = "predictions" | "recent";
-type SortKey = "progress" | "projected" | "outlook" | "cost" | "change";
+type PredictionKey = "progress" | "projected" | "status" | "ownership" | "cost";
+type HistoryKey = "date" | "change" | "before" | "after";
 type SortDir = "desc" | "asc";
-type Trend = "rise" | "fall";
+type PositionFilter = "all" | FplPosition;
 
 const PAGE_SIZE = 20;
+const POSITIONS: FplPosition[] = ["GKP", "DEF", "MID", "FWD"];
 
-/** Rises read green and falls read red everywhere in this table; the cell tint carries the direction. */
-const CELL_TINT: Record<Trend, string> = {
-  rise: "bg-[var(--accent-soft)] text-[var(--accent-ink)]",
-  fall: "bg-[#fbe5e2] text-[#8a2323]"
+/** Same five-step scale as the official chips: strong green → neutral → strong red. */
+const STATUS_STYLE: Record<PriceStatus, string> = {
+  "very-likely-rise": "bg-[var(--accent)] text-white",
+  "likely-rise": "bg-[#b9e6d2] text-[var(--accent-ink)]",
+  "no-change": "bg-[#ece8df] text-[var(--muted)]",
+  "likely-drop": "bg-[#f4c7c2] text-[#7a1f1f]",
+  "very-likely-drop": "bg-[var(--danger)] text-white"
 };
 
-const BADGE_STYLE: Record<PriceOutlook, Record<Trend, string>> = {
-  "very-likely": {
-    rise: "bg-[var(--accent)] text-white",
-    fall: "bg-[var(--danger)] text-white"
-  },
-  likely: {
-    rise: "bg-[#b9e6d2] text-[var(--accent-ink)]",
-    fall: "bg-[#f4c7c2] text-[#7a1f1f]"
-  },
-  unlikely: {
-    rise: "bg-[var(--accent-soft)] text-[var(--accent-ink)]",
-    fall: "bg-[#fbe5e2] text-[#8a2323]"
+/** Higher = stronger rise; used when sorting by the status column. */
+const STATUS_RANK: Record<PriceStatus, number> = Object.fromEntries(
+  PRICE_STATUS_ORDER.map((status, index) => [status, PRICE_STATUS_ORDER.length - index])
+) as Record<PriceStatus, number>;
+
+async function fetchPriceChanges(fallbackError: string) {
+  const response = await fetch("/api/price-changes");
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(payload.error ?? fallbackError);
   }
-};
+
+  return (await response.json()) as PriceChangesResponse;
+}
 
 function signed(value: number) {
   return `${value > 0 ? "+" : ""}${value.toFixed(1)}%`;
 }
 
-const OUTLOOK_RANK: Record<PriceOutlook, number> = { "very-likely": 2, likely: 1, unlikely: 0 };
-
-/** Larger = stronger. Locked players sink below everything else. */
-function outlookScore(player: PlayerStat) {
-  return isLocked(player) ? -1 : OUTLOOK_RANK[priceOutlook(player.projectedPercent)];
+function money(tenths: number) {
+  return `£${(tenths / 10).toFixed(1)}m`;
 }
 
-function sortValue(player: PlayerStat, key: SortKey) {
+function predictionValue(player: PlayerStat, key: PredictionKey) {
   switch (key) {
     case "progress":
       return player.priceChangePercent;
     case "projected":
       return player.projectedPercent;
-    case "outlook":
-      return outlookScore(player) * 1000 + Math.abs(player.projectedPercent);
+    case "status":
+      return STATUS_RANK[priceStatus(player.priceLikelihood)];
+    case "ownership":
+      return player.netTransfers;
     case "cost":
       return player.cost;
-    case "change":
-      return player.costChangeEvent;
   }
+}
+
+function historyValue(change: PriceChangeEvent, key: HistoryKey) {
+  switch (key) {
+    case "date":
+      return new Date(change.changedAt).getTime();
+    case "change":
+      return change.costAfter - change.costBefore;
+    case "before":
+      return change.costBefore;
+    case "after":
+      return change.costAfter;
+  }
+}
+
+/** First click sorts high to low, a second flips it, a third returns to the official order. */
+function useSort<K extends string>() {
+  const [sort, setSort] = useState<{ key: K; dir: SortDir } | null>(null);
+
+  function toggle(key: K) {
+    setSort((current) => {
+      if (!current || current.key !== key) {
+        return { key, dir: "desc" };
+      }
+      return current.dir === "desc" ? { key, dir: "asc" } : null;
+    });
+  }
+
+  return { sort, toggle };
+}
+
+function applySort<T, K extends string>(rows: T[], sort: { key: K; dir: SortDir } | null, value: (row: T, key: K) => number) {
+  if (!sort) {
+    return rows;
+  }
+
+  const factor = sort.dir === "desc" ? -1 : 1;
+  return [...rows].sort((left, right) => factor * (value(left, sort.key) - value(right, sort.key)));
 }
 
 function SortHeader({
@@ -89,213 +140,500 @@ function SortHeader({
   );
 }
 
-function isLocked(player: PlayerStat) {
-  return player.priceLockedUntil !== null && new Date(player.priceLockedUntil).getTime() > Date.now();
+/** Red for out, amber for doubtful — the warning FPL puts beside a player's name. */
+function AvailabilityMark({ status, news }: { status: string; news: string }) {
+  if (status === "a") {
+    return null;
+  }
+
+  return (
+    <span
+      title={news || undefined}
+      aria-label={news || undefined}
+      className={`mr-1 text-[11px] ${status === "d" ? "text-[var(--warning)]" : "text-[var(--danger)]"}`}
+    >
+      ▲!
+    </span>
+  );
 }
 
-function PriceTable({ view, players, onSelect }: { view: PriceView; players: PlayerStat[]; onSelect: (id: number) => void }) {
+function PlayerCell({
+  id,
+  webName,
+  teamShortName,
+  position,
+  onSelect,
+  mark
+}: {
+  id: number;
+  webName: string;
+  teamShortName: string;
+  position: string;
+  onSelect: (id: number) => void;
+  mark?: ReactNode;
+}) {
+  return (
+    <td className="border-t border-[var(--border)] py-1.5 pr-2">
+      {mark}
+      <button
+        type="button"
+        onClick={() => onSelect(id)}
+        className="text-left font-semibold underline-offset-4 hover:text-[var(--accent)] hover:underline"
+      >
+        {webName}
+      </button>
+      <span className="ml-1.5 text-[11px] text-[var(--muted)]">
+        {teamShortName} · {position}
+      </span>
+    </td>
+  );
+}
+
+function Filters({
+  search,
+  onSearch,
+  direction,
+  onDirection,
+  position,
+  onPosition,
+  allowLocked,
+  count
+}: {
+  search: string;
+  onSearch: (value: string) => void;
+  direction: PriceDirection;
+  onDirection: (value: PriceDirection) => void;
+  position: PositionFilter;
+  onPosition: (value: PositionFilter) => void;
+  allowLocked: boolean;
+  count: number;
+}) {
   const { tr } = useLocale();
-  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir } | null>(null);
+  const selectClass =
+    "min-h-9 rounded-full border border-[var(--border)] bg-white px-3 text-[13px] outline-none transition focus:border-[var(--accent)]";
+
+  return (
+    <div className="mb-2 flex flex-wrap items-center gap-1.5">
+      <input
+        value={search}
+        onChange={(event) => onSearch(event.target.value)}
+        aria-label={tr("선수 또는 팀 검색", "Search player or team")}
+        placeholder={tr("선수·팀 검색", "Search player or team")}
+        className="min-h-9 min-w-[10rem] flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-[13px] outline-none transition focus:border-[var(--accent)] md:max-w-[20rem]"
+      />
+      <select
+        value={direction}
+        onChange={(event) => onDirection(event.target.value as PriceDirection)}
+        aria-label={tr("상승·하락 필터", "Rise and drop filter")}
+        className={selectClass}
+      >
+        <option value="all">{tr("상승·하락", "Rise & drop")}</option>
+        <option value="rise">{tr("상승", "Rise")}</option>
+        <option value="drop">{tr("하락", "Drop")}</option>
+        {allowLocked ? <option value="locked">{tr("잠금", "Locked")}</option> : null}
+      </select>
+      <select
+        value={position}
+        onChange={(event) => onPosition(event.target.value as PositionFilter)}
+        aria-label={tr("포지션 필터", "Position filter")}
+        className={selectClass}
+      >
+        <option value="all">{tr("전체 선수", "All players")}</option>
+        {POSITIONS.map((item) => (
+          <option key={item} value={item}>
+            {item}
+          </option>
+        ))}
+      </select>
+      <span className="ml-auto text-[12px] text-[var(--muted)]">{tr(`${count}명`, `${count} players`)}</span>
+    </div>
+  );
+}
+
+function matchesText(needle: string, webName: string, teamShortName: string) {
+  return needle === "" || webName.toLowerCase().includes(needle) || teamShortName.toLowerCase().includes(needle);
+}
+
+function useFilters() {
   const [search, setSearch] = useState("");
+  const [direction, setDirection] = useState<PriceDirection>("all");
+  const [position, setPosition] = useState<PositionFilter>("all");
   const [shown, setShown] = useState(PAGE_SIZE);
 
-  const rows = useMemo(() => {
-    const needle = search.trim().toLowerCase();
-    const base = view === "predictions" ? selectPricePredictions(players) : selectRecentPriceChanges(players);
-    const matched = base.filter(
-      (player) =>
-        needle === "" ||
-        player.webName.toLowerCase().includes(needle) ||
-        player.teamShortName.toLowerCase().includes(needle)
-    );
-
-    if (!sort) {
-      return matched;
-    }
-
-    const factor = sort.dir === "desc" ? -1 : 1;
-    return [...matched].sort((left, right) => factor * (sortValue(left, sort.key) - sortValue(right, sort.key)));
-  }, [players, view, search, sort]);
-
-  const outlookLabel: Record<PriceOutlook, string> = {
-    "very-likely": tr("매우 유력", "Very likely"),
-    likely: tr("유력", "Likely"),
-    unlikely: tr("가능성 낮음", "Unlikely")
+  return {
+    search,
+    direction,
+    position,
+    shown,
+    needle: search.trim().toLowerCase(),
+    setSearch: (value: string) => {
+      setSearch(value);
+      setShown(PAGE_SIZE);
+    },
+    setDirection: (value: PriceDirection) => {
+      setDirection(value);
+      setShown(PAGE_SIZE);
+    },
+    setPosition: (value: PositionFilter) => {
+      setPosition(value);
+      setShown(PAGE_SIZE);
+    },
+    clear: () => {
+      setSearch("");
+      setDirection("all");
+      setPosition("all");
+      setShown(PAGE_SIZE);
+    },
+    showMore: () => setShown((count) => count + PAGE_SIZE),
+    resetPage: () => setShown(PAGE_SIZE)
   };
+}
 
-  function reset() {
-    setShown(PAGE_SIZE);
-  }
-
-  function resetSearch() {
-    setSearch("");
-    reset();
-  }
-
-  /** First click sorts high to low, a second flips it, a third returns to the default order. */
-  function toggleSort(key: SortKey) {
-    setSort((current) => {
-      if (!current || current.key !== key) {
-        return { key, dir: "desc" };
-      }
-      return current.dir === "desc" ? { key, dir: "asc" } : null;
-    });
-    reset();
-  }
-
-  const headerProps = (key: SortKey) => ({
-    active: sort?.key === key,
-    dir: (sort?.dir ?? "desc") as SortDir,
-    onSort: () => toggleSort(key)
-  });
-
+function Card({ title, hint, children }: { title: string; hint: ReactNode; children: ReactNode }) {
   return (
     <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
       <div className="mb-2">
-        <h3 className="text-[1rem] font-semibold">
-          {view === "predictions" ? tr("가격 변동 예측", "Price change predictions") : tr("최근 가격 변동", "Recent price changes")}
-        </h3>
-        <p className="text-[12px] leading-relaxed text-[var(--muted)]">
-          {view === "predictions"
-            ? tr(
-                "FPL이 제공하는 진행률과 다음 갱신 예상치입니다. 100%에 닿으면 상승, −100%에 닿으면 하락합니다.",
-                "FPL's progress meter and its projection for the next update. +100% means a rise, −100% a fall."
-              )
-            : tr(
-                "직전 데드라인 이후 이미 가격이 움직인 선수입니다. FPL 공개 데이터에는 변동 날짜가 없습니다.",
-                "Players whose price has moved since the last deadline. FPL's public data carries no change dates."
-              )}
-        </p>
+        <h3 className="text-[1rem] font-semibold">{title}</h3>
+        <div className="text-[12px] leading-relaxed text-[var(--muted)]">{hint}</div>
       </div>
-
-      <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        <input
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            reset();
-          }}
-          aria-label={tr("선수 또는 팀 검색", "Search player or team")}
-          placeholder={tr("선수·팀 검색", "Search player or team")}
-          className="min-h-9 min-w-[10rem] flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-[13px] outline-none transition focus:border-[var(--accent)] md:max-w-[20rem]"
-        />
-        <span className="ml-auto text-[12px] text-[var(--muted)]">{tr(`${rows.length}명`, `${rows.length} players`)}</span>
-      </div>
-
-      <div className="overflow-x-auto">
-          <table className="w-full min-w-[460px] border-separate border-spacing-0 text-left text-[13px]">
-            <thead className="text-[11px] uppercase tracking-wide text-[var(--muted)]">
-              <tr>
-                <th className="py-1.5 pr-2 font-semibold">{tr("선수", "Player")}</th>
-                {view === "predictions" ? (
-                  <>
-                    <th className="px-1 py-1.5"><SortHeader label={tr("진행률", "Progress")} {...headerProps("progress")} /></th>
-                    <th className="px-1 py-1.5"><SortHeader label={tr("예상", "Projected")} {...headerProps("projected")} /></th>
-                    <th className="px-1 py-1.5"><SortHeader label={tr("전망", "Outlook")} {...headerProps("outlook")} /></th>
-                    <th className="py-1.5 pl-1 text-right"><SortHeader label={tr("현재가", "Price")} align="right" {...headerProps("cost")} /></th>
-                  </>
-                ) : (
-                  <>
-                    <th className="px-1 py-1.5"><SortHeader label={tr("변동", "Change")} {...headerProps("change")} /></th>
-                    <th className="py-1.5 pl-2 text-right font-semibold">{tr("이전 → 현재", "Was → Now")}</th>
-                  </>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={view === "predictions" ? 5 : 3} className="border-t border-[var(--border)] py-6 text-center text-sm text-[var(--muted)]">
-                    {tr("검색에 맞는 선수가 없습니다.", "No players match your search.")}
-                    <button
-                      type="button"
-                      onClick={resetSearch}
-                      className="ml-2 font-semibold text-[var(--accent)] underline underline-offset-4"
-                    >
-                      {tr("검색 지우기", "Clear search")}
-                    </button>
-                  </td>
-                </tr>
-              ) : null}
-              {rows.slice(0, shown).map((player) => {
-                const trend: Trend =
-                  (view === "predictions" ? player.projectedPercent : player.costChangeEvent) >= 0 ? "rise" : "fall";
-                const progressTrend: Trend = player.priceChangePercent >= 0 ? "rise" : "fall";
-                const outlook = priceOutlook(player.projectedPercent);
-
-                return (
-                  <tr key={player.id}>
-                    <td className="border-t border-[var(--border)] py-1.5 pr-2">
-                      <button
-                        type="button"
-                        onClick={() => onSelect(player.id)}
-                        className="text-left font-semibold underline-offset-4 hover:text-[var(--accent)] hover:underline"
-                      >
-                        {player.webName}
-                      </button>
-                      <span className="ml-1.5 text-[11px] text-[var(--muted)]">
-                        {player.teamShortName} · {player.position}
-                      </span>
-                    </td>
-                    {view === "predictions" ? (
-                      <>
-                        <td className={`border-t border-[var(--border)] px-2 py-1.5 font-semibold tabular-nums ${CELL_TINT[progressTrend]}`}>
-                          {signed(player.priceChangePercent)}
-                        </td>
-                        <td className={`border-t border-[var(--border)] px-2 py-1.5 font-semibold tabular-nums ${CELL_TINT[trend]}`}>
-                          {signed(player.projectedPercent)}
-                        </td>
-                        <td className="border-t border-[var(--border)] px-2 py-1.5">
-                          {isLocked(player) ? (
-                            <span className="text-[11px] text-[var(--muted)]">{tr("변동 잠금", "Locked")}</span>
-                          ) : (
-                            <span
-                              className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${BADGE_STYLE[outlook][trend]}`}
-                            >
-                              {outlookLabel[outlook]} {trend === "rise" ? "▲" : "▼"}
-                            </span>
-                          )}
-                        </td>
-                        <td className="border-t border-[var(--border)] py-1.5 pl-2 text-right tabular-nums">
-                          {formatMoney(player.cost)}
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className={`border-t border-[var(--border)] px-2 py-1.5 font-semibold tabular-nums ${CELL_TINT[trend]}`}>
-                          {trend === "rise" ? "▲ +" : "▼ −"}£{(Math.abs(player.costChangeEvent) / 10).toFixed(1)}m
-                        </td>
-                        <td className={`border-t border-[var(--border)] py-1.5 pl-2 text-right tabular-nums ${CELL_TINT[trend]}`}>
-                          {formatMoney(player.cost - player.costChangeEvent)} → {formatMoney(player.cost)}
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-      </div>
-
-      {rows.length > shown ? (
-        <button
-          type="button"
-          onClick={() => setShown((count) => count + PAGE_SIZE)}
-          className="mt-2 w-full rounded-full border border-[var(--border)] bg-white py-2 text-[13px] font-semibold text-[var(--muted)] transition hover:border-[var(--accent)]"
-        >
-          {tr(`더 보기 (${rows.length - shown})`, `Show more (${rows.length - shown})`)}
-        </button>
-      ) : null}
+      {children}
     </section>
   );
 }
 
-/** Predictions and recent changes are separate tables, stacked, rather than tabs of one. */
-export function PriceChangesSection({ players, onSelect }: { players: PlayerStat[]; onSelect: (id: number) => void }) {
+function EmptyRow({ colSpan, onClear }: { colSpan: number; onClear: () => void }) {
+  const { tr } = useLocale();
+
+  return (
+    <tr>
+      <td colSpan={colSpan} className="border-t border-[var(--border)] py-6 text-center text-sm text-[var(--muted)]">
+        {tr("조건에 맞는 선수가 없습니다.", "No players match these filters.")}
+        <button type="button" onClick={onClear} className="ml-2 font-semibold text-[var(--accent)] underline underline-offset-4">
+          {tr("필터 지우기", "Clear filters")}
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+function ShowMore({ remaining, onClick }: { remaining: number; onClick: () => void }) {
+  const { tr } = useLocale();
+
+  if (remaining <= 0) {
+    return null;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="mt-2 w-full rounded-full border border-[var(--border)] bg-white py-2 text-[13px] font-semibold text-[var(--muted)] transition hover:border-[var(--accent)]"
+    >
+      {tr(`더 보기 (${remaining})`, `Show more (${remaining})`)}
+    </button>
+  );
+}
+
+const pad = (value: number) => String(value).padStart(2, "0");
+
+/** "09 : 46 : 34" to the next scheduled update, and its time on the viewer's own clock. */
+function NextUpdate({ nextUpdate }: { nextUpdate: string | null }) {
+  const { tr, locale } = useLocale();
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  if (!nextUpdate) {
+    return null;
+  }
+
+  const target = new Date(nextUpdate);
+  const seconds = Math.max(0, Math.floor((target.getTime() - now) / 1000));
+  const clock = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "ko-KR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).format(target);
+
+  return (
+    <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-xl border border-[var(--border)] bg-white px-3 py-2">
+      <span className="text-[13px]">{tr("다음 가격 변동까지", "Next price changes happen in")}</span>
+      <span className="text-lg font-semibold tabular-nums">
+        {pad(Math.floor(seconds / 3600))}:{pad(Math.floor((seconds % 3600) / 60))}:{pad(seconds % 60)}
+      </span>
+      <span className="text-[12px] text-[var(--muted)]">
+        {tr(`다음 변동 ${clock} (현지 시간)`, `Next price change at ${clock} (local time)`)}
+      </span>
+    </div>
+  );
+}
+
+function PredictionsTable({ players, nextUpdate, onSelect }: { players: PlayerStat[]; nextUpdate: string | null; onSelect: (id: number) => void }) {
+  const { tr } = useLocale();
+  const filters = useFilters();
+  const { sort, toggle } = useSort<PredictionKey>();
+
+  const rows = useMemo(() => {
+    const matched = selectPricePredictions(players).filter(
+      (player) =>
+        matchesText(filters.needle, player.webName, player.teamShortName) &&
+        matchesDirection(player, filters.direction) &&
+        (filters.position === "all" || player.position === filters.position)
+    );
+    return applySort(matched, sort, predictionValue);
+  }, [players, filters.needle, filters.direction, filters.position, sort]);
+
+  const statusLabel: Record<PriceStatus, string> = {
+    "very-likely-rise": tr("상승 매우 유력", "Very likely to rise"),
+    "likely-rise": tr("상승 유력", "Likely to rise"),
+    "no-change": tr("변동 가능성 낮음", "Unlikely to change"),
+    "likely-drop": tr("하락 유력", "Likely to drop"),
+    "very-likely-drop": tr("하락 매우 유력", "Very likely to drop")
+  };
+
+  const header = (key: PredictionKey) => ({
+    active: sort?.key === key,
+    dir: (sort?.dir ?? "desc") as SortDir,
+    onSort: () => {
+      toggle(key);
+      filters.resetPage();
+    }
+  });
+
+  return (
+    <Card
+      title={tr("가격 변동 예측", "Price change predictions")}
+      hint={tr(
+        "공식 FPL 가격 변동 페이지와 같은 데이터입니다. 진행률은 지금 위치, 예상 진행률은 다음 갱신 시점의 예상치이며, 상태는 FPL이 직접 판정합니다. 15분마다 갱신됩니다.",
+        "The same data as FPL's official price changes page. Progress is where a player stands now, predicted progress where FPL expects him at the next update, and the status is FPL's own call. Updates every 15 minutes."
+      )}
+    >
+      <NextUpdate nextUpdate={nextUpdate} />
+      <Filters
+        search={filters.search}
+        onSearch={filters.setSearch}
+        direction={filters.direction}
+        onDirection={filters.setDirection}
+        position={filters.position}
+        onPosition={filters.setPosition}
+        allowLocked
+        count={rows.length}
+      />
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] border-separate border-spacing-0 text-left text-[13px]">
+          <thead className="text-[11px] uppercase tracking-wide text-[var(--muted)]">
+            <tr>
+              <th className="py-1.5 pr-2 font-semibold">{tr("선수", "Player")}</th>
+              <th className="px-1 py-1.5"><SortHeader label={tr("상태", "Status")} {...header("status")} /></th>
+              <th className="px-1 py-1.5"><SortHeader label={tr("진행률", "Progress")} {...header("progress")} /></th>
+              <th className="px-1 py-1.5"><SortHeader label={tr("예상 진행률", "Predicted")} {...header("projected")} /></th>
+              <th className="px-1 py-1.5"><SortHeader label={tr("소유 추세", "Ownership")} {...header("ownership")} /></th>
+              <th className="py-1.5 pl-1 text-right"><SortHeader label={tr("현재가", "Price")} align="right" {...header("cost")} /></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? <EmptyRow colSpan={6} onClear={filters.clear} /> : null}
+            {rows.slice(0, filters.shown).map((player) => {
+              const status = priceStatus(player.priceLikelihood);
+              const trend = ownershipTrend(player);
+              const chip = `rounded-md px-1.5 py-0.5 text-[12px] font-semibold tabular-nums ${STATUS_STYLE[status]}`;
+
+              return (
+                <tr key={player.id}>
+                  <PlayerCell
+                    id={player.id}
+                    webName={player.webName}
+                    teamShortName={player.teamShortName}
+                    position={player.position}
+                    onSelect={onSelect}
+                    mark={<AvailabilityMark status={player.status} news={player.news} />}
+                  />
+                  <td className="border-t border-[var(--border)] px-2 py-1.5">
+                    {player.priceLockedUntil ? (
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_STYLE["no-change"]}`}>
+                        {tr(
+                          `${daysUntilUnlock(player.priceLockedUntil)}일 후 잠금 해제`,
+                          `Unlocks in ${daysUntilUnlock(player.priceLockedUntil)} days`
+                        )}
+                      </span>
+                    ) : player.priceCalibrating ? (
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_STYLE["no-change"]}`}>
+                        {tr("보정 중", "Calibrating")}
+                      </span>
+                    ) : (
+                      <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[status]}`}>
+                        {statusLabel[status]}
+                      </span>
+                    )}
+                  </td>
+                  <td className="border-t border-[var(--border)] px-2 py-1.5">
+                    <span className={chip}>{signed(player.priceChangePercent)}</span>
+                  </td>
+                  <td className="border-t border-[var(--border)] px-2 py-1.5">
+                    <span className={chip}>{signed(player.projectedPercent)}</span>
+                  </td>
+                  <td className="border-t border-[var(--border)] px-2 py-1.5 text-[12px]">
+                    {trend === null ? (
+                      <span className="text-[var(--muted)]">-</span>
+                    ) : trend === "up" ? (
+                      <span className="text-[var(--accent)]">↗ {tr("상승", "Up")}</span>
+                    ) : (
+                      <span className="text-[var(--danger)]">↘ {tr("하락", "Down")}</span>
+                    )}
+                  </td>
+                  <td className="border-t border-[var(--border)] py-1.5 pl-2 text-right tabular-nums">{formatMoney(player.cost)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <ShowMore remaining={rows.length - filters.shown} onClick={filters.showMore} />
+    </Card>
+  );
+}
+
+function HistoryTable({
+  history,
+  players,
+  onSelect
+}: {
+  history: PriceChangeEvent[];
+  players: PlayerStat[];
+  onSelect: (id: number) => void;
+}) {
+  const { tr, locale } = useLocale();
+  const filters = useFilters();
+  const { sort, toggle } = useSort<HistoryKey>();
+  const playersById = useMemo(() => new Map(players.map((player) => [player.id, player])), [players]);
+  const dateFormat = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "ko-KR", { day: "numeric", month: "short", year: "numeric" }),
+    [locale]
+  );
+
+  const rows = useMemo(() => {
+    const matched = selectRecentPriceChanges(history).filter((change) => {
+      const delta = change.costAfter - change.costBefore;
+
+      return (
+        matchesText(filters.needle, change.webName, change.teamShortName) &&
+        (filters.direction === "rise" ? delta > 0 : filters.direction === "drop" ? delta < 0 : true) &&
+        (filters.position === "all" || change.position === filters.position)
+      );
+    });
+    return applySort(matched, sort, historyValue);
+  }, [history, filters.needle, filters.direction, filters.position, sort]);
+
+  const header = (key: HistoryKey) => ({
+    active: sort?.key === key,
+    dir: (sort?.dir ?? "desc") as SortDir,
+    onSort: () => {
+      toggle(key);
+      filters.resetPage();
+    }
+  });
+
+  return (
+    <Card
+      title={tr("최근 가격 변동", "Recent price changes")}
+      hint={tr(
+        "FPL이 기록한 실제 가격 변동 내역입니다. 변동 날짜는 현지 시간 기준입니다.",
+        "Every price move FPL has recorded, dated in your local time."
+      )}
+    >
+      <Filters
+        search={filters.search}
+        onSearch={filters.setSearch}
+        direction={filters.direction}
+        onDirection={filters.setDirection}
+        position={filters.position}
+        onPosition={filters.setPosition}
+        allowLocked={false}
+        count={rows.length}
+      />
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[520px] border-separate border-spacing-0 text-left text-[13px]">
+          <thead className="text-[11px] uppercase tracking-wide text-[var(--muted)]">
+            <tr>
+              <th className="py-1.5 pr-2 font-semibold">{tr("선수", "Player")}</th>
+              <th className="px-1 py-1.5"><SortHeader label={tr("날짜", "Date")} {...header("date")} /></th>
+              <th className="px-1 py-1.5"><SortHeader label={tr("변동", "Change")} {...header("change")} /></th>
+              <th className="px-1 py-1.5 text-right"><SortHeader label={tr("이전가", "Previous")} align="right" {...header("before")} /></th>
+              <th className="py-1.5 pl-1 text-right"><SortHeader label={tr("새 가격", "New price")} align="right" {...header("after")} /></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? <EmptyRow colSpan={5} onClear={filters.clear} /> : null}
+            {rows.slice(0, filters.shown).map((change) => {
+              const delta = change.costAfter - change.costBefore;
+              const player = playersById.get(change.playerId);
+
+              return (
+                <tr key={`${change.playerId}-${change.changedAt}`}>
+                  <PlayerCell
+                    id={change.playerId}
+                    webName={change.webName}
+                    teamShortName={change.teamShortName}
+                    position={change.position}
+                    onSelect={onSelect}
+                    mark={player ? <AvailabilityMark status={player.status} news={player.news} /> : null}
+                  />
+                  <td className="border-t border-[var(--border)] px-2 py-1.5 tabular-nums">{dateFormat.format(new Date(change.changedAt))}</td>
+                  <td className="border-t border-[var(--border)] px-2 py-1.5">
+                    <span
+                      className={`rounded-md px-1.5 py-0.5 text-[12px] font-semibold tabular-nums ${
+                        STATUS_STYLE[delta > 0 ? "very-likely-rise" : "very-likely-drop"]
+                      }`}
+                    >
+                      {delta > 0 ? "+" : "-"}
+                      {money(Math.abs(delta))}
+                    </span>
+                  </td>
+                  <td className="border-t border-[var(--border)] px-2 py-1.5 text-right tabular-nums">{formatMoney(change.costBefore)}</td>
+                  <td className="border-t border-[var(--border)] py-1.5 pl-2 text-right tabular-nums">{formatMoney(change.costAfter)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <ShowMore remaining={rows.length - filters.shown} onClick={filters.showMore} />
+    </Card>
+  );
+}
+
+/**
+ * Predictions and recent changes as two stacked tables, both read from `/api/price-changes`
+ * so the league tab and the public page show exactly what fantasy.premierleague.com does.
+ */
+export function PriceChangesSection({ onSelect }: { onSelect: (id: number) => void }) {
+  const { tr } = useLocale();
+  const query = useQuery({
+    queryKey: ["price-changes"],
+    queryFn: () => fetchPriceChanges(tr("가격 데이터를 불러오지 못했습니다.", "Could not load price data.")),
+    refetchInterval: 60_000
+  });
+
+  if (query.isLoading) {
+    return <div className="h-64 animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80" />;
+  }
+
+  if (!query.data) {
+    return (
+      <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-[var(--danger)]">
+        {(query.error as Error | null)?.message ?? tr("가격 데이터를 불러오지 못했습니다.", "Could not load price data.")}
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-3">
-      <PriceTable view="predictions" players={players} onSelect={onSelect} />
-      <PriceTable view="recent" players={players} onSelect={onSelect} />
+      <PredictionsTable players={query.data.players} nextUpdate={query.data.nextUpdate} onSelect={onSelect} />
+      <HistoryTable history={query.data.history} players={query.data.players} onSelect={onSelect} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { getBootstrapStatic, getFixtures } from "@/lib/fpl-client";
+import { getBootstrapStatic, getFixtures, getPriceChangeHistory } from "@/lib/fpl-client";
 import { buildPremierLeagueTable } from "@/lib/pl-table";
 import { buildProvisionalBonusByElement, getLeagueLivePayload } from "@/lib/league-aggregator";
 import {
@@ -12,6 +12,8 @@ import type {
   LeaguePlayerStat,
   PlayerStat,
   PlayerStatsResponse,
+  PriceChangeEvent,
+  PriceChangesResponse,
   TeamFixtureOutlook
 } from "@/lib/types";
 
@@ -63,6 +65,7 @@ function buildPlayerStat(
   eventPoints: number
 ): PlayerStat {
   const team = teamsById.get(element.team);
+  const nextProjection = element.price_change_projections.find((projection) => projection.offset === 0);
 
   return {
     id: element.id,
@@ -74,11 +77,10 @@ function buildPlayerStat(
     cost: element.now_cost,
     costChangeEvent: element.cost_change_event,
     priceChangePercent: roundTo(element.price_change_percent),
-    projectedPercent: roundTo(
-      element.price_change_projections.find((projection) => projection.offset === 0)?.projected_percent ??
-        element.price_change_percent
-    ),
+    projectedPercent: roundTo(nextProjection?.projected_percent ?? element.price_change_percent),
     priceLockedUntil: element.price_change_locked_until,
+    priceLikelihood: nextProjection?.likelihood ?? 0,
+    priceCalibrating: element.price_change_calibrating,
     totalPoints: element.total_points,
     eventPoints,
     form: element.form,
@@ -264,23 +266,49 @@ export async function getPlayerStatsPayload({
 }
 
 const PRICE_CACHE_TTL_MS = 60_000;
-let priceCache: { players: PlayerStat[]; expiresAt: number } | null = null;
+let priceCache: { data: PriceChangesResponse; expiresAt: number } | null = null;
 
 /**
- * Every player's price-change figures, independent of any league — so the public price page
- * works for visitors who have not entered a league ID.
+ * Everything the price page shows, independent of any league — so it works for visitors who
+ * have not entered a league ID. Mirrors fantasy.premierleague.com/price-changes: predictions
+ * cover every player FPL has not marked unavailable ("u"), and the history comes from FPL's own
+ * dated log rather than this gameweek's cost_change_event.
  */
-export async function getPriceChangePlayers(): Promise<PlayerStat[]> {
+export async function getPriceChangeData(): Promise<PriceChangesResponse> {
   if (priceCache && priceCache.expiresAt > Date.now()) {
-    return priceCache.players;
+    return priceCache.data;
   }
 
-  const bootstrap = await getBootstrapStatic();
+  const [bootstrap, log] = await Promise.all([getBootstrapStatic(), getPriceChangeHistory()]);
   const teamsById = new Map(bootstrap.teams.map((team) => [team.id, team]));
+  const elementsById = new Map(bootstrap.elements.map((element) => [element.id, element]));
   const players = bootstrap.elements
-    .filter((element) => element.minutes > 0)
+    .filter((element) => element.status !== "u")
     .map((element) => buildPlayerStat(element, teamsById, element.event_points));
+  const history: PriceChangeEvent[] = log.flatMap((change) => {
+    const element = elementsById.get(change.element);
 
-  priceCache = { players, expiresAt: Date.now() + PRICE_CACHE_TTL_MS };
-  return players;
+    if (!element) {
+      return [];
+    }
+
+    return [
+      {
+        playerId: change.element,
+        webName: element.web_name,
+        teamShortName: teamsById.get(change.team)?.short_name ?? "-",
+        position: POSITION_BY_TYPE[element.element_type] ?? "MID",
+        changedAt: change.changed_at,
+        costBefore: change.cost_before,
+        costAfter: change.cost_after
+      }
+    ];
+  });
+  const nextUpdate =
+    bootstrap.game_config.settings.price_change_deadlines.find((time) => new Date(time).getTime() > Date.now()) ??
+    null;
+
+  const data = { players, history, nextUpdate };
+  priceCache = { data, expiresAt: Date.now() + PRICE_CACHE_TTL_MS };
+  return data;
 }

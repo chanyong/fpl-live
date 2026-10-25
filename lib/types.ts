@@ -211,6 +211,10 @@ export type PlayerStat = {
   projectedPercent: number;
   /** ISO time before which FPL will not move this price, or null. */
   priceLockedUntil: string | null;
+  /** FPL's status for the next update: ±5 very likely, ±4 likely, anything else no change. */
+  priceLikelihood: number;
+  /** FPL is recalibrating this price and shows no status. */
+  priceCalibrating: boolean;
   totalPoints: number;
   eventPoints: number;
   form: number;
@@ -225,6 +229,25 @@ export type PlayerStat = {
   status: string;
   news: string;
   photoUrl: string | null;
+};
+
+/** One recorded price move from FPL's `stats/price-changes/`. */
+export type PriceChangeEvent = {
+  playerId: number;
+  webName: string;
+  teamShortName: string;
+  position: FplPosition;
+  /** ISO time FPL applied the move. */
+  changedAt: string;
+  costBefore: number;
+  costAfter: number;
+};
+
+export type PriceChangesResponse = {
+  players: PlayerStat[];
+  history: PriceChangeEvent[];
+  /** ISO time of the next scheduled price update, or null when FPL lists none. */
+  nextUpdate: string | null;
 };
 
 export type TeamFixtureOutlook = {
