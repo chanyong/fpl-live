@@ -44,13 +44,13 @@ npm run build
 
 | 탭 | 서브 탭 | 컴포넌트 | 데이터 |
 |---|---|---|---|
-| 주간 순위 | 순위표 | `LeagueTable` + 사이드(`LeagueKpis`, `CaptainStats`) | `/api/league-live` (30초 자동 갱신) |
+| 주간 순위 | 경기 일정 (기본) | `FixturesPanel` (경기별 리그 보유 선수 스탯) | `/api/league-live` (30초 자동 갱신) |
+| | 순위표 | `LeagueTable` + 사이드(`LeagueKpis`, `CaptainStats`) | `/api/league-live` |
 | | 순위 추이 | `RankChangePanel` (SVG 차트, 칩 현황, 시즌 요약) | `/api/league-rank-change` (선택 시 lazy) |
-| | 경기 일정 | `FixturesPanel` (경기별 리그 보유 선수 스탯) | `/api/league-live` |
 | 팀 | (없음) | `TeamFixtureTable` + `PremierLeagueTable` | `/api/player-stats` |
 | 선수 | 이적 시장 / 선수 성과 / 우리 리그 | `PlayerTrendsPanel` → `PriceChangesSection`, `PlayerDetail`, `DifferentialList` … | `/api/player-stats`, `/api/price-changes` |
 
-> 2026-10-25: '경기 일정'을 '팀' 탭에서 '주간 순위'의 세 번째 서브 탭으로 옮기고, 하나만 남은 '팀' 탭의 서브 탭을 없앴다.
+> 2026-10-25: '경기 일정'을 '팀' 탭에서 '주간 순위'의 첫 번째(기본) 서브 탭으로 옮기고, 하나만 남은 '팀' 탭의 서브 탭을 없앴다.
 
 공통: `DeadlineBanner`(다음 데드라인), `RefreshIndicator`(강제 새로고침 = `?refresh=1`), `ShareButton`, `LocaleToggle`.
 

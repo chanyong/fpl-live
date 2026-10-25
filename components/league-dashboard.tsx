@@ -60,7 +60,7 @@ type StandingsView = "table" | "rank-change" | "fixtures";
 export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; buildId: string }) {
   const { tr } = useLocale();
   const [tab, setTab] = useState<Tab>("standings");
-  const [standingsView, setStandingsView] = useState<StandingsView>("table");
+  const [standingsView, setStandingsView] = useState<StandingsView>("fixtures");
   const queryClient = useQueryClient();
 
   const query = useQuery({
@@ -255,9 +255,9 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
               <SubTabs<StandingsView>
                 label={tr("주간 순위 보기", "Standings views")}
                 items={[
+                  { id: "fixtures", label: tr("경기 일정", "Fixtures") },
                   { id: "table", label: tr("순위표", "Table") },
-                  { id: "rank-change", label: tr("순위 추이", "Rank trend") },
-                  { id: "fixtures", label: tr("경기 일정", "Fixtures") }
+                  { id: "rank-change", label: tr("순위 추이", "Rank trend") }
                 ]}
                 value={standingsView}
                 onChange={setStandingsView}
