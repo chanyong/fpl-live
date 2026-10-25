@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 };
 
 const PLAUSIBLE_DOMAIN = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
-const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-NNCTLJCYPY";
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-QBEEY5TCB6";
 
 const STRUCTURED_DATA = {
   "@context": "https://schema.org",
