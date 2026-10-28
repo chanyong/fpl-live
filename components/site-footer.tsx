@@ -19,6 +19,9 @@ export function SiteFooter() {
         <Link href="/price-changes" className="font-semibold hover:text-[var(--accent)]">
           {tr("가격 변동 예측", "Price changes")}
         </Link>
+        <Link href="/faq" className="font-semibold hover:text-[var(--accent)]">
+          {tr("자주 묻는 질문", "FAQ")}
+        </Link>
         <a href={FEEDBACK_URL} target="_blank" rel="noreferrer" className="font-semibold hover:text-[var(--accent)]">
           {tr("피드백 · 버그 제보", "Feedback & bug reports")}
         </a>

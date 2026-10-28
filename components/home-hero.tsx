@@ -14,7 +14,17 @@ export function HomeHero() {
         <p className="text-sm uppercase tracking-[0.3em] text-[var(--muted)]">
           {tr("공식 FPL 라이브 대시보드", "Official FPL live dashboard")}
         </p>
-        <LocaleToggle />
+        <div className="flex items-center gap-2">
+          <Link
+            href="/faq"
+            aria-label={tr("자주 묻는 질문", "FAQ")}
+            title={tr("자주 묻는 질문", "FAQ")}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-sm font-bold text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          >
+            ?
+          </Link>
+          <LocaleToggle />
+        </div>
       </div>
       <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-tight md:text-5xl">
         {tr("경기가 진행되는 동안 미니리그 순위를 따라가세요.", "Follow your mini-league standings while the matches are on.")}
