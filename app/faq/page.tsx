@@ -119,10 +119,10 @@ export default function FaqPage() {
       {CATEGORIES.map((c) => (
         <section key={c.id} id={c.id} aria-labelledby={`${c.id}-t`} className="mt-10 scroll-mt-6">
           <h2 id={`${c.id}-t`} className="mb-3 text-lg font-semibold">{c.title}</h2>
-          <div className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)]">
+          <div className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[0_12px_40px_-20px_rgba(55,40,20,0.35)]">
             {c.items.map((it) => (
-              <details key={it.q} className="group">
-                <summary className="flex cursor-pointer list-none items-start gap-2 px-5 py-4 font-semibold hover:bg-[var(--surface-strong)]/40 [&::-webkit-details-marker]:hidden">
+              <details key={it.q} className="group open:bg-[var(--accent-soft)]">
+                <summary className="flex cursor-pointer list-none items-start gap-2 border-l-4 border-transparent px-5 py-4 font-semibold hover:bg-[var(--surface-strong)]/40 group-open:border-[var(--accent)] [&::-webkit-details-marker]:hidden">
                   <span className="font-bold text-[var(--accent)]">Q</span>
                   <span className="flex-1 break-keep">{it.q}</span>
                   <span aria-hidden className="text-[var(--muted)] transition-transform group-open:rotate-180">▾</span>

@@ -17,11 +17,12 @@ export function HomeHero() {
         <div className="flex items-center gap-2">
           <Link
             href="/faq"
-            aria-label={tr("자주 묻는 질문", "FAQ")}
             title={tr("자주 묻는 질문", "FAQ")}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-sm font-bold text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[var(--accent)] px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--accent-ink)]"
           >
-            ?
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 4 2c-.9.6-1.5 1.1-1.5 2.2M12 17h.01" /></svg>
+            <span className="sm:hidden">FAQ</span>
+            <span className="hidden sm:inline">{tr("자주 묻는 질문", "FAQ")}</span>
           </Link>
           <LocaleToggle />
         </div>
