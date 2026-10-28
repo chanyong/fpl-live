@@ -137,3 +137,8 @@ npm run build
 - 대형 리그(수백 명)는 picks/history fan-out 이 느림 — 동시성 제한만 있고 페이지네이션/가상화 없음.
 - 오토서브·보너스는 잠정 모델.
 - 블로그 가격 변동 글 갱신(7절).
+
+## 의견·질문 버튼 (2026-10-28)
+- 모든 공개 페이지 오른쪽(또는 왼쪽) 아래에 운영자 사이트 공통 '의견·질문' 버튼이 있다. `<script src="https://ddalkkakrank.kr/feedback.js" defer ...>` 한 줄(`app/layout.tsx`, 한/영 전환을 따라감).
+- 방문자가 보낸 유형·내용·선택 연락처·페이지 주소는 딸깍랭크(ai-ranking 저장소) 서버의 의견함 `site_feedback` 에 모이고, 관리자 화면 `https://ddalkkakrank.kr/admin/feedback` 에서 본다. 허용 출처는 ai-ranking `src/lib/feedback.ts` 의 `SITES` — **도메인을 바꾸면 거기에도 추가**해야 접수된다.
+- 언어는 `<html lang>` 을 따라 한국어/영어 자동. 버튼 위치·숨김 옵션(`data-side`, `data-avoid`, `data-hide`)은 feedback.js 맨 위 주석 참고.
