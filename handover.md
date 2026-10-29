@@ -159,6 +159,8 @@ npm run build
 - 공통: 처리방침·약관(한/영), 푸터 링크, "운영자의 다른 서비스" 상호 링크, JSON-LD WebSite+Organization(+기존 WebApplication), FAQPage, sitemap 에 /privacy·/terms.
 - 가격 예측 적중률: 저장소가 없어 **기록 구조만** 만듦(`lib/price-prediction-log.ts`). 환경변수 `PRICE_PREDICTION_LOG_DIR`(예: Railway 볼륨 경로)를 넣으면 가격 갱신마다 마지막 예측(가능성 ±4·±5)을 `<갱신시각>.json` 으로 저장(10분에 1번, 추가 FPL 호출 없음). `evaluateSnapshot()` 이 `stats/price-changes` 실제 변동과 비교해 적중·방향 틀림·변동 없음·놓침·정밀도·재현율 계산. 화면 표시는 아직 없음.
 
+- 첫 화면 위쪽 작은 제목("공식 FPL 라이브 대시보드")이 모바일에서 세로로 깨지던 것 수정: 한 줄 고정, 모바일 글자·자간 축소, 버튼은 공간이 모자라면 다음 줄로(`components/home-hero.tsx`).
+
 **남은 할 일**
 - (사용자) 적중률을 쌓으려면 Railway 서비스에 볼륨을 붙이고 `PRICE_PREDICTION_LOG_DIR` 설정 → 며칠 쌓인 뒤 적중률 API/화면 추가.
 - (사용자) 처리방침·약관 법률 검토, 후원 링크(넣지 않았음), 서치콘솔 sitemap 재제출.
