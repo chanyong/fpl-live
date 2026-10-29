@@ -74,6 +74,8 @@ export type LeagueFixture = {
 export type LeagueRow = {
   entryId: number;
   rank: number;
+  /** League rank when the previous gameweek closed (FPL `last_rank`); null for a new league. */
+  lastRank?: number | null;
   projectedRank: number;
   teamName: string;
   managerName: string;

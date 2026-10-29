@@ -1,4 +1,4 @@
-# FPL Live — Handover (2026-10-25)
+# FPL Live — Handover (2026-10-30 갱신)
 
 FPL(Fantasy Premier League) 공개 클래식 미니리그의 실시간 순위·잠정 점수·선수 데이터·가격 변동을 보여주는 Next.js 대시보드.
 공식 FPL 공개 JSON API만 사용하며 로그인/인증이 없다. UI는 한국어 기본 + 영어 토글.
@@ -39,6 +39,8 @@ npm run build
 | `/` | 리그 ID 입력 (`home-hero`, `league-search-form`, `league-id-links`) |
 | `/league/[leagueId]` | 리그 대시보드 (`components/league-dashboard.tsx`) |
 | `/price-changes` | 리그 ID 없이 보는 공개 가격 변동 페이지 (SEO 용) |
+| `/faq` | 자주 묻는 질문 (한국어, FAQPage JSON-LD) |
+| `/privacy`, `/terms` | 개인정보처리방침·이용약관 (한/영 토글, 초안 — 법률 검토 전) |
 
 ### 리그 대시보드 탭 (`league-dashboard.tsx`)
 
@@ -142,3 +144,23 @@ npm run build
 - 모든 공개 페이지 오른쪽(또는 왼쪽) 아래에 운영자 사이트 공통 '의견·질문' 버튼이 있다. `<script src="https://ddalkkakrank.kr/feedback.js" defer ...>` 한 줄(`app/layout.tsx`, 한/영 전환을 따라감).
 - 방문자가 보낸 유형·내용·선택 연락처·페이지 주소는 딸깍랭크(ai-ranking 저장소) 서버의 의견함 `site_feedback` 에 모이고, 관리자 화면 `https://ddalkkakrank.kr/admin/feedback` 에서 본다. 허용 출처는 ai-ranking `src/lib/feedback.ts` 의 `SITES` — **도메인을 바꾸면 거기에도 추가**해야 접수된다.
 - 언어는 `<html lang>` 을 따라 한국어/영어 자동. 버튼 위치·숨김 옵션(`data-side`, `data-avoid`, `data-hide`)은 feedback.js 맨 위 주석 참고.
+
+## 2026-10-30 개선 (이메일 개선안 자동 승인분)
+
+**한 일**
+- 공유·SEO: `/league/{id}` 제목 `"{리그명} 실시간 순위 · GW N | FPL Live"`, description 70~120자(`lib/seo-text.ts`, 테스트 있음), canonical·og·twitter. 리그별 동적 OG 이미지 `app/league/[leagueId]/opengraph-image.tsx`(리그명·현재 GW). 루트 OG 도 한국어로. 한글 글꼴은 Google Fonts 에서 필요한 글자만 받아 씀(`lib/og-font.ts`), 실패하면 영어 문구로 대체(`lib/og-card.tsx`).
+- 제목의 `&`(HTML 에서 `&amp;` 로 보이던 것) 제거, 기본 title·description 한국어로. 하위 페이지(가격 변동·FAQ·처리방침·약관)에 og:image 명시.
+- FPL 호출량: 메타·OG 는 `lib/league-meta.ts` 메모리 캐시(리그명 30분, 현재 GW 10분, 동시 요청 합치기) → 예전(페이지 열 때마다 standings 1회)보다 줄어듦. 기존 30초/60초 캐시·동시성 8 그대로.
+- 최근 본 리그 목록(최대 6개, localStorage `fpl-live-recent-leagues`, 옛 `recentLeagueId` 자동 이전) — 첫 화면에 이름·ID·삭제 버튼. "리그 ID 찾는 법" 펼침 안내(웹 단계 + 주소창 그림, 앱 초대코드 주의).
+- 보너스 예상: 경기 카드마다 BPS 기준 3·2·1(동점 같은 점수, 3위 동점 모두 1점으로 수정) "보너스 예상", FPL 이 확정하면 "보너스 확정"(`lib/bonus.ts`). 잠정 점수 계산도 같은 함수 사용.
+- "내 라이벌과 점수 차" 카드(`components/rival-card.tsx`): 나·라이벌을 고르면 리그별로 브라우저에 기억, GW 점수 차·잠정 총점 차·순위·주장·나만/라이벌만 가진 선발 표시.
+- "GW N 순위 변화"(경기 후/진행 중) 카드: FPL `last_rank` → 잠정 순위, 많이 오른/내린 3명, GW 최고점(`lib/rank-movement.ts`). `validators.ts` standings 에 `last_rank` 추가.
+- 데이터 배지: 리그 화면 상단 "마지막 갱신 · 출처 FPL 공식 공개 API · 기준 GW N 잠정 점수".
+- 공통: 처리방침·약관(한/영), 푸터 링크, "운영자의 다른 서비스" 상호 링크, JSON-LD WebSite+Organization(+기존 WebApplication), FAQPage, sitemap 에 /privacy·/terms.
+- 가격 예측 적중률: 저장소가 없어 **기록 구조만** 만듦(`lib/price-prediction-log.ts`). 환경변수 `PRICE_PREDICTION_LOG_DIR`(예: Railway 볼륨 경로)를 넣으면 가격 갱신마다 마지막 예측(가능성 ±4·±5)을 `<갱신시각>.json` 으로 저장(10분에 1번, 추가 FPL 호출 없음). `evaluateSnapshot()` 이 `stats/price-changes` 실제 변동과 비교해 적중·방향 틀림·변동 없음·놓침·정밀도·재현율 계산. 화면 표시는 아직 없음.
+
+**남은 할 일**
+- (사용자) 적중률을 쌓으려면 Railway 서비스에 볼륨을 붙이고 `PRICE_PREDICTION_LOG_DIR` 설정 → 며칠 쌓인 뒤 적중률 API/화면 추가.
+- (사용자) 처리방침·약관 법률 검토, 후원 링크(넣지 않았음), 서치콘솔 sitemap 재제출.
+- FAQ 의 `[확인 필요]` 2곳(초대 전용 리그, 유료화 정책).
+- 블로그 가격 변동 글 갱신(7절).

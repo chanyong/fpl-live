@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import type { LeagueLiveResponse, PlayerStatsResponse, RankChangeResponse } from "@/lib/types";
@@ -18,6 +18,9 @@ import { SubTabs } from "@/components/sub-tabs";
 import { TeamFixtureTable } from "@/components/team-fixture-table";
 import { ShareButton } from "@/components/share-button";
 import { RefreshIndicator } from "@/components/refresh-indicator";
+import { RivalCard } from "@/components/rival-card";
+import { RankMovementCard } from "@/components/rank-movement-card";
+import { rememberLeague } from "@/lib/recent-leagues";
 
 async function fetchLeagueLive(leagueId: string, fallbackError: string, refresh = false) {
   const response = await fetch(
@@ -71,6 +74,15 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
     refetchOnReconnect: true,
     refetchOnMount: true
   });
+
+  // Keep this league in the home page's "recent leagues" list (this browser only).
+  const leagueName = query.data?.league.name ?? null;
+  useEffect(() => {
+    const id = Number(leagueId);
+    if (Number.isInteger(id) && id > 0 && leagueName) {
+      rememberLeague(id, leagueName);
+    }
+  }, [leagueId, leagueName]);
 
   const rankChangeQuery = useQuery({
     queryKey: ["league-rank-change", leagueId],
@@ -167,6 +179,14 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
                     )
                   : tr("공식 FPL 데이터를 불러오는 중", "Loading official FPL data")}
           </p>
+          {query.data ? (
+            <p className="mt-1 text-[11px] text-[var(--muted)]">
+              {tr(
+                `마지막 갱신 ${new Date(query.data.league.lastUpdated).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })} · 출처 FPL 공식 공개 API · 기준 GW ${query.data.league.currentGw} 잠정 점수(30초마다 갱신)`,
+                `Updated ${new Date(query.data.league.lastUpdated).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · Source: official FPL public API · GW ${query.data.league.currentGw} provisional points (refreshes every 30s)`
+              )}
+            </p>
+          ) : null}
         </div>
 
         {query.data ? (
@@ -249,6 +269,13 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
               );
             })}
           </div>
+
+          {tab === "standings" && query.data && query.data.rows.length > 1 ? (
+            <div className="mb-2 grid gap-2 md:grid-cols-2">
+              <RivalCard leagueId={query.data.league.id} rows={query.data.rows} />
+              <RankMovementCard rows={query.data.rows} fixtures={query.data.fixtures} gw={query.data.league.currentGw} />
+            </div>
+          ) : null}
 
           {tab === "standings" ? (
             <div className="mb-2">

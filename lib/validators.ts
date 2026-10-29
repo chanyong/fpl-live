@@ -97,6 +97,7 @@ export const standingsPageSchema = z.object({
         entry_name: z.string(),
         player_name: z.string(),
         rank: z.number(),
+        last_rank: z.number().nullable().optional().default(null),
         total: z.number()
       })
     )

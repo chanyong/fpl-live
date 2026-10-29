@@ -6,12 +6,14 @@ import { KpiCard, KpiGrid } from "@/components/kpi-card";
 import { SidePanelLayout } from "@/components/side-panel-layout";
 import { RemoteImage, crestUrl } from "@/components/remote-image";
 import { hasFixtureEnded, isFixtureInPlay } from "@/lib/fixture-status";
+import { fixtureBonusPreview } from "@/lib/bonus";
 import { countdownLabel } from "@/lib/time-format";
 import type { LeagueFixture, LeagueRow } from "@/lib/types";
 import { useLocale } from "@/components/locale-provider";
 
 /** Rows of a stat group shown before the "show all" toggle. */
 const STAT_PREVIEW = 5;
+const EMPTY_IDS = new Set<number>();
 
 type Tr = <T = string>(ko: T, en: T) => T;
 
@@ -254,6 +256,39 @@ function StatGroup({
   );
 }
 
+/** Who gets bonus in this match: FPL's own once published, otherwise 3-2-1 from live BPS. */
+function BonusLine({ fixture, ownedElementIds }: { fixture: LeagueFixture; ownedElementIds: Set<number> }) {
+  const { tr } = useLocale();
+  const preview = fixtureBonusPreview(fixture);
+
+  if (preview.status === "none" || preview.items.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px]">
+      <span
+        className={`shrink-0 rounded-full px-1.5 py-0.5 font-semibold ${
+          preview.status === "confirmed" ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"
+        }`}
+        title={
+          preview.status === "confirmed"
+            ? tr("FPL이 확정한 보너스", "Bonus confirmed by FPL")
+            : tr("실시간 BPS 순위로 계산한 예상 보너스(3·2·1점, 동점은 같은 점수)", "Projected from live BPS (3-2-1, ties share)")
+        }
+      >
+        {preview.status === "confirmed" ? tr("보너스 확정", "Bonus") : tr("보너스 예상", "Proj. bonus")}
+      </span>
+      {preview.items.map((item) => (
+        <span key={item.elementId} className={`whitespace-nowrap ${ownedElementIds.has(item.elementId) ? "font-semibold text-[var(--accent)]" : "text-[var(--muted)]"}`}>
+          {item.playerName} <b className="tabular-nums text-[var(--text)]">+{item.bonus}</b>
+          {item.bps !== null ? <span className="ml-0.5 tabular-nums opacity-70">({item.bps})</span> : null}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function TeamLine({ name, code, align }: { name: string; code: number; align: "left" | "right" }) {
   return (
     <span className={`flex min-w-0 items-center gap-1.5 ${align === "right" ? "flex-row-reverse" : ""}`}>
@@ -478,6 +513,7 @@ export function FixturesPanel({
                           </span>
                         ) : null}
                       </div>
+                      <BonusLine fixture={fixture} ownedElementIds={owned?.ownedElementIds ?? EMPTY_IDS} />
                     </button>
 
                     {isSelected ? (

@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import { isValidElement, type ReactNode } from "react";
 import Link from "next/link";
 import { FEEDBACK_URL } from "@/lib/site";
 
+const TITLE = "자주 묻는 질문 | FPL Live";
+const DESCRIPTION =
+  "FPL Live에서 미니리그 리그 ID 찾는 법, 잠정 점수·보너스 예상·순위 변동 읽는 법, 가격 변동 예측, 개인정보와 문제 해결에 대한 자주 묻는 질문을 모았습니다.";
+
 export const metadata: Metadata = {
-  title: "FAQ · 자주 묻는 질문 — FPL Live",
-  description:
-    "FPL Live에서 미니리그 리그 ID 찾는 법, 잠정 점수·순위 변동 읽는 법, 가격 변동 예측, 개인정보와 문제 해결에 대한 자주 묻는 질문을 모았습니다.",
-  alternates: { canonical: "/faq" }
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: "/faq" },
+  openGraph: { type: "website", siteName: "FPL Live", locale: "ko_KR", title: TITLE, description: DESCRIPTION, url: "/faq", images: [{ url: "/opengraph-image", width: 1200, height: 630 }] },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: ["/opengraph-image"] }
 };
 
 // 사이트의 다른 화면은 한국어·영어를 바꿔 볼 수 있지만 이 페이지는 한국어로만 쓴다.
@@ -58,6 +63,8 @@ const CATEGORIES: { id: string; title: string; items: Item[] }[] = [
           </ul>
         )
       },
+      { q: "보너스 포인트 예상은 어떻게 계산하나요?", a: <p>경기 일정 카드의 <b>보너스 예상</b>은 FPL이 공개하는 실시간 BPS(보너스 포인트 시스템) 점수로 경기마다 1·2·3위에게 3·2·1점을 매긴 값입니다. 동점이면 같은 점수를 받습니다. FPL이 보너스를 확정하면 <b>보너스 확정</b>으로 바뀝니다.</p> },
+      { q: "라이벌과 점수 차를 계속 보고 싶어요", a: <p>주간 순위 화면의 <b>내 라이벌과 점수 차</b>에서 나와 라이벌을 한 번 고르면, 이 브라우저가 기억해 두고 이번 GW 점수 차·잠정 총점 차·주장·나만 가진 선발 선수를 경기 중에도 계속 보여 줍니다.</p> },
       { q: "다른 매니저와 스쿼드를 비교할 수 있나요?", a: <p>네. 순위표의 <b>스쿼드 비교</b>를 누르고 매니저 2명을 고른 뒤 <b>비교하기</b>를 누르면 두 사람의 스쿼드를 나란히 볼 수 있습니다.</p> },
       { q: "남은 칩을 한눈에 보고 싶어요", a: <p><b>칩 사용 현황</b>에서 매니저별로 쓴 칩과 남은 칩을 볼 수 있습니다. 칩은 전·후반기에 각각 한 번씩 주어집니다.</p> },
       { q: "가격이 오를 선수를 미리 알 수 있나요?", a: <p><Link href="/price-changes">가격 변동 예측</Link>에서 이번 마감 전 가격이 오를 선수와 내릴 선수를 볼 수 있습니다. 리그 ID 없이 바로 쓸 수 있습니다. 예측이므로 실제 변동과 다를 수 있습니다.</p> },
@@ -71,7 +78,7 @@ const CATEGORIES: { id: string; title: string; items: Item[] }[] = [
     items: [
       { q: "내 FPL 계정을 연결해야 하나요?", a: <p>아니요. FPL 아이디·비밀번호를 묻지 않으며 계정을 연결하지 않습니다. 이적·주장 변경 같은 팀 관리는 FPL 공식 사이트나 앱에서 하세요.</p> },
       { q: "비공개(초대 전용) 리그도 볼 수 있나요?", a: <p>공개 클래식 리그 ID를 넣어 보는 방식입니다. FPL이 공개하지 않는 리그 정보는 보여 줄 수 없습니다. 초대 전용 리그가 열리는지는 [확인 필요]입니다.</p> },
-      { q: "자주 보는 리그를 저장할 수 있나요?", a: <p>로그인 기능이 없어 따로 저장하지 않습니다. 대시보드 주소(…/league/리그ID)를 즐겨찾기에 넣어 두면 바로 열 수 있습니다.</p> }
+      { q: "자주 보는 리그를 저장할 수 있나요?", a: <p>한 번 연 리그는 첫 화면의 <b>최근 본 리그</b>에 최대 6개까지 남습니다. 이 목록은 지금 쓰는 브라우저에만 저장되고 서버로 보내지 않습니다. 다른 기기에서도 쓰려면 대시보드 주소(…/league/리그ID)를 즐겨찾기에 넣어 두세요.</p> }
     ]
   },
   {
@@ -87,8 +94,8 @@ const CATEGORIES: { id: string; title: string; items: Item[] }[] = [
     id: "privacy",
     title: "개인정보·보안",
     items: [
-      { q: "제 정보를 수집하나요?", a: <p>회원가입이 없어 이름·연락처를 받지 않습니다. 방문 통계를 위해 Google Analytics를 씁니다. 화면에 나오는 매니저 이름·팀 이름은 FPL이 공개한 리그 정보입니다. 개인정보 처리 기준은 [정책 확인 필요]입니다.</p> },
-      { q: "방문 기록은 얼마나 보관하나요?", a: <p>[정책 확인 필요] 보관 기간이 정해지면 안내하겠습니다.</p> },
+      { q: "제 정보를 수집하나요?", a: <p>회원가입이 없어 이름·연락처를 받지 않습니다. 방문 통계를 위해 Google Analytics를 쓰고, ‘의견·질문’ 버튼으로 보낸 내용만 따로 저장합니다. 화면에 나오는 매니저 이름·팀 이름은 FPL이 공개한 리그 정보입니다. 자세한 내용은 <Link href="/privacy">개인정보처리방침</Link>을 보세요.</p> },
+      { q: "방문 기록은 얼마나 보관하나요?", a: <p>Google Analytics 이용 통계는 Google 설정에 따라 최대 14개월, ‘의견·질문’으로 보낸 내용은 1년 뒤 자동 삭제됩니다. 최근 본 리그·라이벌 선택·언어 설정은 내 브라우저에만 있고 언제든 지울 수 있습니다. <Link href="/privacy">개인정보처리방침</Link> 참고.</p> },
       { q: "내 이름이 다른 사람에게 보이는 게 싫어요", a: <p>리그 순위의 이름은 FPL에 등록한 이름입니다. FPL 공식 사이트의 계정 설정에서 바꿀 수 있고, 바꾸면 이 사이트에도 반영됩니다.</p> }
     ]
   },
@@ -104,9 +111,35 @@ const CATEGORIES: { id: string; title: string; items: Item[] }[] = [
   }
 ];
 
+/** Plain text of an answer for the FAQPage structured data. */
+function textOf(node: ReactNode): string {
+  if (node === null || node === undefined || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join("");
+  if (isValidElement<{ children?: ReactNode }>(node)) {
+    if (node.type === Feedback) return "의견·질문 버튼";
+    const inner = textOf(node.props.children);
+    return node.type === "li" ? `${inner} ` : inner;
+  }
+  return "";
+}
+
+const FAQ_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: CATEGORIES.flatMap((c) =>
+    c.items.map((it) => ({
+      "@type": "Question",
+      name: it.q,
+      acceptedAnswer: { "@type": "Answer", text: textOf(it.a).replace(/\s+/g, " ").trim() }
+    }))
+  )
+};
+
 export default function FaqPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col px-6 py-12">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
       <Link href="/" className="text-sm font-semibold text-[var(--muted)] hover:text-[var(--accent)]">← FPL Live</Link>
       <p className="mt-6 text-sm uppercase tracking-[0.3em] text-[var(--muted)]">FAQ</p>
       <h1 className="mt-2 text-3xl font-semibold leading-tight md:text-4xl">자주 묻는 질문</h1>

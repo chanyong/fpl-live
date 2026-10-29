@@ -13,9 +13,9 @@ const manrope = Manrope({
   variable: "--font-sans"
 });
 
-const TITLE = "FPL Live — Mini-league live standings & price changes · FPL 미니리그 라이브";
+const TITLE = "FPL Live — FPL 미니리그 실시간 순위·가격 변동 예측";
 const DESCRIPTION =
-  "Follow your FPL mini-league live: provisional points, rank swings, transfer market and price change predictions. Free, no login. 공식 FPL 데이터로 보는 미니리그 라이브 순위와 가격 변동 예측.";
+  "FPL(판타지 프리미어리그) 미니리그의 잠정 점수와 실시간 순위, BPS 보너스 예상, 라이벌 점수 차, 선수 가격 변동 예측을 로그인 없이 무료로 보는 한국어 대시보드.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
@@ -28,7 +28,8 @@ export const metadata: Metadata = {
     "FPL live",
     "FPL price changes",
     "FPL 미니리그",
-    "FPL 가격 변동"
+    "FPL 가격 변동",
+    "FPL 보너스 포인트 예상"
   ],
   alternates: { canonical: "/" },
   openGraph: {
@@ -37,8 +38,8 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     url: "/",
-    locale: "en_US",
-    alternateLocale: ["ko_KR"]
+    locale: "ko_KR",
+    alternateLocale: ["en_US"]
   },
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
   verification: { google: "xvAnUUfmT3__qox3MlY5TFmG735TP1rwejDi5cOrmHA" }
@@ -47,16 +48,36 @@ export const metadata: Metadata = {
 const PLAUSIBLE_DOMAIN = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-QBEEY5TCB6";
 
-const STRUCTURED_DATA = {
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  name: "FPL Live",
-  applicationCategory: "SportsApplication",
-  operatingSystem: "Any",
-  inLanguage: ["en", "ko"],
-  description: DESCRIPTION,
-  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" }
-};
+const STRUCTURED_DATA = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "FPL Live",
+    url: siteUrl(),
+    applicationCategory: "SportsApplication",
+    operatingSystem: "Any",
+    inLanguage: ["ko", "en"],
+    description: DESCRIPTION,
+    offers: { "@type": "Offer", price: "0", priceCurrency: "KRW" }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "FPL Live",
+    url: siteUrl(),
+    inLanguage: ["ko", "en"],
+    publisher: { "@type": "Organization", name: "FPL Live" }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "FPL Live",
+    url: siteUrl(),
+    logo: `${siteUrl()}/icon.png`,
+    founder: { "@type": "Person", name: "chanyong" },
+    email: "cyjung@gmail.com"
+  }
+];
 
 export default function RootLayout({
   children

@@ -6,6 +6,7 @@ import {
   getEventLive,
   getFixtures
 } from "@/lib/fpl-client";
+import { assignProvisionalBonus } from "@/lib/bonus";
 import { getCurrentGw, getNextDeadline } from "@/lib/gameweek";
 import {
   calculateLiveScore,
@@ -96,47 +97,6 @@ function getPlayerPhoto(photo: string | undefined) {
   return photo
     ? `https://resources.premierleague.com/premierleague/photos/players/110x140/p${photo.replace(".jpg", "")}.png`
     : null;
-}
-
-function assignProvisionalBonus(values: Array<{ value: number; element: number }>) {
-  const sorted = [...values].sort((left, right) => right.value - left.value);
-  if (sorted.length === 0) {
-    return [] as Array<{ element: number; bonus: number }>;
-  }
-
-  const top = sorted[0]?.value;
-  const firstGroup = sorted.filter((item) => item.value === top);
-  if (firstGroup.length >= 3) {
-    return firstGroup.map((item) => ({ element: item.element, bonus: 3 }));
-  }
-
-  if (firstGroup.length === 2) {
-    const next = sorted.find((item) => item.value < top);
-    return [
-      ...firstGroup.map((item) => ({ element: item.element, bonus: 3 })),
-      ...(next ? [{ element: next.element, bonus: 1 }] : [])
-    ];
-  }
-
-  const secondValue = sorted.find((item) => item.value < top)?.value;
-  if (secondValue === undefined) {
-    return [{ element: sorted[0].element, bonus: 3 }];
-  }
-
-  const secondGroup = sorted.filter((item) => item.value === secondValue);
-  if (secondGroup.length >= 2) {
-    return [
-      { element: sorted[0].element, bonus: 3 },
-      ...secondGroup.map((item) => ({ element: item.element, bonus: 2 }))
-    ];
-  }
-
-  const third = sorted.find((item) => item.value < secondValue);
-  return [
-    { element: sorted[0].element, bonus: 3 },
-    { element: secondGroup[0].element, bonus: 2 },
-    ...(third ? [{ element: third.element, bonus: 1 }] : [])
-  ];
 }
 
 /**
@@ -330,6 +290,7 @@ function buildRow(args: {
     entry_name: string;
     player_name: string;
     rank: number;
+    last_rank: number | null;
     total: number;
   };
   picks: {
@@ -381,6 +342,7 @@ function buildRow(args: {
   return {
     entryId: args.standing.entry,
     rank: args.standing.rank,
+    lastRank: args.standing.last_rank || null,
     projectedRank: args.standing.rank,
     teamName: args.standing.entry_name,
     managerName: args.standing.player_name,
@@ -472,6 +434,7 @@ export async function getLeagueLivePayload({
       {
         entryId: standing.entry,
         rank: standing.rank,
+        lastRank: standing.last_rank || null,
         projectedRank: standing.rank,
         teamName: standing.entry_name,
         managerName: standing.player_name,

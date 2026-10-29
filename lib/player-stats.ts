@@ -1,3 +1,4 @@
+import { recordPredictionSnapshot } from "@/lib/price-prediction-log";
 import { getBootstrapStatic, getFixtures, getPriceChangeHistory } from "@/lib/fpl-client";
 import { buildPremierLeagueTable } from "@/lib/pl-table";
 import { buildProvisionalBonusByElement, getLeagueLivePayload } from "@/lib/league-aggregator";
@@ -310,5 +311,7 @@ export async function getPriceChangeData(): Promise<PriceChangesResponse> {
 
   const data = { players, history, nextUpdate };
   priceCache = { data, expiresAt: Date.now() + PRICE_CACHE_TTL_MS };
+  // No-op unless PRICE_PREDICTION_LOG_DIR is set; uses the data above, no extra FPL calls.
+  void recordPredictionSnapshot(data);
   return data;
 }

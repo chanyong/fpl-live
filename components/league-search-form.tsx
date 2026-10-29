@@ -4,29 +4,30 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { parseLeagueId } from "@/lib/request-params";
 import { useLocale } from "@/components/locale-provider";
-
-const STORAGE_KEY = "recentLeagueId";
+import { loadRecentLeagues, rememberLeague, removeRecentLeague, saveRecentLeagues, type RecentLeague } from "@/lib/recent-leagues";
 
 export function LeagueSearchForm() {
   const { tr } = useLocale();
   const router = useRouter();
   const [leagueId, setLeagueId] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [recentLeagueId, setRecentLeagueId] = useState<string | null>(null);
+  const [recent, setRecent] = useState<RecentLeague[]>([]);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    // An earlier build saved whatever was typed, including invite codes.
-    if (stored && "leagueId" in parseLeagueId(stored)) {
-      setRecentLeagueId(stored);
-    } else if (stored) {
-      window.localStorage.removeItem(STORAGE_KEY);
-    }
+    // Read after mount: the list lives only in this browser.
+    setRecent(loadRecentLeagues());
   }, []);
 
   function openLeague(nextLeagueId: string) {
-    window.localStorage.setItem(STORAGE_KEY, nextLeagueId);
+    const existing = recent.find((item) => String(item.id) === nextLeagueId);
+    rememberLeague(Number(nextLeagueId), existing?.name ?? null);
     router.push(`/league/${nextLeagueId}`);
+  }
+
+  function forget(id: number) {
+    const next = removeRecentLeague(recent, id);
+    saveRecentLeagues(next);
+    setRecent(next);
   }
 
   return (
@@ -82,14 +83,35 @@ export function LeagueSearchForm() {
         </p>
       ) : null}
 
-      {recentLeagueId ? (
-        <button
-          type="button"
-          className="w-fit text-sm text-[var(--muted)] underline underline-offset-4 transition hover:text-[var(--accent)]"
-          onClick={() => openLeague(recentLeagueId)}
-        >
-          {tr(`최근 본 리그 ${recentLeagueId} 다시 열기`, `Reopen recent league ${recentLeagueId}`)}
-        </button>
+      {recent.length > 0 ? (
+        <div>
+          <p className="text-sm font-semibold text-[var(--muted)]">
+            {tr("최근 본 리그", "Recent leagues")}
+            <span className="ml-2 text-[12px] font-normal">{tr("(이 브라우저에만 저장)", "(saved in this browser only)")}</span>
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {recent.map((item) => (
+              <li key={item.id} className="flex items-center rounded-full border border-[var(--border)] bg-white text-sm">
+                <button
+                  type="button"
+                  onClick={() => openLeague(String(item.id))}
+                  className="max-w-[16rem] truncate rounded-l-full py-2 pl-4 pr-2 font-medium transition hover:text-[var(--accent)]"
+                >
+                  {item.name ? `${item.name} ` : ""}
+                  <span className="text-[12px] text-[var(--muted)] tabular-nums">#{item.id}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => forget(item.id)}
+                  aria-label={tr(`리그 ${item.id} 목록에서 지우기`, `Remove league ${item.id} from list`)}
+                  className="rounded-r-full py-2 pl-1 pr-3 text-[var(--muted)] transition hover:text-[var(--danger)]"
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
     </div>
   );
