@@ -170,3 +170,6 @@ npm run build
 ## 네이버 서치어드바이저 (2026-10-30)
 
 - https://fpl-live-production-34f4.up.railway.app 를 네이버 서치어드바이저(웹마스터 도구, 운영자 네이버 계정)에 등록. 소유 확인은 HTML 태그 방식 — `<meta name="naver-site-verification">` 를 `app/layout.tsx` 의 `metadata.verification.other` 에 넣음(지우면 소유 확인이 풀림). 소유 확인 후 sitemap 제출.
+
+### 2026-10-30 디자인 점검 반영 (`98f901d`)
+- 히어로 라벨 '공식 FPL 라이브 대시보드'(대문자·넓은 자간) → 'FPL 라이브 대시보드'(비공식 팬 서비스와 맞춤), body `word-break: keep-all`. 전체 점검 리포트: `~/.gstack/projects/gstack-github/designs/design-audit-20261030/design-audit-11-sites.md`
