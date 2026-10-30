@@ -166,3 +166,7 @@ npm run build
 - (사용자) 처리방침·약관 법률 검토, 후원 링크(넣지 않았음), 서치콘솔 sitemap 재제출.
 - FAQ 의 `[확인 필요]` 2곳(초대 전용 리그, 유료화 정책).
 - 블로그 가격 변동 글 갱신(7절).
+
+## 네이버 서치어드바이저 (2026-10-30)
+
+- https://fpl-live-production-34f4.up.railway.app 를 네이버 서치어드바이저(웹마스터 도구, 운영자 네이버 계정)에 등록. 소유 확인은 HTML 태그 방식 — `<meta name="naver-site-verification">` 를 `app/layout.tsx` 의 `metadata.verification.other` 에 넣음(지우면 소유 확인이 풀림). 소유 확인 후 sitemap 제출.

@@ -42,7 +42,10 @@ export const metadata: Metadata = {
     alternateLocale: ["en_US"]
   },
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
-  verification: { google: "xvAnUUfmT3__qox3MlY5TFmG735TP1rwejDi5cOrmHA" }
+  verification: {
+    google: "xvAnUUfmT3__qox3MlY5TFmG735TP1rwejDi5cOrmHA",
+    other: { "naver-site-verification": "fbcdbd95ab414fa247e8eeb66455e0566888a9b5" },
+  }
 };
 
 const PLAUSIBLE_DOMAIN = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
