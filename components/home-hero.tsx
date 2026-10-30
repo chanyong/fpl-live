@@ -11,8 +11,8 @@ export function HomeHero() {
   return (
     <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--surface)]/95 p-6 shadow-[0_20px_80px_rgba(55,40,20,0.12)] md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <p className="whitespace-nowrap text-xs uppercase tracking-[0.15em] text-[var(--muted)] sm:text-sm sm:tracking-[0.3em]">
-          {tr("공식 FPL 라이브 대시보드", "Official FPL live dashboard")}
+        <p className="whitespace-nowrap text-xs font-medium text-[var(--muted)] sm:text-sm">
+          {tr("FPL 라이브 대시보드", "FPL live dashboard")}
         </p>
         <div className="ml-auto flex items-center gap-2">
           <Link

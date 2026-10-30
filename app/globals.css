@@ -49,6 +49,8 @@ body {
   font-size: 16.5px;
   line-height: 1.45;
   text-rendering: optimizeLegibility;
+  /* 한국어는 단어 단위로 줄바꿈 */
+  word-break: keep-all; overflow-wrap: break-word;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
