@@ -106,6 +106,7 @@ function Harness({ rows, leagueId = LEAGUE_ID, showCard = true }: { rows: League
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  focusManager.setFocused(undefined);
   window.localStorage.clear();
 });
 
@@ -152,6 +153,29 @@ describe("RivalCard choice", () => {
     expect(screen.queryByText(TITLE)).not.toBeInTheDocument();
     view.rerender(<Harness rows={ROWS} />);
     expectPick("1", "2");
+  });
+
+  it("still works when the browser blocks storage", () => {
+    // Private modes and blocked site data make even reading window.localStorage throw.
+    const original = Object.getOwnPropertyDescriptor(window, "localStorage");
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      get() {
+        throw new DOMException("The operation is insecure.", "SecurityError");
+      }
+    });
+    try {
+      render(<Harness rows={ROWS} />);
+      expectPick("", "");
+      choose(1, 2);
+      expectPick("1", "2");
+    } finally {
+      if (original) {
+        Object.defineProperty(window, "localStorage", original);
+      } else {
+        delete (window as unknown as Record<string, unknown>).localStorage;
+      }
+    }
   });
 
   it("starts empty for a different league", () => {
@@ -201,13 +225,14 @@ describe("LeagueDashboard rival choice", () => {
     expectPick("1", "2");
 
     // Leaving for another browser tab and coming back refetches; the choice stays.
+    const callsBeforeFocus = fetchMock.mock.calls.length;
     await act(async () => {
       focusManager.setFocused(false);
       focusManager.setFocused(true);
       await vi.advanceTimersByTimeAsync(0);
     });
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(callsBeforeFocus);
     expectPick("1", "2");
-    focusManager.setFocused(undefined);
 
     expect(window.localStorage.getItem(`fpl-live-rival:${LEAGUE_ID}`)).toBeNull();
   });

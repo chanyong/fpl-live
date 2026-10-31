@@ -77,7 +77,12 @@ select {
    meta     14px  보조 설명·메타(조금 더 읽는 것)
    body     15px  본문·표 숫자·선수 이름 (text-sm 대체)
    body-lg  16px  강조 본문·카드 안 선수 이름·소제목
-   title    18px  카드 제목 */
+   title    18px  카드 제목
+   title-lg 19px  선수 상세 이름 등 한 단계 큰 제목
+   score    23px  카드 안 큰 점수 숫자
+   이보다 큰 제목·숫자는 Tailwind 기본 단계(text-lg 이상)를 그대로 쓴다.
+   SVG 차트 글자(fontSize)도 13 이상이고, 차트는 viewBox 폭 그대로(1:1) 그려야 13px이 유지된다.
+   tests/type-scale.test.ts 가 13px 미만과 임의 크기를 막는다. */
 @theme {
   --text-caption: 13px;
   --text-meta: 14px;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { ChartScroll } from "@/components/charts/chart-scroll";
 import { CaretDown, CaretRight } from "@/components/icons";
 import { KpiCard, KpiGrid } from "@/components/kpi-card";
 import { SidePanelLayout } from "@/components/side-panel-layout";
@@ -253,6 +254,13 @@ function spreadLabels(entries: Array<{ key: number; y: number }>, minGap: number
   return placed;
 }
 
+// The name column right of the chart is padding.right - 11 = 139 units wide, about 19 bold 13px characters.
+const MAX_NAME_CHARS = 18;
+
+function chartName(name: string) {
+  return name.length > MAX_NAME_CHARS ? `${name.slice(0, MAX_NAME_CHARS - 1)}…` : name;
+}
+
 function TrendChart({
   managers,
   gameweeks,
@@ -296,10 +304,13 @@ function TrendChart({
     })
     .filter((item) => item.points.length > 0);
 
+  // 15 apart so neighbouring 13px bold names do not touch.
   const labelY = spreadLabels(
     series.map((item) => ({ key: item.manager.entry, y: item.points[item.points.length - 1].y })),
-    12
+    15
   );
+  // "GW38" at 13px is about 36 units wide; closer than 40 apart, print every other one (always the latest).
+  const gwLabelEvery = stepX > 0 && stepX < 40 ? 2 : 1;
 
   return (
     <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-4">
@@ -315,7 +326,7 @@ function TrendChart({
         </div>
         {headerRight}
       </div>
-      <div className="overflow-x-auto pb-1">
+      <ChartScroll className="pb-1" resetKey={`${gameweeks[0]}-${gameweeks.length}`}>
         <svg
           viewBox={`0 0 ${width} ${height}`}
           width="100%"
@@ -348,9 +359,11 @@ function TrendChart({
                   strokeOpacity="0.4"
                   strokeDasharray="4 8"
                 />
-                <text x={x} y={height - 12} fill="var(--muted)" fontSize="13" textAnchor="middle">
-                  GW{gw}
-                </text>
+                {(gameweeks.length - 1 - index) % gwLabelEvery === 0 ? (
+                  <text x={x} y={height - 12} fill="var(--muted)" fontSize="13" textAnchor="middle">
+                    GW{gw}
+                  </text>
+                ) : null}
               </g>
             );
           })}
@@ -398,7 +411,8 @@ function TrendChart({
                   fontSize="13"
                   fontWeight="700"
                 >
-                  {manager.playerName}
+                  {chartName(manager.playerName)}
+                  {manager.playerName.length > MAX_NAME_CHARS ? <title>{manager.playerName}</title> : null}
                 </text>
               </g>
             );
@@ -419,7 +433,7 @@ function TrendChart({
             </rect>
           ))}
         </svg>
-      </div>
+      </ChartScroll>
 
       <div className="mt-3 border-t border-[var(--border)] pt-3">
         <div className="mb-2 text-meta font-semibold">{tr(`GW${activeGw} 순위`, `GW${activeGw} ranks`)}</div>

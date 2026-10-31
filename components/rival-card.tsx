@@ -87,7 +87,7 @@ export function RivalCard({
       <select
         value={value ?? ""}
         onChange={(event) => onChange(event.target.value ? Number(event.target.value) : null)}
-        className="min-h-9 w-full min-w-0 rounded-lg border border-[var(--border)] bg-white px-2 text-meta font-medium text-[var(--text)]"
+        className="min-h-9 w-full min-w-0 rounded-lg border border-[var(--border)] bg-white px-2 text-body-lg font-medium text-[var(--text)] md:text-meta"
       >
         <option value="">{tr("선택", "Choose")}</option>
         {sorted.map((row) => (

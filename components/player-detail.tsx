@@ -152,7 +152,8 @@ export function PlayerDetail({
           </div>
         ) : null}
 
-        <div className="grid gap-2">
+        {/* grid-cols-1, not an auto column: the 640px charts below would otherwise widen every panel past a phone screen. */}
+        <div className="grid grid-cols-1 gap-2">
           <Panel
             title={tr(`GW${gw} 점수는 이렇게 나왔습니다`, `How the GW${gw} score was earned`)}
             hint={tr("FPL이 기록한 항목 그대로", "Exactly as FPL recorded it")}

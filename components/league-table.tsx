@@ -276,7 +276,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                       {...rowProps(row.entryId, isExpanded)}
                     >
                       <td className="px-1 py-1.5 align-top">
-                        <div className="flex items-center gap-1 font-semibold tabular-nums text-stone-800">
+                        <div className="flex items-center gap-1 text-body font-semibold leading-4 tabular-nums text-stone-800">
                           {compareMode ? (
                             selectMark(row.entryId)
                           ) : (
@@ -300,10 +300,10 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                           {row.chip ? chipLabel(row.chip, true, locale) : tr(`${row.playersPlayed}명 출전`, `${row.playersPlayed} played`)}
                         </div>
                       </td>
-                      <td className={`px-1 py-1.5 text-right align-top font-semibold ${tone}`}>
+                      <td className={`px-1 py-1.5 text-right align-top text-body font-semibold leading-4 ${tone}`}>
                         <GwPoints row={row} />
                       </td>
-                      <td className="px-1 py-1.5 text-right align-top font-semibold tabular-nums">{row.totalPoints}</td>
+                      <td className="px-1 py-1.5 text-right align-top text-body font-semibold leading-4 tabular-nums">{row.totalPoints}</td>
                     </tr>
                     {isExpanded && !compareMode ? (
                       <tr className="bg-[var(--surface-strong)]/30">

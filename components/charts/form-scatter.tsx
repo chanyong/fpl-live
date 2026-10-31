@@ -61,7 +61,8 @@ export function FormScatter({ players, ownershipCut, formCut, ownedIds, onSelect
     for (const player of candidates) {
       const cx = x(player.selectedByPercent);
       const cy = y(player.form);
-      const width = player.webName.length * 6.4 + 10;
+      // About 7.6 units per character at the 13px label size (was 6.4 for 11px).
+      const width = player.webName.length * 7.6 + 10;
 
       for (const side of [1, -1]) {
         const tx = cx + side * 9;

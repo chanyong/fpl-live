@@ -210,7 +210,8 @@ function Filters({
 }) {
   const { tr } = useLocale();
   const selectClass =
-    "min-h-9 rounded-full border border-[var(--border)] bg-white px-3 text-meta outline-none transition focus:border-[var(--accent)]";
+    // 16px on phones: iOS Safari zooms the page when a form control under 16px gets focus.
+    "min-h-9 rounded-full border border-[var(--border)] bg-white px-3 text-body-lg outline-none transition focus:border-[var(--accent)] md:text-meta";
 
   return (
     <div className="mb-2 flex flex-wrap items-center gap-1.5">
@@ -219,7 +220,7 @@ function Filters({
         onChange={(event) => onSearch(event.target.value)}
         aria-label={tr("선수 또는 팀 검색", "Search player or team")}
         placeholder={tr("선수·팀 검색", "Search player or team")}
-        className="min-h-9 min-w-[10rem] flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-meta outline-none transition focus:border-[var(--accent)] md:max-w-[20rem]"
+        className="min-h-9 min-w-[10rem] flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-body-lg outline-none transition focus:border-[var(--accent)] md:max-w-[20rem] md:text-meta"
       />
       <select
         value={direction}

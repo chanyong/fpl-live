@@ -227,7 +227,7 @@ export function LeaguePlayersPanel({
 
         {swingRows.length > 0 ? (
           <div className="overflow-x-auto">
-            <MagnitudeRows rows={swingRows} max={swingMax} valueWidth="132px" />
+            <MagnitudeRows rows={swingRows} max={swingMax} valueWidth="148px" />
           </div>
         ) : (
           <p className="py-4 text-center text-meta text-[var(--muted)]">
