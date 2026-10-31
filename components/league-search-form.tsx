@@ -6,6 +6,9 @@ import { parseLeagueId } from "@/lib/request-params";
 import { useLocale } from "@/components/locale-provider";
 import { loadRecentLeagues, rememberLeague, removeRecentLeague, saveRecentLeagues, type RecentLeague } from "@/lib/recent-leagues";
 
+// Renders only inside .home-stage (app/page.tsx): its colours and radius come from the home tokens there.
+// Buttons and inputs need the `!` utilities because the unlayered `button, input { font: inherit }` in
+// app/globals.css beats Tailwind's layered font utilities.
 export function LeagueSearchForm() {
   const { tr } = useLocale();
   const router = useRouter();
@@ -31,7 +34,7 @@ export function LeagueSearchForm() {
   }
 
   return (
-    <div className="mt-10 flex flex-col gap-4">
+    <div className="mt-8 flex flex-col gap-4">
       <form
         className="flex flex-col gap-3 md:flex-row"
         onSubmit={(event) => {
@@ -65,13 +68,13 @@ export function LeagueSearchForm() {
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? "league-id-error" : undefined}
           placeholder={tr("공개 클래식 리그 ID (예: 915874)", "Public classic league ID (e.g. 915874)")}
-          className={`min-h-14 flex-1 rounded-full border bg-white px-6 text-lg outline-none transition focus:border-[var(--accent)] ${
-            error ? "border-red-400" : "border-[var(--border)]"
+          className={`min-h-14 flex-1 rounded-[var(--radius)] border-2 px-5 text-body-lg! outline-hidden transition focus:border-[var(--stub)] focus:ring-2 focus:ring-[var(--stub)] focus:ring-offset-2 focus:ring-offset-[var(--paper)] md:text-lg! ${
+            error ? "border-[var(--danger)] bg-red-50" : "border-[var(--ink)] bg-white"
           }`}
         />
         <button
           type="submit"
-          className="min-h-14 rounded-full bg-[var(--accent)] px-8 font-semibold text-white transition hover:opacity-90"
+          className="min-h-14 rounded-[var(--radius)] bg-[var(--stub)] px-8 text-body-lg! font-bold! text-white transition hover:bg-[var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
         >
           {tr("대시보드 열기", "Open dashboard")}
         </button>
@@ -85,26 +88,26 @@ export function LeagueSearchForm() {
 
       {recent.length > 0 ? (
         <div>
-          <p className="text-body font-semibold text-[var(--muted)]">
+          <p className="text-body font-semibold text-[var(--ink-soft)]">
             {tr("최근 본 리그", "Recent leagues")}
             <span className="ml-2 text-caption font-normal">{tr("(이 브라우저에만 저장)", "(saved in this browser only)")}</span>
           </p>
           <ul className="mt-2 flex flex-wrap gap-2">
             {recent.map((item) => (
-              <li key={item.id} className="flex items-center rounded-full border border-[var(--border)] bg-white text-body">
+              <li key={item.id} className="flex min-w-0 max-w-full items-center rounded-[var(--radius)] bg-[var(--paper-tone)] text-body">
                 <button
                   type="button"
                   onClick={() => openLeague(String(item.id))}
-                  className="max-w-[16rem] truncate rounded-l-full py-2 pl-4 pr-2 font-medium transition hover:text-[var(--accent)]"
+                  className="min-w-0 max-w-[16rem] truncate rounded-l-[var(--radius)] py-2 pl-4 pr-2 font-medium! transition hover:text-[var(--stub)]"
                 >
                   {item.name ? `${item.name} ` : ""}
-                  <span className="text-caption text-[var(--muted)] tabular-nums">#{item.id}</span>
+                  <span className="text-caption text-[var(--ink-soft)] tabular-nums">#{item.id}</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => forget(item.id)}
                   aria-label={tr(`리그 ${item.id} 목록에서 지우기`, `Remove league ${item.id} from list`)}
-                  className="rounded-r-full py-2 pl-1 pr-3 text-[var(--muted)] transition hover:text-[var(--danger)]"
+                  className="rounded-r-[var(--radius)] py-2 pl-1 pr-3 text-[var(--ink-soft)] transition hover:text-[var(--danger)]"
                 >
                   ×
                 </button>

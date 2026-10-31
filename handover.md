@@ -173,3 +173,9 @@ npm run build
 
 ### 2026-10-30 디자인 점검 반영 (`98f901d`)
 - 히어로 라벨 '공식 FPL 라이브 대시보드'(대문자·넓은 자간) → 'FPL 라이브 대시보드'(비공식 팬 서비스와 맞춤), body `word-break: keep-all`. 전체 점검 리포트: `~/.gstack/projects/gstack-github/designs/design-audit-20261030/design-audit-11-sites.md`
+
+## 배포 기록
+
+| 배포 시각 | 브랜치 | 내용 |
+|---|---|---|
+| 머지 시 | `design/taste-pilot` | 홈 첫 화면을 경기 입장권 구성으로 개편(taste-skill 시범, 홈 전용 `.home-*` 토큰·클래스, 리그 화면 미변경). 리뷰 반영: 오류 문구로 휴대폰 화면이 넓어지던 grid 수정(`minmax(0,1fr)`), 홈 배경 화면 높이 채움, 제목 첫 화면 즉시 표시(LCP), 입력란 포커스 링·오류 배경·고대비 모드 포커스, 버튼 굵기 실제 적용(`!`), 긴 최근 리그 이름 말줄임. |

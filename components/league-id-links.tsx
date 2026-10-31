@@ -46,12 +46,13 @@ const LINKS: LinkItem[] = [
   },
 ];
 
+// Renders only inside .home-stage (app/page.tsx): its colours and radius come from the home tokens there.
 export function LeagueIdLinks() {
   const { tr } = useLocale();
 
   return (
     <div className="mt-6">
-      <p className="text-body text-[var(--muted)]">
+      <p className="text-body text-[var(--ink-soft)]">
         {tr(
           "리그 ID가 기억나지 않나요? FPL 홈페이지나 App에서 내 리그 주소의 숫자를 확인하세요.",
           "Not sure of your league ID? Open FPL on the web or in the app and read the number in your league's address."
@@ -64,7 +65,7 @@ export function LeagueIdLinks() {
               href={link.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex min-h-14 items-center gap-3 rounded-full border border-[var(--border)] bg-white px-5 text-body font-medium transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] bg-[var(--paper-tone)] px-5 text-body font-medium transition hover:bg-[var(--paper-tone-hover)]"
             >
               {link.icon}
               {tr(link.ko, link.en)}
@@ -82,43 +83,43 @@ function LeagueIdGuide() {
   const { tr } = useLocale();
 
   return (
-    <details className="group mt-4 overflow-hidden rounded-2xl border border-[var(--border)] bg-white/80 open:bg-white">
+    <details className="group mt-4 overflow-hidden rounded-[var(--radius)] bg-[var(--paper-tone)]">
       <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-body font-semibold [&::-webkit-details-marker]:hidden">
-        <span className="grid h-5 w-5 place-items-center rounded-full bg-[var(--accent)] text-caption text-white">?</span>
+        <span className="grid h-5 w-5 place-items-center rounded-full bg-[var(--stub)] text-caption text-white">?</span>
         <span className="flex-1">{tr("리그 ID 찾는 법", "How to find your league ID")}</span>
-        <span aria-hidden className="text-[var(--muted)] transition-transform group-open:rotate-180">▾</span>
+        <span aria-hidden className="text-[var(--ink-soft)] transition-transform group-open:rotate-180">▾</span>
       </summary>
-      <div className="grid gap-4 border-t border-[var(--border)] px-4 py-4 text-body leading-6 md:grid-cols-2">
+      <div className="grid gap-4 bg-white/60 px-4 py-4 text-body leading-6 md:grid-cols-2">
         <div className="min-w-0">
           <p className="font-semibold">{tr("PC·모바일 웹", "On the web")}</p>
-          <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-[var(--muted)]">
+          <ol className="mt-1 list-decimal space-y-0.5 pl-5 text-[var(--ink-soft)]">
             <li>{tr("fantasy.premierleague.com 에 로그인합니다.", "Log in at fantasy.premierleague.com.")}</li>
             <li>{tr("위쪽 메뉴에서 ‘Leagues & Cups’를 누릅니다.", "Open ‘Leagues & Cups’ from the top menu.")}</li>
             <li>{tr("보고 싶은 클래식 리그 이름을 누릅니다.", "Click the classic league you want.")}</li>
             <li>{tr("주소창의 leagues/ 뒤 숫자가 리그 ID입니다.", "The number after leagues/ in the address is the ID.")}</li>
           </ol>
-          <div className="mt-2 overflow-hidden rounded-xl border border-[var(--border)] bg-stone-50" aria-hidden="true">
-            <div className="flex items-center gap-1.5 border-b border-[var(--border)] px-3 py-1.5">
+          <div className="mt-2 overflow-hidden rounded-[var(--radius)] bg-white" aria-hidden="true">
+            <div className="flex items-center gap-1.5 bg-[var(--paper-tone)] px-3 py-1.5">
               <span className="h-2 w-2 rounded-full bg-red-300" />
               <span className="h-2 w-2 rounded-full bg-amber-300" />
               <span className="h-2 w-2 rounded-full bg-emerald-300" />
             </div>
-            <div className="break-all px-3 py-2 font-mono text-caption text-[var(--muted)]">
+            <div className="break-all px-3 py-2 text-caption tabular-nums text-[var(--ink-soft)]">
               fantasy.premierleague.com/leagues/
-              <mark className="rounded bg-[var(--accent)] px-1 font-bold text-white">915874</mark>
+              <mark className="rounded bg-[var(--stub)] px-1 font-bold text-white">915874</mark>
               /standings/c
             </div>
           </div>
         </div>
         <div className="min-w-0">
           <p className="font-semibold">{tr("Premier League 앱", "In the Premier League app")}</p>
-          <p className="mt-1 text-[var(--muted)]">
+          <p className="mt-1 text-[var(--ink-soft)]">
             {tr(
               "앱 화면에는 리그 ID 숫자가 잘 보이지 않습니다. 앱의 초대 링크(…/auto-join/영문코드)는 리그 ID가 아닙니다. 휴대폰 브라우저로 fantasy.premierleague.com 에 로그인해 ‘PC·모바일 웹’ 방법으로 주소의 숫자를 확인하세요.",
               "The app rarely shows the numeric ID, and its invite link (…/auto-join/code) is not the league ID. Log in at fantasy.premierleague.com in your phone's browser and follow the web steps."
             )}
           </p>
-          <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-caption text-amber-900">
+          <p className="mt-2 rounded-[var(--radius)] bg-amber-100 px-3 py-2 text-caption text-amber-900">
             {tr(
               "bfwf45 처럼 영문이 섞인 초대 코드는 리그 ID가 아닙니다. 숫자만 넣어 주세요. 한 번 연 리그는 이 브라우저의 ‘최근 본 리그’에 남습니다.",
               "Invite codes with letters (like bfwf45) are not league IDs — use the number only. Leagues you open are kept under ‘Recent leagues’ in this browser."
