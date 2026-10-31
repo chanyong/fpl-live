@@ -99,3 +99,128 @@ select {
   --text-title-lg: 19px;
   --text-score: 23px;
 }
+
+/* Home only (taste pilot, 2026-11). The home page is set as a matchday ticket on a dark ground:
+   flat colour, one radius, no gradients, no shadows. Tokens are scoped to .home-stage so the league
+   screens keep the original palette.
+   paper #eaeae5 on ink #2a1d17 = 13:1, muted #5f5047 on paper = 6.6:1, white on stub green #3a6230 = 6.9:1. */
+.home-stage {
+  --ground: #2a1d17;
+  --paper: #eaeae5;
+  --paper-tone: #d9d9d1;
+  --ink: #2a1d17;
+  --ink-soft: #5f5047;
+  --stub: #3a6230;
+  --stub-ink: #ffffff;
+  --radius: 6px;
+  background: var(--ground);
+  color: var(--ink);
+  padding: 20px 16px 48px;
+}
+
+.home-frame {
+  margin: 0 auto;
+  max-width: 64rem;
+}
+
+.home-ticket {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  background: var(--paper);
+  border-radius: var(--radius);
+}
+
+.home-ticket-main {
+  padding: 28px 20px 32px;
+}
+
+.home-ticket-stub {
+  position: relative;
+  padding: 28px 20px 32px;
+  background: var(--stub);
+  color: var(--stub-ink);
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+/* perforation: a dotted edge between main and stub, and two round bites out of the paper */
+.home-ticket-stub {
+  border-top: 3px dotted var(--paper);
+}
+.home-ticket-stub::before,
+.home-ticket-stub::after {
+  content: "";
+  position: absolute;
+  top: -15px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ground);
+}
+.home-ticket-stub::before {
+  left: -14px;
+}
+.home-ticket-stub::after {
+  right: -14px;
+}
+
+@media (min-width: 768px) {
+  .home-stage {
+    padding: 40px 32px 72px;
+  }
+  .home-ticket-main {
+    padding: 44px 48px 48px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-ticket {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+  .home-ticket-stub {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 32px;
+    padding: 44px 32px;
+    border-top: 0;
+    border-left: 3px dotted var(--paper);
+    border-radius: 0 var(--radius) var(--radius) 0;
+  }
+  .home-ticket-stub::before,
+  .home-ticket-stub::after {
+    left: -15px;
+    right: auto;
+  }
+  .home-ticket-stub::before {
+    top: -14px;
+  }
+  .home-ticket-stub::after {
+    top: auto;
+    bottom: -14px;
+  }
+}
+
+.home-title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  font-size: clamp(1.75rem, 1.2rem + 2.6vw, 3rem);
+  max-width: 18em;
+}
+
+.home-stub-link {
+  color: var(--ink);
+}
+
+/* entrance: parts rise in one after another (opacity + transform only, works without script) */
+@keyframes home-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .home-rise {
+    animation: home-rise 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+}
