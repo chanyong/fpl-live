@@ -46,6 +46,7 @@ const LINKS: LinkItem[] = [
   },
 ];
 
+// Renders only inside .home-stage (app/page.tsx): its colours and radius come from the home tokens there.
 export function LeagueIdLinks() {
   const { tr } = useLocale();
 
@@ -64,7 +65,7 @@ export function LeagueIdLinks() {
               href={link.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] bg-[var(--paper-tone)] px-5 text-body font-medium transition hover:bg-[#cbcbc1]"
+              className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] bg-[var(--paper-tone)] px-5 text-body font-medium transition hover:bg-[var(--paper-tone-hover)]"
             >
               {link.icon}
               {tr(link.ko, link.en)}

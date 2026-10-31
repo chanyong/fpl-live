@@ -103,11 +103,13 @@ select {
 /* Home only (taste pilot, 2026-11). The home page is set as a matchday ticket on a dark ground:
    flat colour, one radius, no gradients, no shadows. Tokens are scoped to .home-stage so the league
    screens keep the original palette.
-   paper #eaeae5 on ink #2a1d17 = 13:1, muted #5f5047 on paper = 6.6:1, white on stub green #3a6230 = 6.9:1. */
+   paper #eaeae5 on ink #2a1d17 = 13.5:1, muted #5f5047 on paper = 6.4:1 (5.4:1 on paper-tone #d9d9d1),
+   white on stub green #3a6230 = 7.1:1. */
 .home-stage {
   --ground: #2a1d17;
   --paper: #eaeae5;
   --paper-tone: #d9d9d1;
+  --paper-tone-hover: #cbcbc1;
   --ink: #2a1d17;
   --ink-soft: #5f5047;
   --stub: #3a6230;
@@ -116,6 +118,9 @@ select {
   background: var(--ground);
   color: var(--ink);
   padding: 20px 16px 48px;
+  /* fill the screen like the old min-h-screen main, so tall screens don't show the cream page below */
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .home-frame {
@@ -124,9 +129,10 @@ select {
 }
 
 .home-ticket {
-  position: relative;
   display: grid;
-  grid-template-columns: 1fr;
+  /* minmax(0, …), not 1fr: a bare 1fr track grows to its longest unbreakable word, and the
+     invalid-ID error carries "fantasy.premierleague.com/leagues/915874/", which widened phones to 395px. */
+  grid-template-columns: minmax(0, 1fr);
   background: var(--paper);
   border-radius: var(--radius);
 }
@@ -209,6 +215,8 @@ select {
   max-width: 18em;
 }
 
+/* Needed even though the link also has text-[var(--ink)]: the unlayered `a { color: inherit }` above
+   beats Tailwind's layered utilities, so without this the link inherits the stub's white (1.2:1 on paper). */
 .home-stub-link {
   color: var(--ink);
 }
@@ -218,9 +226,18 @@ select {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: none; }
 }
+/* The headline and intro are the likely LCP elements, and Chrome does not count text at opacity 0,
+   so they only slide (no fade, no delay) and paint on the first frame. */
+@keyframes home-slide {
+  from { transform: translateY(16px); }
+  to { transform: none; }
+}
 @media (prefers-reduced-motion: no-preference) {
   .home-rise {
     animation: home-rise 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
     animation-delay: calc(var(--i, 0) * 70ms);
+  }
+  .home-slide {
+    animation: home-slide 520ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
 }

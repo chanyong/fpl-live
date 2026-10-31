@@ -6,6 +6,9 @@ import { parseLeagueId } from "@/lib/request-params";
 import { useLocale } from "@/components/locale-provider";
 import { loadRecentLeagues, rememberLeague, removeRecentLeague, saveRecentLeagues, type RecentLeague } from "@/lib/recent-leagues";
 
+// Renders only inside .home-stage (app/page.tsx): its colours and radius come from the home tokens there.
+// Buttons and inputs need the `!` utilities because the unlayered `button, input { font: inherit }` in
+// app/globals.css beats Tailwind's layered font utilities.
 export function LeagueSearchForm() {
   const { tr } = useLocale();
   const router = useRouter();
@@ -65,13 +68,13 @@ export function LeagueSearchForm() {
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? "league-id-error" : undefined}
           placeholder={tr("공개 클래식 리그 ID (예: 915874)", "Public classic league ID (e.g. 915874)")}
-          className={`min-h-14 flex-1 rounded-[var(--radius)] border-2 bg-white px-5 text-body-lg outline-none transition focus:border-[var(--stub)] focus:ring-2 focus:ring-[var(--stub)]/30 md:text-lg ${
-            error ? "border-[var(--danger)]" : "border-[var(--ink)]"
+          className={`min-h-14 flex-1 rounded-[var(--radius)] border-2 px-5 text-body-lg! outline-hidden transition focus:border-[var(--stub)] focus:ring-2 focus:ring-[var(--stub)] focus:ring-offset-2 focus:ring-offset-[var(--paper)] md:text-lg! ${
+            error ? "border-[var(--danger)] bg-red-50" : "border-[var(--ink)] bg-white"
           }`}
         />
         <button
           type="submit"
-          className="min-h-14 rounded-[var(--radius)] bg-[var(--stub)] px-8 text-body-lg font-bold text-white transition hover:bg-[var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+          className="min-h-14 rounded-[var(--radius)] bg-[var(--stub)] px-8 text-body-lg! font-bold! text-white transition hover:bg-[var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
         >
           {tr("대시보드 열기", "Open dashboard")}
         </button>
@@ -87,15 +90,15 @@ export function LeagueSearchForm() {
         <div>
           <p className="text-body font-semibold text-[var(--ink-soft)]">
             {tr("최근 본 리그", "Recent leagues")}
-            <span className="ml-2 text-caption font-normal text-[var(--ink-soft)]">{tr("(이 브라우저에만 저장)", "(saved in this browser only)")}</span>
+            <span className="ml-2 text-caption font-normal">{tr("(이 브라우저에만 저장)", "(saved in this browser only)")}</span>
           </p>
           <ul className="mt-2 flex flex-wrap gap-2">
             {recent.map((item) => (
-              <li key={item.id} className="flex items-center rounded-[var(--radius)] bg-[var(--paper-tone)] text-body">
+              <li key={item.id} className="flex min-w-0 max-w-full items-center rounded-[var(--radius)] bg-[var(--paper-tone)] text-body">
                 <button
                   type="button"
                   onClick={() => openLeague(String(item.id))}
-                  className="max-w-[16rem] truncate rounded-l-[var(--radius)] py-2 pl-4 pr-2 font-medium transition hover:text-[var(--stub)]"
+                  className="min-w-0 max-w-[16rem] truncate rounded-l-[var(--radius)] py-2 pl-4 pr-2 font-medium! transition hover:text-[var(--stub)]"
                 >
                   {item.name ? `${item.name} ` : ""}
                   <span className="text-caption text-[var(--ink-soft)] tabular-nums">#{item.id}</span>

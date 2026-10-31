@@ -34,10 +34,10 @@ export function HomeHero() {
 
       <section className="home-ticket" aria-labelledby="home-title">
         <div className="home-ticket-main">
-          <h1 id="home-title" className="home-title home-rise" style={{ "--i": 1 } as React.CSSProperties}>
+          <h1 id="home-title" className="home-title home-slide">
             {tr("내 미니리그 순위, 경기 중에 실시간으로", "Mini-league standings, live")}
           </h1>
-          <p style={{ "--i": 2 } as React.CSSProperties} className="home-rise mt-4 max-w-xl text-body-lg leading-7 text-[var(--ink-soft)] md:text-lg md:leading-8">
+          <p className="home-slide mt-4 max-w-xl text-body-lg leading-7 text-[var(--ink-soft)] md:text-lg md:leading-8">
             {tr(
               "공개 클래식 리그 ID를 입력하면 게임위크 잠정 점수, 실시간 순위 변동, 매니저별 스쿼드 현황을 볼 수 있습니다.",
               "Enter a public classic league ID to see provisional gameweek scores, live rank changes and every manager's squad."
@@ -49,15 +49,15 @@ export function HomeHero() {
 
         <aside style={{ "--i": 4 } as React.CSSProperties} className="home-rise home-ticket-stub" aria-labelledby="home-stub-title">
           <div>
-          <h2 id="home-stub-title" className="text-title font-extrabold leading-snug tracking-tight">
-            {tr("리그 ID 없이 바로 보기", "No league ID? Start here")}
-          </h2>
-          <p className="mt-2 text-body leading-6">
-            {tr(
-              "이번 마감 전 가격이 오를 선수와 내릴 선수를 확인하세요.",
-              "See which players are about to rise or fall in price before the deadline."
-            )}
-          </p>
+            <h2 id="home-stub-title" className="text-title font-extrabold leading-snug tracking-tight">
+              {tr("리그 ID 없이 바로 보기", "No league ID? Start here")}
+            </h2>
+            <p className="mt-2 text-body leading-6">
+              {tr(
+                "이번 마감 전 가격이 오를 선수와 내릴 선수를 확인하세요.",
+                "See which players are about to rise or fall in price before the deadline."
+              )}
+            </p>
           </div>
           <Link
             href="/price-changes"
