@@ -174,8 +174,12 @@ npm run build
 ### 2026-10-30 디자인 점검 반영 (`98f901d`)
 - 히어로 라벨 '공식 FPL 라이브 대시보드'(대문자·넓은 자간) → 'FPL 라이브 대시보드'(비공식 팬 서비스와 맞춤), body `word-break: keep-all`. 전체 점검 리포트: `~/.gstack/projects/gstack-github/designs/design-audit-20261030/design-audit-11-sites.md`
 
+### 2026-11-01 하단 '운영자의 다른 서비스' 카드 띠 (#4, 공통 사양 chanyong/ddalkkak-rank#12)
+- 푸터 맨 위(법적 고지 위)에 카드 띠: 10곳(FPL Live 자신 제외), 2/3/5열, 이름 16px·설명 14px. 목록·utm(`utm_source=fpl&utm_medium=footer_network`)은 `lib/network.ts` 한 곳, 화면은 `components/site-footer.tsx`. 도메인을 바꾸면 `lib/network.ts` 의 FPL Live 주소와 `SELF_URL` 도 같이 바꾼다.
+
 ## 배포 기록
 
 | 배포 시각 | 브랜치 | 내용 |
 |---|---|---|
 | 머지 시 | `design/taste-pilot` | 홈 첫 화면을 경기 입장권 구성으로 개편(taste-skill 시범, 홈 전용 `.home-*` 토큰·클래스, 리그 화면 미변경). 리뷰 반영: 오류 문구로 휴대폰 화면이 넓어지던 grid 수정(`minmax(0,1fr)`), 홈 배경 화면 높이 채움, 제목 첫 화면 즉시 표시(LCP), 입력란 포커스 링·오류 배경·고대비 모드 포커스, 버튼 굵기 실제 적용(`!`), 긴 최근 리그 이름 말줄임. |
+| 머지 시 | `design/network-footer` | 하단 '운영자의 다른 서비스'를 카드 띠로 개편(#4, 공통 사양 chanyong/ddalkkak-rank#12): 10곳 2/3/5열, 제목 18px·이름 16px·설명 14px, `utm_source=fpl&utm_medium=footer_network`, 법적 고지·정책 링크는 띠 아래로 분리. 리뷰 반영: 옛 브랜치를 옮기며 배포 기록 표 아래에 붙었던 설명 절을 본문으로 옮기고 표에 이 줄 추가. |
