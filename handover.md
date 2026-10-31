@@ -153,7 +153,7 @@ npm run build
 - FPL 호출량: 메타·OG 는 `lib/league-meta.ts` 메모리 캐시(리그명 30분, 현재 GW 10분, 동시 요청 합치기) → 예전(페이지 열 때마다 standings 1회)보다 줄어듦. 기존 30초/60초 캐시·동시성 8 그대로.
 - 최근 본 리그 목록(최대 6개, localStorage `fpl-live-recent-leagues`, 옛 `recentLeagueId` 자동 이전) — 첫 화면에 이름·ID·삭제 버튼. "리그 ID 찾는 법" 펼침 안내(웹 단계 + 주소창 그림, 앱 초대코드 주의).
 - 보너스 예상: 경기 카드마다 BPS 기준 3·2·1(동점 같은 점수, 3위 동점 모두 1점으로 수정) "보너스 예상", FPL 이 확정하면 "보너스 확정"(`lib/bonus.ts`). 잠정 점수 계산도 같은 함수 사용.
-- "내 라이벌과 점수 차" 카드(`components/rival-card.tsx`): 나·라이벌을 고르면 리그별로 브라우저에 기억, GW 점수 차·잠정 총점 차·순위·주장·나만/라이벌만 가진 선발 표시.
+- "내 라이벌과 점수 차" 카드(`components/rival-card.tsx`): 나·라이벌을 고르면 GW 점수 차·잠정 총점 차·순위·주장·나만/라이벌만 가진 선발 표시. 2026-10-31(#2)부터 선택을 저장하지 않는다 — 페이지를 새로 열면 '선택'으로 시작하고, 같은 화면에서는 자동 갱신·탭 전환 뒤에도 유지(선택은 카드가 아니라 `league-dashboard.tsx` 의 `useRivalPick` 이 보관). 예전 저장 키 `fpl-live-rival:*` 는 열 때 지운다.
 - "GW N 순위 변화"(경기 후/진행 중) 카드: FPL `last_rank` → 잠정 순위, 많이 오른/내린 3명, GW 최고점(`lib/rank-movement.ts`). `validators.ts` standings 에 `last_rank` 추가.
 - 데이터 배지: 리그 화면 상단 "마지막 갱신 · 출처 FPL 공식 공개 API · 기준 GW N 잠정 점수".
 - 공통: 처리방침·약관(한/영), 푸터 링크, "운영자의 다른 서비스" 상호 링크, JSON-LD WebSite+Organization(+기존 WebApplication), FAQPage, sitemap 에 /privacy·/terms.

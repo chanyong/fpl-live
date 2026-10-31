@@ -65,7 +65,7 @@ export function PrivacyContent() {
               </tr>
               <tr>
                 <td>{tr("브라우저 저장소 (서버로 보내지 않음)", "Browser storage (never sent to us)")}</td>
-                <td>{tr("언어 설정, 최근 본 리그 목록, 리그별 ‘나·라이벌’ 선택", "Language, recent leagues list, per-league “me / rival” choice")}</td>
+                <td>{tr("언어 설정, 최근 본 리그 목록", "Language, recent leagues list")}</td>
                 <td>{tr("편의 기능. 브라우저에서 사이트 데이터를 지우면 삭제", "Convenience. Removed when you clear site data")}</td>
               </tr>
             </tbody>
