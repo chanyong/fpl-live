@@ -1,14 +1,56 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { LeagueRow } from "@/lib/types";
 import { computeRivalGap } from "@/lib/rank-movement";
 import { useLocale } from "@/components/locale-provider";
 
-type Saved = { me: number | null; rival: number | null };
+export type RivalPick = { me: number | null; rival: number | null };
 
-function storageKey(leagueId: number) {
-  return `fpl-live-rival:${leagueId}`;
+export const EMPTY_RIVAL_PICK: RivalPick = { me: null, rival: null };
+
+/** Earlier versions kept each league's choice in localStorage as `fpl-live-rival:{leagueId}`. */
+export const LEGACY_RIVAL_STORAGE_PREFIX = "fpl-live-rival:";
+
+/** Removes choices saved by earlier versions so an old pick never lingers in the browser. */
+export function clearLegacyRivalStorage() {
+  try {
+    const storage = window.localStorage;
+    const stale: string[] = [];
+    for (let index = 0; index < storage.length; index += 1) {
+      const key = storage.key(index);
+      if (key?.startsWith(LEGACY_RIVAL_STORAGE_PREFIX)) {
+        stale.push(key);
+      }
+    }
+    stale.forEach((key) => storage.removeItem(key));
+  } catch {
+    // Blocked storage: nothing could have been saved there either.
+  }
+}
+
+/**
+ * The me/rival choice for as long as this page stays open. Nothing is saved, so every fresh
+ * visit (new tab, reload, typed or shared URL) starts empty.
+ *
+ * Call it from the dashboard, not from the card: the card unmounts while the 팀·선수 tabs are
+ * showing, and the choice has to survive that as well as the 30-second refresh. Another league
+ * starts empty too.
+ */
+export function useRivalPick(leagueId: string) {
+  const [state, setState] = useState<{ leagueId: string; pick: RivalPick }>(() => ({
+    leagueId,
+    pick: EMPTY_RIVAL_PICK
+  }));
+
+  useEffect(() => {
+    clearLegacyRivalStorage();
+  }, []);
+
+  const pick = state.leagueId === leagueId ? state.pick : EMPTY_RIVAL_PICK;
+  const setPick = useCallback((next: RivalPick) => setState({ leagueId, pick: next }), [leagueId]);
+
+  return [pick, setPick] as const;
 }
 
 function signed(value: number) {
@@ -19,38 +61,24 @@ function gapTone(value: number) {
   return value > 0 ? "text-emerald-700" : value < 0 ? "text-[var(--danger)]" : "text-[var(--muted)]";
 }
 
-/** "Me vs my rival": two managers picked once per league (kept in this browser), gap shown live. */
-export function RivalCard({ leagueId, rows }: { leagueId: number; rows: LeagueRow[] }) {
+/**
+ * "Me vs my rival": two managers picked for this visit, gap shown live. The choice is held by
+ * the caller (see useRivalPick) and is never saved.
+ */
+export function RivalCard({
+  rows,
+  pick,
+  onPickChange
+}: {
+  rows: LeagueRow[];
+  pick: RivalPick;
+  onPickChange: (next: RivalPick) => void;
+}) {
   const { tr } = useLocale();
-  const [saved, setSaved] = useState<Saved>({ me: null, rival: null });
-
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(storageKey(leagueId));
-      if (raw) {
-        const value = JSON.parse(raw) as Partial<Saved>;
-        setSaved({
-          me: typeof value.me === "number" ? value.me : null,
-          rival: typeof value.rival === "number" ? value.rival : null
-        });
-      }
-    } catch {
-      // Unreadable storage: start empty.
-    }
-  }, [leagueId]);
-
-  function update(next: Saved) {
-    setSaved(next);
-    try {
-      window.localStorage.setItem(storageKey(leagueId), JSON.stringify(next));
-    } catch {
-      // Blocked storage: the choice lasts for this visit.
-    }
-  }
 
   const sorted = useMemo(() => [...rows].sort((a, b) => a.projectedRank - b.projectedRank), [rows]);
-  const me = rows.find((row) => row.entryId === saved.me) ?? null;
-  const rival = rows.find((row) => row.entryId === saved.rival) ?? null;
+  const me = rows.find((row) => row.entryId === pick.me) ?? null;
+  const rival = rows.find((row) => row.entryId === pick.rival) ?? null;
   const gap = me && rival && me.entryId !== rival.entryId ? computeRivalGap(me, rival) : null;
 
   const select = (value: number | null, onChange: (id: number | null) => void, label: string) => (
@@ -77,8 +105,8 @@ export function RivalCard({ leagueId, rows }: { leagueId: number; rows: LeagueRo
         {tr("내 라이벌과 점수 차", "Me vs my rival")}
       </h2>
       <div className="mt-2 flex gap-2">
-        {select(saved.me, (id) => update({ ...saved, me: id }), tr("나", "Me"))}
-        {select(saved.rival, (id) => update({ ...saved, rival: id }), tr("라이벌", "Rival"))}
+        {select(pick.me, (id) => onPickChange({ ...pick, me: id }), tr("나", "Me"))}
+        {select(pick.rival, (id) => onPickChange({ ...pick, rival: id }), tr("라이벌", "Rival"))}
       </div>
 
       {gap && me && rival ? (
@@ -137,8 +165,8 @@ export function RivalCard({ leagueId, rows }: { leagueId: number; rows: LeagueRo
       ) : (
         <p className="mt-2 text-[12px] text-[var(--muted)]">
           {tr(
-            "나와 라이벌을 한 번 고르면 이 브라우저에 기억해 두고, 경기 중에도 점수 차를 계속 보여 줍니다.",
-            "Pick yourself and a rival once; this browser remembers them and keeps the gap updated during matches."
+            "나와 라이벌을 고르면 경기 중에도 점수 차를 계속 보여 줍니다. 페이지를 새로 열면 다시 고릅니다.",
+            "Pick yourself and a rival to keep the gap updated during matches. You pick again each time you open the page."
           )}
         </p>
       )}

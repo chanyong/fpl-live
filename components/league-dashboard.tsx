@@ -18,7 +18,7 @@ import { SubTabs } from "@/components/sub-tabs";
 import { TeamFixtureTable } from "@/components/team-fixture-table";
 import { ShareButton } from "@/components/share-button";
 import { RefreshIndicator } from "@/components/refresh-indicator";
-import { RivalCard } from "@/components/rival-card";
+import { RivalCard, useRivalPick } from "@/components/rival-card";
 import { RankMovementCard } from "@/components/rank-movement-card";
 import { rememberLeague } from "@/lib/recent-leagues";
 
@@ -64,6 +64,8 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
   const { tr } = useLocale();
   const [tab, setTab] = useState<Tab>("standings");
   const [standingsView, setStandingsView] = useState<StandingsView>("fixtures");
+  // Held here, not in RivalCard: the card unmounts on the 팀·선수 tabs. Not saved, so a new visit starts empty.
+  const [rivalPick, setRivalPick] = useRivalPick(leagueId);
   const queryClient = useQueryClient();
 
   const query = useQuery({
@@ -272,7 +274,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
           {tab === "standings" && query.data && query.data.rows.length > 1 ? (
             <div className="mb-2 grid gap-2 md:grid-cols-2">
-              <RivalCard leagueId={query.data.league.id} rows={query.data.rows} />
+              <RivalCard rows={query.data.rows} pick={rivalPick} onPickChange={setRivalPick} />
               <RankMovementCard rows={query.data.rows} fixtures={query.data.fixtures} gw={query.data.league.currentGw} />
             </div>
           ) : null}
