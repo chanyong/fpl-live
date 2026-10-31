@@ -123,6 +123,13 @@ select {
   min-height: 100dvh;
 }
 
+/* The site footer (components/site-footer.tsx) opens with the bordered "other services" band.
+   Its mt-4 gap suits the league screens, but under the dark home ground it shows a stray strip of
+   cream page between the ground and the band, so the band sits flush on the home page. */
+.home-stage + footer {
+  margin-top: 0;
+}
+
 .home-frame {
   margin: 0 auto;
   max-width: 64rem;
