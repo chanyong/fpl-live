@@ -89,7 +89,8 @@ export function BarSeries({
             >
               <title>{point.tooltip ?? `${point.label} · ${format(point.value)}`}</title>
             </rect>
-            {showValues ? (
+            {/* On a phone the chart opens scrolled to the latest week, past the y axis, so that bar's value is always printed. */}
+            {showValues || index === points.length - 1 ? (
               <text
                 x={cx}
                 y={negative ? zero + height + 17 : valueY - 6}

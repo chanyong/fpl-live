@@ -118,7 +118,7 @@ export function PlayerTable({
           }}
           placeholder={tr("선수 또는 팀 검색", "Search player or team")}
           aria-label={tr("선수 또는 팀 검색", "Search player or team")}
-          className="min-h-10 w-full flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-body-lg outline-none focus:border-[var(--accent)] md:text-body"
+          className="min-h-10 w-full flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-body-lg outline-none focus:border-[var(--accent)] md:pointer-fine:text-body"
         />
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
           <div className="flex rounded-full border border-[var(--border)] bg-white p-0.5">

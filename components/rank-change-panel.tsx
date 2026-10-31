@@ -240,25 +240,54 @@ function StatCard({
  * Managers tied on points share a rank, so their lines end at an identical
  * coordinate and the names render on top of one another.
  */
-function spreadLabels(entries: Array<{ key: number; y: number }>, minGap: number) {
+/** Spaces end-of-line labels at least `minGap` apart, never below `maxY` (tied last places included). */
+export function spreadLabels(entries: Array<{ key: number; y: number }>, minGap: number, maxY = Number.POSITIVE_INFINITY) {
   const sorted = [...entries].sort((left, right) => left.y - right.y);
-  const placed = new Map<number, number>();
+  const ys: number[] = [];
   let previous = Number.NEGATIVE_INFINITY;
 
   for (const entry of sorted) {
     const y = Math.max(entry.y, previous + minGap);
-    placed.set(entry.key, y);
+    ys.push(y);
     previous = y;
   }
+  // A run pushed past the bottom moves back up as a block, keeping the gap.
+  for (let index = ys.length - 1; index >= 0; index -= 1) {
+    const limit = index === ys.length - 1 ? maxY : ys[index + 1] - minGap;
+    ys[index] = Math.min(ys[index], limit);
+  }
 
+  const placed = new Map<number, number>();
+  sorted.forEach((entry, index) => placed.set(entry.key, ys[index]));
   return placed;
 }
 
-// The name column right of the chart is padding.right - 11 = 139 units wide, about 19 bold 13px characters.
-const MAX_NAME_CHARS = 18;
+// The name column right of the chart is padding.right - 11 = 139 units wide.
+const NAME_WIDTH = 139;
+const ELLIPSIS_WIDTH = 8;
 
-function chartName(name: string) {
-  return name.length > MAX_NAME_CHARS ? `${name.slice(0, MAX_NAME_CHARS - 1)}…` : name;
+/** Rough width of bold 13px Manrope: Hangul/CJK about 13 units, capitals and digits 9, spaces 3.5, the rest 6.9. */
+function nameWidth(chars: string[]) {
+  return chars.reduce(
+    (sum, char) =>
+      sum +
+      (/[\u1100-\u11ff\u3000-\u9fff\uac00-\ud7af\uf900-\ufaff]|\p{Extended_Pictographic}/u.test(char)
+        ? 13
+        : /[A-Z0-9]/.test(char)
+          ? 9
+          : char === " "
+            ? 3.5
+            : 6.9),
+    0
+  );
+}
+
+/** Shortens a manager name to fit the label column, by estimated width and whole characters. */
+export function chartName(name: string) {
+  const chars = Array.from(name);
+  if (nameWidth(chars) <= NAME_WIDTH) return name;
+  while (chars.length > 1 && nameWidth(chars) + ELLIPSIS_WIDTH > NAME_WIDTH) chars.pop();
+  return `${chars.join("").trimEnd()}…`;
 }
 
 function TrendChart({
@@ -304,10 +333,12 @@ function TrendChart({
     })
     .filter((item) => item.points.length > 0);
 
-  // 15 apart so neighbouring 13px bold names do not touch.
+  // 15 apart so neighbouring 13px bold names do not touch, and no lower than 12 below the last rank
+  // line so tied last places stay clear of the GW labels.
   const labelY = spreadLabels(
     series.map((item) => ({ key: item.manager.entry, y: item.points[item.points.length - 1].y })),
-    15
+    15,
+    height - padding.bottom + 12
   );
   // "GW38" at 13px is about 36 units wide; closer than 40 apart, print every other one (always the latest).
   const gwLabelEvery = stepX > 0 && stepX < 40 ? 2 : 1;
@@ -412,7 +443,7 @@ function TrendChart({
                   fontWeight="700"
                 >
                   {chartName(manager.playerName)}
-                  {manager.playerName.length > MAX_NAME_CHARS ? <title>{manager.playerName}</title> : null}
+                  {chartName(manager.playerName) !== manager.playerName ? <title>{manager.playerName}</title> : null}
                 </text>
               </g>
             );
