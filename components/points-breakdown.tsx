@@ -33,13 +33,13 @@ function FixtureLedger({ fixture }: { fixture: PlayerPointsFixture }) {
   return (
     <div className="rounded-[0.7rem] border border-[var(--border)] bg-white">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border)] px-2.5 py-1.5">
-        <span className="text-[12px] font-semibold">
+        <span className="text-caption font-semibold">
           {fixture.home ? "vs" : "@"} {fixture.opponent}
           <span className="ml-1.5 font-normal text-[var(--muted)]">
             {tr(`${fixture.minutes}분`, `${fixture.minutes} min`)}
           </span>
         </span>
-        <span className="text-[11px] text-[var(--muted)]">
+        <span className="text-caption text-[var(--muted)]">
           {fixture.settled
             ? tr("종료", "Finished")
             : fixture.started
@@ -48,7 +48,7 @@ function FixtureLedger({ fixture }: { fixture: PlayerPointsFixture }) {
         </span>
       </div>
 
-      <table className="w-full border-collapse text-[13px]">
+      <table className="w-full border-collapse text-meta">
         <tbody>
           {fixture.lines.map((line) => (
             <tr key={line.identifier} className="border-b border-dashed border-[var(--border)]">
@@ -66,7 +66,7 @@ function FixtureLedger({ fixture }: { fixture: PlayerPointsFixture }) {
             <tr className="border-b border-dashed border-[var(--border)]">
               <td className="px-2.5 py-1.5">
                 {tr("보너스", "Bonus")}
-                <span className="ml-1.5 rounded-full bg-[var(--accent-soft)] px-1.5 text-[10px] font-semibold text-[var(--accent)]">
+                <span className="ml-1.5 rounded-full bg-[var(--accent-soft)] px-1.5 text-caption font-semibold text-[var(--accent)]">
                   {tr("잠정", "Provisional")}
                 </span>
               </td>
@@ -81,14 +81,14 @@ function FixtureLedger({ fixture }: { fixture: PlayerPointsFixture }) {
 
           {fixture.lines.length === 0 && fixture.provisionalBonus === 0 ? (
             <tr>
-              <td colSpan={3} className="px-2.5 py-3 text-center text-[12px] text-[var(--muted)]">
+              <td colSpan={3} className="px-2.5 py-3 text-center text-caption text-[var(--muted)]">
                 {tr("아직 기록된 득점 항목이 없습니다.", "No scoring events yet.")}
               </td>
             </tr>
           ) : null}
 
           <tr className="bg-[var(--surface-strong)]/40">
-            <td className="px-2.5 py-1.5 text-[12px] font-semibold" colSpan={2}>
+            <td className="px-2.5 py-1.5 text-caption font-semibold" colSpan={2}>
               {tr("소계", "Subtotal")}
             </td>
             <td className="px-2.5 py-1.5 text-right">
@@ -129,7 +129,7 @@ export function PointsBreakdown({
 
   if (query.error) {
     return (
-      <p className="rounded-[0.7rem] border border-red-200 bg-red-50 p-3 text-[13px] text-[var(--danger)]">
+      <p className="rounded-[0.7rem] border border-red-200 bg-red-50 p-3 text-meta text-[var(--danger)]">
         {(query.error as Error).message}
       </p>
     );
@@ -142,7 +142,7 @@ export function PointsBreakdown({
 
   if (data.fixtures.length === 0) {
     return (
-      <p className="py-4 text-center text-[13px] text-[var(--muted)]">
+      <p className="py-4 text-center text-meta text-[var(--muted)]">
         {tr(`GW${data.gw}에 이 선수의 경기가 없습니다.`, `No fixtures for this player in GW${data.gw}.`)}
       </p>
     );
@@ -158,27 +158,27 @@ export function PointsBreakdown({
 
       <div className="rounded-[0.7rem] border border-[var(--border)] bg-[var(--surface-strong)]/50 px-2.5 py-2">
         <div className="flex items-baseline justify-between gap-2">
-          <span className="text-[13px] font-semibold">{tr(`GW${data.gw} 합계`, `GW${data.gw} total`)}</span>
-          <span className="text-[17px] font-semibold tabular-nums">
+          <span className="text-meta font-semibold">{tr(`GW${data.gw} 합계`, `GW${data.gw} total`)}</span>
+          <span className="text-title font-semibold tabular-nums">
             {data.points}
             {tr("점", " pts")}
           </span>
         </div>
         {multiplier > 1 ? (
           <div className="mt-1 flex items-baseline justify-between gap-2 border-t border-[var(--border)] pt-1">
-            <span className="text-[12px] text-[var(--muted)]">
+            <span className="text-caption text-[var(--muted)]">
               {multiplier === 3
                 ? tr("트리플 캡틴 ×3 적용", "Triple Captain ×3 applied")
                 : tr("주장 ×2 적용", "Captain ×2 applied")}
             </span>
-            <span className="text-[15px] font-semibold tabular-nums">
+            <span className="text-body-lg font-semibold tabular-nums">
               {data.points * multiplier}
               {tr("점", " pts")}
             </span>
           </div>
         ) : null}
         {data.provisionalBonus > 0 ? (
-          <p className="mt-1 text-[11px] leading-relaxed text-[var(--muted)]">
+          <p className="mt-1 text-caption leading-relaxed text-[var(--muted)]">
             {tr(
               `보너스 ${data.provisionalBonus}점은 현재 BPS 순위로 예상한 잠정 점수입니다. 경기가 끝나고 FPL이 보너스를 확정하면 그 값으로 바뀝니다.`,
               `The ${data.provisionalBonus} bonus points are projected from the current BPS ranking and will be replaced once FPL confirms bonus after the match.`
@@ -232,13 +232,13 @@ export function PointsBreakdownModal({
       >
         <div className="mb-2.5 flex items-start justify-between gap-2">
           <div>
-            <h3 className="text-[1.05rem] font-semibold">{webName}</h3>
-            <p className="text-[12px] text-[var(--muted)]">{teamShortName} · {tr("득점 상세", "Points breakdown")}</p>
+            <h3 className="text-title font-semibold">{webName}</h3>
+            <p className="text-caption text-[var(--muted)]">{teamShortName} · {tr("득점 상세", "Points breakdown")}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-[var(--border)] px-2.5 py-1 text-[12px] text-[var(--muted)] transition hover:text-[var(--text)]"
+            className="rounded-full border border-[var(--border)] px-2.5 py-1 text-caption text-[var(--muted)] transition hover:text-[var(--text)]"
           >
             {tr("닫기", "Close")}
           </button>

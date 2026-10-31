@@ -4,22 +4,24 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
 
-const UPDATED = "2026-10-29";
+// Each page carries its own date: the privacy table changed on 2026-10-31 (#2), the terms did not.
+const PRIVACY_UPDATED = "2026-10-31";
+const TERMS_UPDATED = "2026-10-29";
 const EMAIL = "cyjung@gmail.com";
 
-function Shell({ title, children }: { title: string; children: ReactNode }) {
+function Shell({ title, updated, children }: { title: string; updated: string; children: ReactNode }) {
   const { tr } = useLocale();
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col px-6 py-12">
       <div className="flex items-center justify-between gap-3">
-        <Link href="/" className="text-sm font-semibold text-[var(--muted)] hover:text-[var(--accent)]">← FPL Live</Link>
+        <Link href="/" className="text-body font-semibold text-[var(--muted)] hover:text-[var(--accent)]">← FPL Live</Link>
         <LocaleToggle />
       </div>
       <h1 className="mt-6 text-3xl font-semibold leading-tight">{title}</h1>
-      <p className="mt-2 text-sm text-[var(--muted)]">
-        {tr(`시행일·최종 갱신: ${UPDATED} (초안 — 법률 검토 전)`, `Effective / last updated: ${UPDATED} (draft, not yet legally reviewed)`)}
+      <p className="mt-2 text-body text-[var(--muted)]">
+        {tr(`시행일·최종 갱신: ${updated} (초안 — 법률 검토 전)`, `Effective / last updated: ${updated} (draft, not yet legally reviewed)`)}
       </p>
-      <div className="mt-6 space-y-6 break-keep text-[15px] leading-7 [&_a]:font-semibold [&_a]:text-[var(--accent)] [&_a]:underline [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_li]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_table]:w-full [&_td]:border [&_td]:border-[var(--border)] [&_td]:p-2 [&_td]:align-top [&_th]:border [&_th]:border-[var(--border)] [&_th]:bg-[var(--surface)] [&_th]:p-2 [&_th]:text-left">
+      <div className="mt-6 space-y-6 break-keep text-body-lg leading-7 [&_a]:font-semibold [&_a]:text-[var(--accent)] [&_a]:underline [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_li]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_table]:w-full [&_td]:border [&_td]:border-[var(--border)] [&_td]:p-2 [&_td]:align-top [&_th]:border [&_th]:border-[var(--border)] [&_th]:bg-[var(--surface)] [&_th]:p-2 [&_th]:text-left">
         {children}
       </div>
     </main>
@@ -29,7 +31,7 @@ function Shell({ title, children }: { title: string; children: ReactNode }) {
 export function PrivacyContent() {
   const { tr } = useLocale();
   return (
-    <Shell title={tr("개인정보처리방침", "Privacy Policy")}>
+    <Shell title={tr("개인정보처리방침", "Privacy Policy")} updated={PRIVACY_UPDATED}>
       <p>
         {tr(
           "FPL Live(이하 ‘서비스’)는 운영자 chanyong 이 운영하는 비공식 FPL 팬 서비스입니다. 회원가입·로그인이 없으며, 아래에 적은 것 외의 개인정보는 받지 않습니다.",
@@ -65,7 +67,7 @@ export function PrivacyContent() {
               </tr>
               <tr>
                 <td>{tr("브라우저 저장소 (서버로 보내지 않음)", "Browser storage (never sent to us)")}</td>
-                <td>{tr("언어 설정, 최근 본 리그 목록, 리그별 ‘나·라이벌’ 선택", "Language, recent leagues list, per-league “me / rival” choice")}</td>
+                <td>{tr("언어 설정, 최근 본 리그 목록", "Language, recent leagues list")}</td>
                 <td>{tr("편의 기능. 브라우저에서 사이트 데이터를 지우면 삭제", "Convenience. Removed when you clear site data")}</td>
               </tr>
             </tbody>
@@ -125,7 +127,7 @@ export function PrivacyContent() {
 export function TermsContent() {
   const { tr } = useLocale();
   return (
-    <Shell title={tr("이용약관", "Terms of Use")}>
+    <Shell title={tr("이용약관", "Terms of Use")} updated={TERMS_UPDATED}>
       <section>
         <h2>{tr("1. 서비스", "1. The Service")}</h2>
         <p>

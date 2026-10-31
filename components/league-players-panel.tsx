@@ -82,9 +82,9 @@ function DotRow({
 
   return (
     <div className="grid items-center gap-2" style={{ gridTemplateColumns: "116px 1fr 58px" }}>
-      <span className="truncate text-[13px]">
+      <span className="truncate text-meta">
         {row.webName}
-        <span className="ml-1 text-[11px] text-[var(--muted)]">{row.teamShortName}</span>
+        <span className="ml-1 text-caption text-[var(--muted)]">{row.teamShortName}</span>
       </span>
       <span className="flex gap-[3px]">
         {managerNames.map((name, index) => {
@@ -107,7 +107,7 @@ function DotRow({
           );
         })}
       </span>
-      <span className="text-right text-[12px] tabular-nums text-[var(--muted)]">
+      <span className="text-right text-caption tabular-nums text-[var(--muted)]">
         {row.ownedBy}/{managerNames.length}
         {row.captains.length > 0 ? ` ⓒ${row.captains.length}` : ""}
       </span>
@@ -185,8 +185,8 @@ export function LeaguePlayersPanel({
     <div className="flex flex-col gap-3">
       <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
         <div className="mb-2">
-          <h3 className="text-[1rem] font-semibold">{tr("순위 상승에 기여한 선수", "Players driving the rank")}</h3>
-          <p className="text-[12px] leading-relaxed text-[var(--muted)]">
+          <h3 className="text-body-lg font-semibold">{tr("순위 상승에 기여한 선수", "Players driving the rank")}</h3>
+          <p className="text-caption leading-relaxed text-[var(--muted)]">
             {tr(
               "보유자가 리그 평균 대비 벌어놓은 점수입니다. 적게 보유될수록 커지고, 전원이 가진 선수는 아무도 끌어올리지 못합니다.",
               "Points owners gained on the league average. The fewer own him the bigger it is; a player everyone has lifts nobody."
@@ -205,7 +205,7 @@ export function LeaguePlayersPanel({
           </p>
         </div>
 
-        <div className="mb-2 flex rounded-full border border-[var(--border)] bg-white p-0.5 text-[12px]">
+        <div className="mb-2 flex rounded-full border border-[var(--border)] bg-white p-0.5 text-caption">
           {(
             [
               { id: "season", label: tr("누적", "Season") },
@@ -227,10 +227,10 @@ export function LeaguePlayersPanel({
 
         {swingRows.length > 0 ? (
           <div className="overflow-x-auto">
-            <MagnitudeRows rows={swingRows} max={swingMax} valueWidth="132px" />
+            <MagnitudeRows rows={swingRows} max={swingMax} valueWidth="148px" />
           </div>
         ) : (
-          <p className="py-4 text-center text-[13px] text-[var(--muted)]">
+          <p className="py-4 text-center text-meta text-[var(--muted)]">
             {tr("아직 이번 게임위크에 점수를 낸 보유 선수가 없습니다.", "No owned player has scored this gameweek yet.")}
           </p>
         )}
@@ -239,10 +239,10 @@ export function LeaguePlayersPanel({
       {summary.solo.length > 0 ? (
         <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
           <div className="mb-2">
-            <h3 className="text-[1rem] font-semibold">
+            <h3 className="text-body-lg font-semibold">
               {tr(`단독 보유 ${summary.solo.length}명`, `Owned by one manager: ${summary.solo.length}`)}
             </h3>
-            <p className="text-[12px] text-[var(--muted)]">
+            <p className="text-caption text-[var(--muted)]">
               {tr("한 명만 가진 선수. 이 선수들이 리그 순위를 벌립니다.", "Players only one manager has. These open up the league table.")}
             </p>
           </div>
@@ -255,13 +255,13 @@ export function LeaguePlayersPanel({
                   <button
                     type="button"
                     onClick={() => onSelect(row.elementId)}
-                    className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-1 text-left text-[13px] transition hover:bg-[var(--surface-strong)]/50"
+                    className="flex w-full items-center justify-between gap-2 rounded-md px-1 py-1 text-left text-meta transition hover:bg-[var(--surface-strong)]/50"
                   >
                     <span className="min-w-0 truncate">
                       <span className="font-semibold">{row.webName}</span>
-                      <span className="ml-1 text-[11px] text-[var(--muted)]">{row.teamShortName}</span>
+                      <span className="ml-1 text-caption text-[var(--muted)]">{row.teamShortName}</span>
                     </span>
-                    <span className="whitespace-nowrap text-[12px] tabular-nums text-[var(--muted)]">
+                    <span className="whitespace-nowrap text-caption tabular-nums text-[var(--muted)]">
                       {managerNames[row.owners[0]] ?? "?"} · {tr(`누적 ${row.seasonPoints}점`, `${row.seasonPoints} pts this season`)}
                     </span>
                   </button>
@@ -274,10 +274,10 @@ export function LeaguePlayersPanel({
       <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
           <div>
-            <h3 className="text-[1rem] font-semibold">
+            <h3 className="text-body-lg font-semibold">
               {tr(`리그 보유 선수 ${leaguePlayers.length}명`, `Players owned in league: ${leaguePlayers.length}`)}
             </h3>
-            <p className="text-[12px] text-[var(--muted)]">
+            <p className="text-caption text-[var(--muted)]">
               {tr(
                 `${managerCount}명 전원이 가진 선수 ${summary.template.length}명 · 헤더를 눌러 정렬하고, 행을 누르면 상세가 열립니다.`,
                 `${summary.template.length} players owned by all ${managerCount} managers · tap a header to sort, a row for details.`
@@ -287,9 +287,9 @@ export function LeaguePlayersPanel({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-[620px] w-full border-collapse text-[13px]">
+          <table className="min-w-[620px] w-full border-collapse text-meta">
             <thead>
-              <tr className="border-b border-[var(--border)] text-[10px] uppercase tracking-[0.08em] text-[var(--muted)]">
+              <tr className="border-b border-[var(--border)] text-caption uppercase tracking-[0.08em] text-[var(--muted)]">
                 <th className="px-2 py-2 text-left">{tr("선수", "Player")}</th>
                 {columns.map((column) => {
                   const active = sortKey === column.key;
@@ -319,7 +319,7 @@ export function LeaguePlayersPanel({
                 >
                   <td className="px-2 py-1.5">
                     <span className="font-semibold">{row.webName}</span>
-                    <span className="ml-1 text-[11px] text-[var(--muted)]">
+                    <span className="ml-1 text-caption text-[var(--muted)]">
                       {row.teamShortName} · {row.position} · {formatMoney(row.cost)}
                     </span>
                   </td>
@@ -338,7 +338,7 @@ export function LeaguePlayersPanel({
           <button
             type="button"
             onClick={() => setExpanded((current) => !current)}
-            className="mx-auto mt-2 flex items-center gap-1 text-[12px] text-[var(--muted)] transition hover:text-[var(--text)]"
+            className="mx-auto mt-2 flex items-center gap-1 text-caption text-[var(--muted)] transition hover:text-[var(--text)]"
           >
             {expanded ? tr("접기", "Show less") : tr(`${sorted.length - PREVIEW}명 더 보기`, `Show ${sorted.length - PREVIEW} more`)}
             <CaretDown className={expanded ? "rotate-180" : ""} />
@@ -348,8 +348,8 @@ export function LeaguePlayersPanel({
 
       <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
         <div className="mb-2">
-          <h3 className="text-[1rem] font-semibold">{tr("누가 갖고 있나", "Who owns whom")}</h3>
-          <p className="text-[12px] text-[var(--muted)]">
+          <h3 className="text-body-lg font-semibold">{tr("누가 갖고 있나", "Who owns whom")}</h3>
+          <p className="text-caption text-[var(--muted)]">
             {tr(
               "가장 많이 보유된 선수 6명. 세로로 훑으면 한 매니저가 템플릿에서 얼마나 벗어나 있는지 보입니다.",
               "The six most-owned players. Read down a column to see how far one manager strays from the template."
@@ -363,7 +363,7 @@ export function LeaguePlayersPanel({
             ))}
           </div>
         </div>
-        <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-[var(--muted)]">
+        <div className="mt-2 flex flex-wrap gap-3 text-caption text-[var(--muted)]">
           <span className="flex items-center gap-1">
             <span className="h-[11px] w-[11px] rounded-full border-[1.5px] border-[var(--chart-in)] bg-[var(--chart-in)]" />
             {tr("보유", "Owns")}

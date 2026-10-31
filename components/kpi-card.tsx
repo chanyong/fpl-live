@@ -5,8 +5,8 @@ export function KpiCard({ label, value, sub }: { label: string; value: string; s
   return (
     <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-white/80 px-2.5 py-1.5">
       <div className="min-w-0">
-        <div className="truncate text-[11px] font-semibold text-[var(--muted)]">{label}</div>
-        <div className="truncate text-[10px] text-[var(--muted)] md:text-[11px]">{sub}</div>
+        <div className="truncate text-caption font-semibold text-[var(--muted)]">{label}</div>
+        <div className="truncate text-caption text-[var(--muted)] md:text-caption">{sub}</div>
       </div>
       <span className="max-w-[60%] shrink-0 truncate text-xl font-semibold leading-tight tabular-nums md:text-2xl">
         {value}

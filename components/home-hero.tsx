@@ -11,14 +11,14 @@ export function HomeHero() {
   return (
     <section className="rounded-[2rem] border border-[var(--border)] bg-[var(--surface)]/95 p-6 shadow-[0_20px_80px_rgba(55,40,20,0.12)] md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <p className="whitespace-nowrap text-xs font-medium text-[var(--muted)] sm:text-sm">
+        <p className="whitespace-nowrap text-caption font-medium text-[var(--muted)] sm:text-body">
           {tr("FPL 라이브 대시보드", "FPL live dashboard")}
         </p>
         <div className="ml-auto flex items-center gap-2">
           <Link
             href="/faq"
             title={tr("자주 묻는 질문", "FAQ")}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[var(--accent)] px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--accent-ink)]"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[var(--accent)] px-3.5 text-body font-semibold text-white shadow-sm transition hover:bg-[var(--accent-ink)]"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 4 2c-.9.6-1.5 1.1-1.5 2.2M12 17h.01" /></svg>
             <span className="sm:hidden">FAQ</span>
@@ -38,7 +38,7 @@ export function HomeHero() {
       </p>
       <LeagueSearchForm />
       <LeagueIdLinks />
-      <div className="mt-6 rounded-2xl border border-[var(--info-border)] bg-[var(--info-soft)] p-4 text-sm">
+      <div className="mt-6 rounded-2xl border border-[var(--info-border)] bg-[var(--info-soft)] p-4 text-body">
         <p className="font-semibold text-[var(--info)]">
           {tr("리그 ID 없이 바로 보기", "No league ID? Start here")}
         </p>
@@ -50,7 +50,7 @@ export function HomeHero() {
         </p>
         <Link
           href="/price-changes"
-          className="mt-3 inline-flex rounded-full border border-[var(--info)] bg-white px-4 py-1.5 text-[13px] font-semibold text-[var(--info)] transition hover:bg-[var(--info-soft)]"
+          className="mt-3 inline-flex rounded-full border border-[var(--info)] bg-white px-4 py-1.5 text-meta font-semibold text-[var(--info)] transition hover:bg-[var(--info-soft)]"
         >
           {tr("가격 변동 예측 보기", "View price change predictions")}
         </Link>

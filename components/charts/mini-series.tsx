@@ -1,5 +1,6 @@
 "use client";
 
+import { ChartScroll } from "@/components/charts/chart-scroll";
 import { useLocale } from "@/components/locale-provider";
 
 export type SeriesPoint = {
@@ -10,7 +11,10 @@ export type SeriesPoint = {
 
 const WIDTH = 640;
 const HEIGHT = 150;
-const M = { left: 42, right: 10, top: 26, bottom: 22 };
+// left fits a 13px axis label such as "10,512k" or "-1000k" (about 48px) right-aligned at M.left - 8.
+const M = { left: 60, right: 10, top: 26, bottom: 22 };
+// Below this many units per gameweek, 13px two-digit labels touch, so only every other one is printed.
+const MIN_LABEL_STEP = 22;
 const PLOT_W = WIDTH - M.left - M.right;
 const PLOT_H = HEIGHT - M.top - M.bottom;
 
@@ -38,7 +42,7 @@ export function BarSeries({
 }) {
   const { tr } = useLocale();
   if (points.length === 0) {
-    return <p className="py-6 text-center text-[12px] text-[var(--muted)]">{tr("기록 없음", "No data")}</p>;
+    return <p className="py-6 text-center text-caption text-[var(--muted)]">{tr("기록 없음", "No data")}</p>;
   }
 
   const values = points.map((point) => point.value);
@@ -50,19 +54,20 @@ export function BarSeries({
   const zero = y(0);
   const step = PLOT_W / points.length;
   const barWidth = Math.max(3, Math.min(26, step - 6));
+  const labelEvery = step < MIN_LABEL_STEP ? 2 : 1;
 
   return (
-    <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full" role="img">
+    <ChartScroll><svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full" style={{ minWidth: WIDTH }} role="img">
       <line x1={M.left} x2={WIDTH - M.right} y1={zero} y2={zero} stroke="var(--border)" strokeWidth={1} />
-      <text x={M.left - 8} y={y(top) + 4} textAnchor="end" fontSize={10} fill="var(--muted)">
+      <text x={M.left - 8} y={y(top) + 4} textAnchor="end" fontSize={13} fill="var(--muted)">
         {format(top)}
       </text>
       {bottom < 0 ? (
-        <text x={M.left - 8} y={y(bottom) + 4} textAnchor="end" fontSize={10} fill="var(--muted)">
+        <text x={M.left - 8} y={y(bottom) + 4} textAnchor="end" fontSize={13} fill="var(--muted)">
           {format(bottom)}
         </text>
       ) : null}
-      <text x={M.left - 8} y={zero + 4} textAnchor="end" fontSize={10} fill="var(--muted)">
+      <text x={M.left - 8} y={zero + 4} textAnchor="end" fontSize={13} fill="var(--muted)">
         0
       </text>
 
@@ -84,7 +89,8 @@ export function BarSeries({
             >
               <title>{point.tooltip ?? `${point.label} · ${format(point.value)}`}</title>
             </rect>
-            {showValues ? (
+            {/* On a phone the chart opens scrolled to the latest week, past the y axis, so that bar's value is always printed. */}
+            {showValues || index === points.length - 1 ? (
               <text
                 x={cx}
                 y={negative ? zero + height + 17 : valueY - 6}
@@ -96,13 +102,15 @@ export function BarSeries({
                 {format(point.value)}
               </text>
             ) : null}
-            <text x={cx} y={HEIGHT - 7} textAnchor="middle" fontSize={10} fill="var(--muted)">
-              {point.label}
-            </text>
+            {(points.length - 1 - index) % labelEvery === 0 ? (
+              <text x={cx} y={HEIGHT - 7} textAnchor="middle" fontSize={13} fill="var(--muted)">
+                {point.label}
+              </text>
+            ) : null}
           </g>
         );
       })}
-    </svg>
+    </svg></ChartScroll>
   );
 }
 
@@ -116,7 +124,7 @@ export function LineSeries({
 }) {
   const { tr } = useLocale();
   if (points.length === 0) {
-    return <p className="py-6 text-center text-[12px] text-[var(--muted)]">{tr("기록 없음", "No data")}</p>;
+    return <p className="py-6 text-center text-caption text-[var(--muted)]">{tr("기록 없음", "No data")}</p>;
   }
 
   const values = points.map((point) => point.value);
@@ -129,18 +137,19 @@ export function LineSeries({
   const y = (value: number) => M.top + PLOT_H - ((value - low) / span) * PLOT_H;
   const step = points.length > 1 ? PLOT_W / (points.length - 1) : 0;
   const x = (index: number) => (points.length > 1 ? M.left + step * index : M.left + PLOT_W / 2);
+  const labelEvery = points.length > 1 && step < MIN_LABEL_STEP ? 2 : 1;
 
   const path = points.map((point, index) => `${index === 0 ? "M" : "L"}${x(index)} ${y(point.value)}`).join(" ");
   const last = points[points.length - 1];
 
   return (
-    <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full" role="img">
+    <ChartScroll><svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full" style={{ minWidth: WIDTH }} role="img">
       <line x1={M.left} x2={WIDTH - M.right} y1={y(max)} y2={y(max)} stroke="var(--border)" strokeWidth={0.6} />
       <line x1={M.left} x2={WIDTH - M.right} y1={y(min)} y2={y(min)} stroke="var(--border)" strokeWidth={0.6} />
-      <text x={M.left - 8} y={y(max) + 4} textAnchor="end" fontSize={10} fill="var(--muted)">
+      <text x={M.left - 8} y={y(max) + 4} textAnchor="end" fontSize={13} fill="var(--muted)">
         {format(max)}
       </text>
-      <text x={M.left - 8} y={y(min) + 4} textAnchor="end" fontSize={10} fill="var(--muted)">
+      <text x={M.left - 8} y={y(min) + 4} textAnchor="end" fontSize={13} fill="var(--muted)">
         {format(min)}
       </text>
 
@@ -157,18 +166,20 @@ export function LineSeries({
         x={x(points.length - 1)}
         y={y(last.value) - 10}
         textAnchor="end"
-        fontSize={11}
+        fontSize={13}
         fontWeight={600}
         fill="var(--text)"
       >
         {format(last.value)}
       </text>
 
-      {points.map((point, index) => (
-        <text key={`x${point.label}`} x={x(index)} y={HEIGHT - 7} textAnchor="middle" fontSize={10} fill="var(--muted)">
-          {point.label}
-        </text>
-      ))}
-    </svg>
+      {points.map((point, index) =>
+        (points.length - 1 - index) % labelEvery === 0 ? (
+          <text key={`x${point.label}`} x={x(index)} y={HEIGHT - 7} textAnchor="middle" fontSize={13} fill="var(--muted)">
+            {point.label}
+          </text>
+        ) : null
+      )}
+    </svg></ChartScroll>
   );
 }

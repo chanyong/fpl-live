@@ -64,7 +64,7 @@ const CATEGORIES: { id: string; title: string; items: Item[] }[] = [
         )
       },
       { q: "보너스 포인트 예상은 어떻게 계산하나요?", a: <p>경기 일정 카드의 <b>보너스 예상</b>은 FPL이 공개하는 실시간 BPS(보너스 포인트 시스템) 점수로 경기마다 1·2·3위에게 3·2·1점을 매긴 값입니다. 동점이면 같은 점수를 받습니다. FPL이 보너스를 확정하면 <b>보너스 확정</b>으로 바뀝니다.</p> },
-      { q: "라이벌과 점수 차를 계속 보고 싶어요", a: <p>주간 순위 화면의 <b>내 라이벌과 점수 차</b>에서 나와 라이벌을 한 번 고르면, 이 브라우저가 기억해 두고 이번 GW 점수 차·잠정 총점 차·주장·나만 가진 선발 선수를 경기 중에도 계속 보여 줍니다.</p> },
+      { q: "라이벌과 점수 차를 계속 보고 싶어요", a: <p>주간 순위 화면의 <b>내 라이벌과 점수 차</b>에서 나와 라이벌을 고르면 이번 GW 점수 차·잠정 총점 차·주장·나만 가진 선발 선수를 경기 중에도 계속 보여 줍니다. 선택은 저장하지 않아서 페이지를 새로 열면 다시 고릅니다.</p> },
       { q: "다른 매니저와 스쿼드를 비교할 수 있나요?", a: <p>네. 순위표의 <b>스쿼드 비교</b>를 누르고 매니저 2명을 고른 뒤 <b>비교하기</b>를 누르면 두 사람의 스쿼드를 나란히 볼 수 있습니다.</p> },
       { q: "남은 칩을 한눈에 보고 싶어요", a: <p><b>칩 사용 현황</b>에서 매니저별로 쓴 칩과 남은 칩을 볼 수 있습니다. 칩은 전·후반기에 각각 한 번씩 주어집니다.</p> },
       { q: "가격이 오를 선수를 미리 알 수 있나요?", a: <p><Link href="/price-changes">가격 변동 예측</Link>에서 이번 마감 전 가격이 오를 선수와 내릴 선수를 볼 수 있습니다. 리그 ID 없이 바로 쓸 수 있습니다. 예측이므로 실제 변동과 다를 수 있습니다.</p> },
@@ -95,7 +95,7 @@ const CATEGORIES: { id: string; title: string; items: Item[] }[] = [
     title: "개인정보·보안",
     items: [
       { q: "제 정보를 수집하나요?", a: <p>회원가입이 없어 이름·연락처를 받지 않습니다. 방문 통계를 위해 Google Analytics를 쓰고, ‘의견·질문’ 버튼으로 보낸 내용만 따로 저장합니다. 화면에 나오는 매니저 이름·팀 이름은 FPL이 공개한 리그 정보입니다. 자세한 내용은 <Link href="/privacy">개인정보처리방침</Link>을 보세요.</p> },
-      { q: "방문 기록은 얼마나 보관하나요?", a: <p>Google Analytics 이용 통계는 Google 설정에 따라 최대 14개월, ‘의견·질문’으로 보낸 내용은 1년 뒤 자동 삭제됩니다. 최근 본 리그·라이벌 선택·언어 설정은 내 브라우저에만 있고 언제든 지울 수 있습니다. <Link href="/privacy">개인정보처리방침</Link> 참고.</p> },
+      { q: "방문 기록은 얼마나 보관하나요?", a: <p>Google Analytics 이용 통계는 Google 설정에 따라 최대 14개월, ‘의견·질문’으로 보낸 내용은 1년 뒤 자동 삭제됩니다. 최근 본 리그·언어 설정은 내 브라우저에만 있고 언제든 지울 수 있습니다. <Link href="/privacy">개인정보처리방침</Link> 참고.</p> },
       { q: "내 이름이 다른 사람에게 보이는 게 싫어요", a: <p>리그 순위의 이름은 FPL에 등록한 이름입니다. FPL 공식 사이트의 계정 설정에서 바꿀 수 있고, 바꾸면 이 사이트에도 반영됩니다.</p> }
     ]
   },
@@ -140,13 +140,13 @@ export default function FaqPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col px-6 py-12">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
-      <Link href="/" className="text-sm font-semibold text-[var(--muted)] hover:text-[var(--accent)]">← FPL Live</Link>
-      <p className="mt-6 text-sm uppercase tracking-[0.3em] text-[var(--muted)]">FAQ</p>
+      <Link href="/" className="text-body font-semibold text-[var(--muted)] hover:text-[var(--accent)]">← FPL Live</Link>
+      <p className="mt-6 text-body uppercase tracking-[0.3em] text-[var(--muted)]">FAQ</p>
       <h1 className="mt-2 text-3xl font-semibold leading-tight md:text-4xl">자주 묻는 질문</h1>
       <p className="mt-3 leading-7 text-[var(--muted)]">리그 ID 찾는 법부터 잠정 점수 읽는 법, 숫자가 다르게 보일 때 확인할 것까지 모았습니다.</p>
       <nav aria-label="질문 분류" className="mt-5 flex flex-wrap gap-2">
         {CATEGORIES.map((c) => (
-          <a key={c.id} href={`#${c.id}`} className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[13px] font-semibold text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">{c.title}</a>
+          <a key={c.id} href={`#${c.id}`} className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-meta font-semibold text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">{c.title}</a>
         ))}
       </nav>
       {CATEGORIES.map((c) => (
@@ -160,11 +160,11 @@ export default function FaqPage() {
                   <span className="flex-1 break-keep">{it.q}</span>
                   <span aria-hidden className="text-[var(--muted)] transition-transform group-open:rotate-180">▾</span>
                 </summary>
-                <div className="space-y-2 break-keep px-5 pb-5 pl-10 text-[15px] leading-7 text-[var(--muted)] [&_a]:font-semibold [&_a]:text-[var(--accent)] [&_a]:underline [&_b]:text-[var(--text)] [&_li]:my-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5">{it.a}</div>
+                <div className="space-y-2 break-keep px-5 pb-5 pl-10 text-body-lg leading-7 text-[var(--muted)] [&_a]:font-semibold [&_a]:text-[var(--accent)] [&_a]:underline [&_b]:text-[var(--text)] [&_li]:my-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5">{it.a}</div>
               </details>
             ))}
           </div>
-          <p className="mt-2 text-[13px] text-[var(--muted)] [&_a]:font-semibold [&_a]:underline">여기서 해결되지 않았다면 <Feedback />에 남겨 주세요. 어떤 화면에서 무엇을 하다가 생긴 일인지 적어 주시면 빨리 확인할 수 있습니다.</p>
+          <p className="mt-2 text-meta text-[var(--muted)] [&_a]:font-semibold [&_a]:underline">여기서 해결되지 않았다면 <Feedback />에 남겨 주세요. 어떤 화면에서 무엇을 하다가 생긴 일인지 적어 주시면 빨리 확인할 수 있습니다.</p>
         </section>
       ))}
     </main>

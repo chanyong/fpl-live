@@ -55,8 +55,8 @@ function Section({
   return (
     <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
       <div className="mb-2">
-        <h3 className="text-[1rem] font-semibold">{title}</h3>
-        {hint ? <p className="text-[12px] leading-relaxed text-[var(--muted)]">{hint}</p> : null}
+        <h3 className="text-body-lg font-semibold">{title}</h3>
+        {hint ? <p className="text-caption leading-relaxed text-[var(--muted)]">{hint}</p> : null}
       </div>
       {children}
     </section>
@@ -186,7 +186,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
               role="tab"
               aria-selected={active}
               onClick={() => setView(item.id)}
-              className={`flex-1 rounded-[0.7rem] px-3 py-1.5 text-[13px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none ${
+              className={`flex-1 rounded-[0.7rem] px-3 py-1.5 text-meta font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none ${
                 active ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] shadow-[inset_0_0_0_1px_var(--accent)]" : "text-[var(--muted)] hover:text-[var(--text)]"
               }`}
             >
@@ -203,7 +203,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
             type="button"
             aria-pressed={position === item.id}
             onClick={() => setPosition(item.id)}
-            className={`min-h-9 shrink-0 rounded-full border px-3.5 text-[13px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+            className={`min-h-9 shrink-0 rounded-full border px-3.5 text-meta font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
               position === item.id
                 ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
                 : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--accent)]"
@@ -223,7 +223,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
               `Transfer figures ${transferWindowLabel}. They reset to 0 at every deadline.`
             )}
           >
-            <div className="mb-2 flex flex-wrap gap-3 text-[11px] text-[var(--muted)]">
+            <div className="mb-2 flex flex-wrap gap-3 text-caption text-[var(--muted)]">
               <span className="flex items-center gap-1.5">
                 <i className="h-[11px] w-[11px] rounded-[3px]" style={{ background: "var(--chart-in)" }} />
                 {tr("영입", "In")}
@@ -257,7 +257,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
             )}
           >
             <div className="overflow-x-auto">
-              <div className="min-w-[540px]">
+              <div className="min-w-[720px]">
                 <FormScatter
                   players={players}
                   ownershipCut={OWNERSHIP_CUT}

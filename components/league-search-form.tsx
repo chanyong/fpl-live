@@ -78,27 +78,27 @@ export function LeagueSearchForm() {
       </form>
 
       {error ? (
-        <p id="league-id-error" role="alert" className="text-sm text-[var(--danger)]">
+        <p id="league-id-error" role="alert" className="text-body text-[var(--danger)]">
           {error}
         </p>
       ) : null}
 
       {recent.length > 0 ? (
         <div>
-          <p className="text-sm font-semibold text-[var(--muted)]">
+          <p className="text-body font-semibold text-[var(--muted)]">
             {tr("최근 본 리그", "Recent leagues")}
-            <span className="ml-2 text-[12px] font-normal">{tr("(이 브라우저에만 저장)", "(saved in this browser only)")}</span>
+            <span className="ml-2 text-caption font-normal">{tr("(이 브라우저에만 저장)", "(saved in this browser only)")}</span>
           </p>
           <ul className="mt-2 flex flex-wrap gap-2">
             {recent.map((item) => (
-              <li key={item.id} className="flex items-center rounded-full border border-[var(--border)] bg-white text-sm">
+              <li key={item.id} className="flex items-center rounded-full border border-[var(--border)] bg-white text-body">
                 <button
                   type="button"
                   onClick={() => openLeague(String(item.id))}
                   className="max-w-[16rem] truncate rounded-l-full py-2 pl-4 pr-2 font-medium transition hover:text-[var(--accent)]"
                 >
                   {item.name ? `${item.name} ` : ""}
-                  <span className="text-[12px] text-[var(--muted)] tabular-nums">#{item.id}</span>
+                  <span className="text-caption text-[var(--muted)] tabular-nums">#{item.id}</span>
                 </button>
                 <button
                   type="button"

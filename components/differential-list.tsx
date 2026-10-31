@@ -74,7 +74,7 @@ export function DifferentialList({
 
   if (rows.length === 0) {
     return (
-      <p className="py-6 text-center text-[13px] text-[var(--muted)]">
+      <p className="py-6 text-center text-meta text-[var(--muted)]">
         {tr("지금은 조건을 만족하는 선수가 없습니다. 경기가 진행되면 채워집니다.", "No player meets the criteria yet. This fills in as matches are played.")}
       </p>
     );
@@ -84,7 +84,7 @@ export function DifferentialList({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[12px] text-[var(--muted)]">
+      <p className="text-caption text-[var(--muted)]">
         {tr(
           `${rows.length}명 · 이 중 우리 리그가 이미 가진 선수는 ${ownedCount}명입니다.`,
           `${rows.length} players · ${ownedCount} of them are already owned in our league.`
@@ -92,9 +92,9 @@ export function DifferentialList({
       </p>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[800px] border-collapse text-[13px]">
+        <table className="w-full min-w-[800px] border-collapse text-meta">
           <thead>
-            <tr className="border-b border-[var(--border)] text-[10px] uppercase tracking-[0.08em] text-[var(--muted)]">
+            <tr className="border-b border-[var(--border)] text-caption uppercase tracking-[0.08em] text-[var(--muted)]">
               <th className="px-2 py-2 text-left">{tr("선수", "Player")}</th>
               <th className="px-2 py-2 text-left">{tr("포지션", "Position")}</th>
               {columns.map((column) => {
@@ -139,18 +139,18 @@ export function DifferentialList({
                         />
                       ) : null}
                       <span className="font-semibold">{player.webName}</span>
-                      <span className="text-[11px] text-[var(--muted)]">{player.teamShortName}</span>
+                      <span className="text-caption text-[var(--muted)]">{player.teamShortName}</span>
                       {owned ? (
                         <span
                           title={tr("우리 리그가 이미 보유", "Already owned in our league")}
-                          className="rounded-full bg-[var(--accent-soft)] px-1.5 text-[10px] font-semibold text-[var(--accent)]"
+                          className="rounded-full bg-[var(--accent-soft)] px-1.5 text-caption font-semibold text-[var(--accent)]"
                         >
                           {tr("리그", "League")}
                         </span>
                       ) : null}
                     </span>
                   </td>
-                  <td className="px-2 py-1.5 text-[12px] text-[var(--muted)]">{player.position}</td>
+                  <td className="px-2 py-1.5 text-caption text-[var(--muted)]">{player.position}</td>
                   {columns.map((column) => (
                     <td key={column.key} className="px-2 py-1.5 text-right tabular-nums">
                       {column.key === "avgDifficulty" ? (

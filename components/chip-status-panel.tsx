@@ -47,7 +47,7 @@ function ChipCell({ chip }: { chip: ChipStatus | undefined }) {
   if (chip.usedEvent !== null) {
     return (
       <span
-        className="inline-block rounded-full bg-[var(--accent)] px-2 py-0.5 text-[11px] font-semibold text-white"
+        className="inline-block rounded-full bg-[var(--accent)] px-2 py-0.5 text-caption font-semibold text-white"
         title={tr(
           `${chipLabel(chip.name, false, locale)} · GW${chip.usedEvent} 사용`,
           `${chipLabel(chip.name, false, locale)} · played in GW${chip.usedEvent}`
@@ -61,7 +61,7 @@ function ChipCell({ chip }: { chip: ChipStatus | undefined }) {
   if (chip.expired) {
     return (
       <span
-        className="inline-block rounded-full bg-stone-200 px-2 py-0.5 text-[11px] font-medium text-stone-500 line-through"
+        className="inline-block rounded-full bg-stone-200 px-2 py-0.5 text-caption font-medium text-stone-500 line-through"
         title={tr(
           `${chipLabel(chip.name, false, locale)} · GW${chip.stop}까지 못 씀`,
           `${chipLabel(chip.name, false, locale)} · not used by GW${chip.stop}`
@@ -74,7 +74,7 @@ function ChipCell({ chip }: { chip: ChipStatus | undefined }) {
 
   return (
     <span
-      className="inline-block rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800"
+      className="inline-block rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-caption font-semibold text-emerald-800"
       title={tr(
         `${chipLabel(chip.name, false, locale)} · GW${chip.start}~${chip.stop} 사용 가능`,
         `${chipLabel(chip.name, false, locale)} · available GW${chip.start}–${chip.stop}`
@@ -102,8 +102,8 @@ export function ChipStatusPanel({ managers }: { managers: RankChangeManager[] })
   return (
     <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
       <div className="mb-3">
-        <div className="text-[1rem] font-semibold">{tr("칩 사용 현황", "Chip status")}</div>
-        <div className="text-[12px] text-[var(--muted)]">
+        <div className="text-body-lg font-semibold">{tr("칩 사용 현황", "Chip status")}</div>
+        <div className="text-caption text-[var(--muted)]">
           {tr(
             "남은 칩이 많은 순입니다. 칩은 전·후반기에 각각 한 번씩 주어집니다.",
             "Sorted by chips remaining. Each chip is granted once per half of the season."
@@ -112,9 +112,9 @@ export function ChipStatusPanel({ managers }: { managers: RankChangeManager[] })
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full border-collapse text-[13px]">
+        <table className="min-w-full border-collapse text-meta">
           <thead>
-            <tr className="border-b border-[var(--border)] text-[10px] uppercase tracking-[0.08em] text-[var(--muted)]">
+            <tr className="border-b border-[var(--border)] text-caption uppercase tracking-[0.08em] text-[var(--muted)]">
               <th className="px-2 py-2 text-left" rowSpan={2}>
                 {tr("매니저", "Manager")}
               </th>
@@ -131,7 +131,7 @@ export function ChipStatusPanel({ managers }: { managers: RankChangeManager[] })
                 </th>
               ))}
             </tr>
-            <tr className="border-b border-[var(--border)] bg-[var(--surface-strong)]/40 text-[10px] uppercase tracking-[0.06em] text-[var(--muted)]">
+            <tr className="border-b border-[var(--border)] bg-[var(--surface-strong)]/40 text-caption uppercase tracking-[0.06em] text-[var(--muted)]">
               {groups.flatMap((group) =>
                 group.columns.map((column, index) => (
                   <th
@@ -157,7 +157,7 @@ export function ChipStatusPanel({ managers }: { managers: RankChangeManager[] })
                       <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: manager.color }} />
                       <span className="min-w-0">
                         <span className="block truncate font-semibold">{manager.entryName}</span>
-                        <span className="block truncate text-[11px] text-[var(--muted)]">{manager.playerName}</span>
+                        <span className="block truncate text-caption text-[var(--muted)]">{manager.playerName}</span>
                       </span>
                     </span>
                   </td>

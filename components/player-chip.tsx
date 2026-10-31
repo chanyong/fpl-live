@@ -53,35 +53,35 @@ export function PlayerChip({ player, onSelect }: { player: PlayerLiveCard; onSel
         alt=""
         fallback={player.webName.slice(0, 2).toUpperCase()}
         className="h-11 w-9 shrink-0 self-start rounded-[0.55rem] bg-[var(--surface-strong)] object-cover object-top"
-        fallbackClassName="grid h-11 w-9 shrink-0 place-items-center self-start rounded-[0.55rem] bg-[var(--surface-strong)] text-[11px] font-semibold text-[var(--muted)]"
+        fallbackClassName="grid h-11 w-9 shrink-0 place-items-center self-start rounded-[0.55rem] bg-[var(--surface-strong)] text-caption font-semibold text-[var(--muted)]"
       />
 
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0 flex-1 truncate text-[15px] font-semibold leading-5 md:text-[17px]">
+          <div className="min-w-0 flex-1 truncate text-body-lg font-semibold leading-5 md:text-title">
             {player.webName}
           </div>
           {player.isCaptain ? (
-            <span className="shrink-0 rounded-full bg-rose-600 px-2 py-0.5 text-[12px] font-bold leading-none text-white">
+            <span className="shrink-0 rounded-full bg-rose-600 px-2 py-0.5 text-caption font-bold leading-none text-white">
               C
             </span>
           ) : player.isViceCaptain ? (
-            <span className="shrink-0 rounded-full bg-sky-600 px-2 py-0.5 text-[12px] font-bold leading-none text-white">
+            <span className="shrink-0 rounded-full bg-sky-600 px-2 py-0.5 text-caption font-bold leading-none text-white">
               VC
             </span>
           ) : null}
-          <div className={`shrink-0 text-[18px] font-semibold leading-none tabular-nums md:text-[21px] ${scoreTone(player.livePoints, player.status)}`}>
+          <div className={`shrink-0 text-title-lg font-semibold leading-none tabular-nums md:text-score ${scoreTone(player.livePoints, player.status)}`}>
             {pointsLabel}
-            <span className="ml-1 text-[12px] font-medium text-[var(--muted)]">{tr("점", "pts")}</span>
+            <span className="ml-1 text-caption font-medium text-[var(--muted)]">{tr("점", "pts")}</span>
           </div>
         </div>
 
         <div className="mt-1.5 flex items-center justify-between gap-2">
-          <div className="min-w-0 truncate text-[12px] leading-4 text-[var(--muted)]">
+          <div className="min-w-0 truncate text-caption leading-4 text-[var(--muted)]">
             {player.teamShortName} · {player.position}
             {player.minutes > 0 ? <span className="ml-1">{player.minutes}&apos;</span> : null}
           </div>
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${statusTone[player.status]}`}>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-caption font-medium ${statusTone[player.status]}`}>
             {tr(statusLabel[player.status].ko, statusLabel[player.status].en)}
           </span>
         </div>

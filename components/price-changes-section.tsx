@@ -150,7 +150,7 @@ function AvailabilityMark({ status, news }: { status: string; news: string }) {
     <span
       title={news || undefined}
       aria-label={news || undefined}
-      className={`mr-1 text-[11px] ${status === "d" ? "text-[var(--warning)]" : "text-[var(--danger)]"}`}
+      className={`mr-1 text-caption ${status === "d" ? "text-[var(--warning)]" : "text-[var(--danger)]"}`}
     >
       ▲!
     </span>
@@ -182,7 +182,7 @@ function PlayerCell({
       >
         {webName}
       </button>
-      <span className="ml-1.5 text-[11px] text-[var(--muted)]">
+      <span className="ml-1.5 text-caption text-[var(--muted)]">
         {teamShortName} · {position}
       </span>
     </td>
@@ -210,7 +210,9 @@ function Filters({
 }) {
   const { tr } = useLocale();
   const selectClass =
-    "min-h-9 rounded-full border border-[var(--border)] bg-white px-3 text-[13px] outline-none transition focus:border-[var(--accent)]";
+    // 16px on touch screens (phones in any orientation, tablets): iOS Safari zooms the page when a
+    // form control under 16px gets focus. Only a mouse-driven screen at md and up gets 14px.
+    "min-h-9 rounded-full border border-[var(--border)] bg-white px-3 text-body-lg outline-none transition focus:border-[var(--accent)] md:pointer-fine:text-meta";
 
   return (
     <div className="mb-2 flex flex-wrap items-center gap-1.5">
@@ -219,7 +221,7 @@ function Filters({
         onChange={(event) => onSearch(event.target.value)}
         aria-label={tr("선수 또는 팀 검색", "Search player or team")}
         placeholder={tr("선수·팀 검색", "Search player or team")}
-        className="min-h-9 min-w-[10rem] flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-[13px] outline-none transition focus:border-[var(--accent)] md:max-w-[20rem]"
+        className="min-h-9 min-w-[10rem] flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-body-lg outline-none transition focus:border-[var(--accent)] md:max-w-[20rem] md:pointer-fine:text-meta"
       />
       <select
         value={direction}
@@ -245,7 +247,7 @@ function Filters({
           </option>
         ))}
       </select>
-      <span className="ml-auto text-[12px] text-[var(--muted)]">{tr(`${count}명`, `${count} players`)}</span>
+      <span className="ml-auto text-caption text-[var(--muted)]">{tr(`${count}명`, `${count} players`)}</span>
     </div>
   );
 }
@@ -293,8 +295,8 @@ function Card({ title, hint, children }: { title: string; hint: ReactNode; child
   return (
     <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
       <div className="mb-2">
-        <h3 className="text-[1rem] font-semibold">{title}</h3>
-        <div className="text-[12px] leading-relaxed text-[var(--muted)]">{hint}</div>
+        <h3 className="text-body-lg font-semibold">{title}</h3>
+        <div className="text-caption leading-relaxed text-[var(--muted)]">{hint}</div>
       </div>
       {children}
     </section>
@@ -306,7 +308,7 @@ function EmptyRow({ colSpan, onClear }: { colSpan: number; onClear: () => void }
 
   return (
     <tr>
-      <td colSpan={colSpan} className="border-t border-[var(--border)] py-6 text-center text-sm text-[var(--muted)]">
+      <td colSpan={colSpan} className="border-t border-[var(--border)] py-6 text-center text-body text-[var(--muted)]">
         {tr("조건에 맞는 선수가 없습니다.", "No players match these filters.")}
         <button type="button" onClick={onClear} className="ml-2 font-semibold text-[var(--accent)] underline underline-offset-4">
           {tr("필터 지우기", "Clear filters")}
@@ -327,7 +329,7 @@ function ShowMore({ remaining, onClick }: { remaining: number; onClick: () => vo
     <button
       type="button"
       onClick={onClick}
-      className="mt-2 w-full rounded-full border border-[var(--border)] bg-white py-2 text-[13px] font-semibold text-[var(--muted)] transition hover:border-[var(--accent)]"
+      className="mt-2 w-full rounded-full border border-[var(--border)] bg-white py-2 text-meta font-semibold text-[var(--muted)] transition hover:border-[var(--accent)]"
     >
       {tr(`더 보기 (${remaining})`, `Show more (${remaining})`)}
     </button>
@@ -360,11 +362,11 @@ function NextUpdate({ nextUpdate }: { nextUpdate: string | null }) {
 
   return (
     <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-xl border border-[var(--border)] bg-white px-3 py-2">
-      <span className="text-[13px]">{tr("다음 가격 변동까지", "Next price changes happen in")}</span>
+      <span className="text-meta">{tr("다음 가격 변동까지", "Next price changes happen in")}</span>
       <span className="text-lg font-semibold tabular-nums">
         {pad(Math.floor(seconds / 3600))}:{pad(Math.floor((seconds % 3600) / 60))}:{pad(seconds % 60)}
       </span>
-      <span className="text-[12px] text-[var(--muted)]">
+      <span className="text-caption text-[var(--muted)]">
         {tr(`다음 변동 ${clock} (현지 시간)`, `Next price change at ${clock} (local time)`)}
       </span>
     </div>
@@ -423,8 +425,8 @@ function PredictionsTable({ players, nextUpdate, onSelect }: { players: PlayerSt
         count={rows.length}
       />
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] border-separate border-spacing-0 text-left text-[13px]">
-          <thead className="text-[11px] uppercase tracking-wide text-[var(--muted)]">
+        <table className="w-full min-w-[640px] border-separate border-spacing-0 text-left text-meta">
+          <thead className="text-caption uppercase tracking-wide text-[var(--muted)]">
             <tr>
               <th className="py-1.5 pr-2 font-semibold">{tr("선수", "Player")}</th>
               <th className="px-1 py-1.5"><SortHeader label={tr("상태", "Status")} {...header("status")} /></th>
@@ -439,7 +441,7 @@ function PredictionsTable({ players, nextUpdate, onSelect }: { players: PlayerSt
             {rows.slice(0, filters.shown).map((player) => {
               const status = priceStatus(player.priceLikelihood);
               const trend = ownershipTrend(player);
-              const chip = `rounded-md px-1.5 py-0.5 text-[12px] font-semibold tabular-nums ${STATUS_STYLE[status]}`;
+              const chip = `rounded-md px-1.5 py-0.5 text-caption font-semibold tabular-nums ${STATUS_STYLE[status]}`;
 
               return (
                 <tr key={player.id}>
@@ -453,18 +455,18 @@ function PredictionsTable({ players, nextUpdate, onSelect }: { players: PlayerSt
                   />
                   <td className="border-t border-[var(--border)] px-2 py-1.5">
                     {player.priceLockedUntil ? (
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_STYLE["no-change"]}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-caption font-semibold ${STATUS_STYLE["no-change"]}`}>
                         {tr(
                           `${daysUntilUnlock(player.priceLockedUntil)}일 후 잠금 해제`,
                           `Unlocks in ${daysUntilUnlock(player.priceLockedUntil)} days`
                         )}
                       </span>
                     ) : player.priceCalibrating ? (
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_STYLE["no-change"]}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-caption font-semibold ${STATUS_STYLE["no-change"]}`}>
                         {tr("보정 중", "Calibrating")}
                       </span>
                     ) : (
-                      <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS_STYLE[status]}`}>
+                      <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-caption font-semibold ${STATUS_STYLE[status]}`}>
                         {statusLabel[status]}
                       </span>
                     )}
@@ -475,7 +477,7 @@ function PredictionsTable({ players, nextUpdate, onSelect }: { players: PlayerSt
                   <td className="border-t border-[var(--border)] px-2 py-1.5">
                     <span className={chip}>{signed(player.projectedPercent)}</span>
                   </td>
-                  <td className="border-t border-[var(--border)] px-2 py-1.5 text-[12px]">
+                  <td className="border-t border-[var(--border)] px-2 py-1.5 text-caption">
                     {trend === null ? (
                       <span className="text-[var(--muted)]">-</span>
                     ) : trend === "up" ? (
@@ -556,8 +558,8 @@ function HistoryTable({
         count={rows.length}
       />
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[520px] border-separate border-spacing-0 text-left text-[13px]">
-          <thead className="text-[11px] uppercase tracking-wide text-[var(--muted)]">
+        <table className="w-full min-w-[520px] border-separate border-spacing-0 text-left text-meta">
+          <thead className="text-caption uppercase tracking-wide text-[var(--muted)]">
             <tr>
               <th className="py-1.5 pr-2 font-semibold">{tr("선수", "Player")}</th>
               <th className="px-1 py-1.5"><SortHeader label={tr("날짜", "Date")} {...header("date")} /></th>
@@ -585,7 +587,7 @@ function HistoryTable({
                   <td className="border-t border-[var(--border)] px-2 py-1.5 tabular-nums">{dateFormat.format(new Date(change.changedAt))}</td>
                   <td className="border-t border-[var(--border)] px-2 py-1.5">
                     <span
-                      className={`rounded-md px-1.5 py-0.5 text-[12px] font-semibold tabular-nums ${
+                      className={`rounded-md px-1.5 py-0.5 text-caption font-semibold tabular-nums ${
                         STATUS_STYLE[delta > 0 ? "very-likely-rise" : "very-likely-drop"]
                       }`}
                     >
@@ -631,7 +633,7 @@ export function PriceChangesSection({ onSelect }: { onSelect: (id: number) => vo
   }
 
   return (
-    <div className="grid gap-3">
+    <div className="grid grid-cols-1 gap-3">
       <PredictionsTable players={query.data.players} nextUpdate={query.data.nextUpdate} onSelect={onSelect} />
       <HistoryTable history={query.data.history} players={query.data.players} onSelect={onSelect} />
     </div>

@@ -28,7 +28,7 @@ export function RefreshIndicator({
   }, []);
 
   return (
-    <div className="flex flex-wrap items-center gap-2 text-[12px] text-[var(--muted)]">
+    <div className="flex flex-wrap items-center gap-2 text-caption text-[var(--muted)]">
       <span className="inline-flex items-center gap-1.5">
         <span
           className={`h-2 w-2 rounded-full ${isFetching ? "animate-pulse bg-[var(--accent)]" : "bg-emerald-500"}`}
@@ -41,7 +41,7 @@ export function RefreshIndicator({
 
       {isProvisional ? (
         <span
-          className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800"
+          className="rounded-full bg-amber-100 px-2 py-0.5 text-caption font-medium text-amber-800"
           title={tr(
             "보너스 포인트와 자동 교체는 FPL이 게임위크를 확정한 뒤 바뀔 수 있습니다",
             "Bonus points and auto-subs may change once FPL finalises the gameweek"

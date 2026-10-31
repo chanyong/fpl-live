@@ -31,7 +31,7 @@ function Crest({ name, code }: { name: string; code: number }) {
       alt=""
       fallback={name.slice(0, 1)}
       className="h-7 w-7 shrink-0 object-contain"
-      fallbackClassName="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--surface-strong)] text-[11px] font-semibold text-[var(--muted)]"
+      fallbackClassName="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--surface-strong)] text-caption font-semibold text-[var(--muted)]"
     />
   );
 }
@@ -39,15 +39,15 @@ function Crest({ name, code }: { name: string; code: number }) {
 export function PremierLeagueTable({ table }: { table: PremierLeagueTableRow[] }) {
   const { tr } = useLocale();
   const numberHead = "w-[50px] px-1 py-2 text-center";
-  const numberCell = "px-1 py-2.5 text-center text-[16px] tabular-nums";
+  const numberCell = "px-1 py-2.5 text-center text-body-lg tabular-nums";
 
   return (
     <section className="mt-3 rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-2">
       <div className="mb-1.5 px-1.5">
-        <div className="text-[14px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+        <div className="text-body font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
           {tr("프리미어리그 현재 순위", "Premier League table")}
         </div>
-        <div className="mt-1 text-[13px] text-[var(--muted)]">
+        <div className="mt-1 text-meta text-[var(--muted)]">
           {tr(
             "진행 중인 경기는 현재 스코어로 반영됩니다. 동률은 골득실, 다득점 순.",
             "Matches in play count at their current score. Ties break on goal difference, then goals scored."
@@ -56,9 +56,9 @@ export function PremierLeagueTable({ table }: { table: PremierLeagueTableRow[] }
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[800px] text-[16px]">
+        <table className="w-full min-w-[800px] text-body-lg">
           <thead>
-            <tr className="text-[13px] font-semibold text-[var(--muted)]">
+            <tr className="text-meta font-semibold text-[var(--muted)]">
               <th className="w-[56px] px-2 py-2 text-left">{tr("순위", "Pos")}</th>
               <th className="w-[200px] px-2 py-2 text-left">{tr("팀", "Team")}</th>
               <th className={numberHead} title={tr("경기 수", "Played")}>Pl</th>
@@ -76,11 +76,11 @@ export function PremierLeagueTable({ table }: { table: PremierLeagueTableRow[] }
           <tbody>
             {table.map((row) => (
               <tr key={row.shortName} className="border-t border-[var(--border)]">
-                <td className={`border-l-[3px] px-2 py-2.5 text-[16px] font-semibold tabular-nums ${zoneBorder(row.position, table.length)}`}>
+                <td className={`border-l-[3px] px-2 py-2.5 text-body-lg font-semibold tabular-nums ${zoneBorder(row.position, table.length)}`}>
                   {row.position}
                 </td>
                 <td className="px-2 py-2.5">
-                  <span className="flex items-center gap-2.5 text-[16px] font-semibold">
+                  <span className="flex items-center gap-2.5 text-body-lg font-semibold">
                     <Crest name={row.team} code={row.teamCode} />
                     {row.team}
                   </span>
@@ -98,7 +98,7 @@ export function PremierLeagueTable({ table }: { table: PremierLeagueTableRow[] }
                     {row.form.map((result, index) => (
                       <span
                         key={index}
-                        className={`inline-flex h-[26px] w-[26px] items-center justify-center rounded-full text-[12px] font-bold ${FORM_STYLE[result]}`}
+                        className={`inline-flex h-[26px] w-[26px] items-center justify-center rounded-full text-caption font-bold ${FORM_STYLE[result]}`}
                       >
                         {result}
                       </span>
@@ -108,14 +108,14 @@ export function PremierLeagueTable({ table }: { table: PremierLeagueTableRow[] }
                 <td className="px-1 py-2.5">
                   {row.next ? (
                     <span
-                      className="flex items-center justify-center gap-1.5 text-[13px] text-[var(--muted)]"
+                      className="flex items-center justify-center gap-1.5 text-meta text-[var(--muted)]"
                       title={`${row.next.home ? tr("홈", "Home") : tr("원정", "Away")} ${row.next.opponent}`}
                     >
                       <Crest name={row.next.opponent} code={row.next.opponentCode} />
                       {row.next.home ? tr("홈", "H") : tr("원정", "A")}
                     </span>
                   ) : (
-                    <span className="block text-center text-[13px] text-[var(--muted)]">-</span>
+                    <span className="block text-center text-meta text-[var(--muted)]">-</span>
                   )}
                 </td>
               </tr>

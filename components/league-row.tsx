@@ -13,7 +13,7 @@ export function GwPoints({ row, className }: { row: LeagueRowType; className?: s
       {row.gwPoints}
       {row.transferCost > 0 ? (
         <span
-          className="ml-1 text-[11px] font-semibold text-rose-700"
+          className="ml-1 text-caption font-semibold text-rose-700"
           title={tr(
             `라인업 ${row.lineupPoints}점, 이적 차감 -${row.transferCost}점`,
             `Lineup ${row.lineupPoints} pts, transfer cost -${row.transferCost}`
@@ -44,7 +44,7 @@ export function LeagueRow({
           <span className="font-semibold tabular-nums text-stone-800">{row.projectedRank}</span>
         </span>
       </td>
-      <td className="w-px whitespace-nowrap px-2.5 py-1.5 text-center text-[13px]">
+      <td className="w-px whitespace-nowrap px-2.5 py-1.5 text-center text-meta">
         <RankDelta from={row.rank} to={row.projectedRank} />
       </td>
       <td className="px-2.5 py-1.5 font-semibold">{row.teamName}</td>

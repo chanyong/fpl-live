@@ -72,13 +72,13 @@ export function DeadlineBanner({ gw, deadlineTime }: { gw: number; deadlineTime:
       }`}
     >
       <div className="min-w-0 md:flex md:items-baseline md:gap-3">
-        <div className="whitespace-nowrap text-[11px] font-semibold text-[var(--muted)] md:text-xs">
-          <span className="text-[15px] font-extrabold text-[var(--text)] md:text-base">GW{gw}</span>{" "}
+        <div className="whitespace-nowrap text-caption font-semibold text-[var(--muted)] md:text-caption">
+          <span className="text-body-lg font-extrabold text-[var(--text)] md:text-body-lg">GW{gw}</span>{" "}
           {tr("마감 (내 시간대)", "deadline (local time)")}
         </div>
-        <div className="whitespace-nowrap text-[15px] font-semibold md:text-lg">
+        <div className="whitespace-nowrap text-body-lg font-semibold md:text-lg">
           {LOCAL_FORMATTERS[locale].format(new Date(deadline))}
-          <span className="ml-1.5 text-[11px] font-medium text-[var(--muted)] md:text-xs">
+          <span className="ml-1.5 text-caption font-medium text-[var(--muted)] md:text-caption">
             {zoneLabel(new Date(deadline))}
           </span>
         </div>
@@ -90,7 +90,7 @@ export function DeadlineBanner({ gw, deadlineTime }: { gw: number; deadlineTime:
         }`}
       />
       <div className="text-right md:flex md:items-baseline md:gap-3">
-        <div className="whitespace-nowrap text-[11px] font-semibold text-[var(--muted)] md:text-xs">
+        <div className="whitespace-nowrap text-caption font-semibold text-[var(--muted)] md:text-caption">
           {tr("남은 시간", "Time left")}
         </div>
         <div
