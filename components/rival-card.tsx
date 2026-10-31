@@ -82,12 +82,12 @@ export function RivalCard({
   const gap = me && rival && me.entryId !== rival.entryId ? computeRivalGap(me, rival) : null;
 
   const select = (value: number | null, onChange: (id: number | null) => void, label: string) => (
-    <label className="flex min-w-0 flex-1 flex-col gap-1 text-[11px] font-semibold text-[var(--muted)]">
+    <label className="flex min-w-0 flex-1 flex-col gap-1 text-caption font-semibold text-[var(--muted)]">
       {label}
       <select
         value={value ?? ""}
         onChange={(event) => onChange(event.target.value ? Number(event.target.value) : null)}
-        className="min-h-9 w-full min-w-0 rounded-lg border border-[var(--border)] bg-white px-2 text-[13px] font-medium text-[var(--text)]"
+        className="min-h-9 w-full min-w-0 rounded-lg border border-[var(--border)] bg-white px-2 text-meta font-medium text-[var(--text)]"
       >
         <option value="">{tr("선택", "Choose")}</option>
         {sorted.map((row) => (
@@ -101,7 +101,7 @@ export function RivalCard({
 
   return (
     <section className="rounded-[1.1rem] border border-[var(--border)] bg-[var(--surface)] p-3" aria-labelledby="rival-card-title">
-      <h2 id="rival-card-title" className="text-sm font-semibold">
+      <h2 id="rival-card-title" className="text-body font-semibold">
         {tr("내 라이벌과 점수 차", "Me vs my rival")}
       </h2>
       <div className="mt-2 flex gap-2">
@@ -110,36 +110,36 @@ export function RivalCard({
       </div>
 
       {gap && me && rival ? (
-        <div className="mt-3 space-y-2 text-[13px]">
+        <div className="mt-3 space-y-2 text-meta">
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="rounded-lg bg-white px-2 py-2">
-              <div className="text-[11px] text-[var(--muted)]">{tr("이번 GW", "This GW")}</div>
+              <div className="text-caption text-[var(--muted)]">{tr("이번 GW", "This GW")}</div>
               <div className={`text-lg font-bold tabular-nums ${gapTone(gap.gwGap)}`}>{signed(gap.gwGap)}</div>
-              <div className="text-[11px] tabular-nums text-[var(--muted)]">
+              <div className="text-caption tabular-nums text-[var(--muted)]">
                 {me.gwPoints} : {rival.gwPoints}
               </div>
             </div>
             <div className="rounded-lg bg-white px-2 py-2">
-              <div className="text-[11px] text-[var(--muted)]">{tr("총점(잠정)", "Total (live)")}</div>
+              <div className="text-caption text-[var(--muted)]">{tr("총점(잠정)", "Total (live)")}</div>
               <div className={`text-lg font-bold tabular-nums ${gapTone(gap.totalGap)}`}>{signed(gap.totalGap)}</div>
-              <div className="text-[11px] tabular-nums text-[var(--muted)]">
+              <div className="text-caption tabular-nums text-[var(--muted)]">
                 {me.projectedTotalPoints} : {rival.projectedTotalPoints}
               </div>
             </div>
             <div className="rounded-lg bg-white px-2 py-2">
-              <div className="text-[11px] text-[var(--muted)]">{tr("순위", "Rank")}</div>
+              <div className="text-caption text-[var(--muted)]">{tr("순위", "Rank")}</div>
               <div className={`text-lg font-bold tabular-nums ${gapTone(gap.rankGap)}`}>
                 {me.projectedRank} : {rival.projectedRank}
               </div>
-              <div className="text-[11px] text-[var(--muted)]">{tr("잠정 순위", "projected")}</div>
+              <div className="text-caption text-[var(--muted)]">{tr("잠정 순위", "projected")}</div>
             </div>
           </div>
-          <p className="text-[12px] text-[var(--muted)]">
+          <p className="text-caption text-[var(--muted)]">
             {tr("주장", "Captains")}: <b className="text-[var(--text)]">{me.captainName}</b> vs{" "}
             <b className="text-[var(--text)]">{rival.captainName}</b>
             {gap.captainDiff ? <span className="ml-1 font-semibold text-amber-700">{tr("· 주장이 달라요", "· different")}</span> : null}
           </p>
-          <div className="grid grid-cols-2 gap-2 text-[12px]">
+          <div className="grid grid-cols-2 gap-2 text-caption">
             {(
               [
                 [tr("나만 가진 선발", "Only in my XI"), gap.myOnly],
@@ -147,7 +147,7 @@ export function RivalCard({
               ] as const
             ).map(([label, list]) => (
               <div key={label} className="rounded-lg bg-white px-2 py-1.5">
-                <div className="mb-1 text-[11px] font-semibold text-[var(--muted)]">{label}</div>
+                <div className="mb-1 text-caption font-semibold text-[var(--muted)]">{label}</div>
                 {list.length === 0 ? (
                   <div className="text-[var(--muted)]">-</div>
                 ) : (
@@ -163,7 +163,7 @@ export function RivalCard({
           </div>
         </div>
       ) : (
-        <p className="mt-2 text-[12px] text-[var(--muted)]">
+        <p className="mt-2 text-caption text-[var(--muted)]">
           {tr(
             "나와 라이벌을 고르면 경기 중에도 점수 차를 계속 보여 줍니다. 페이지를 새로 열면 다시 고릅니다.",
             "Pick yourself and a rival to keep the gap updated during matches. You pick again each time you open the page."

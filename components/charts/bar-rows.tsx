@@ -25,9 +25,9 @@ type Props = {
 
 function Name({ label, sub }: { label: string; sub?: string }) {
   return (
-    <span className="truncate text-right text-[13px]">
+    <span className="truncate text-right text-meta">
       {label}
-      {sub ? <span className="ml-1 text-[11px] text-[var(--muted)]">{sub}</span> : null}
+      {sub ? <span className="ml-1 text-caption text-[var(--muted)]">{sub}</span> : null}
     </span>
   );
 }
@@ -68,7 +68,7 @@ export function DivergingRows({ rows, max, scale, valueWidth = "72px" }: Props) 
                 style={{ left: "50%", width: `${rightWidth}%`, background: "var(--chart-in)" }}
               />
             </span>
-            <span className="text-right text-[12px] tabular-nums text-[var(--muted)]">{row.value}</span>
+            <span className="text-right text-caption tabular-nums text-[var(--muted)]">{row.value}</span>
           </Wrapper>
         );
       })}
@@ -79,7 +79,7 @@ export function DivergingRows({ rows, max, scale, valueWidth = "72px" }: Props) 
           style={{ gridTemplateColumns: `96px 1fr ${valueWidth}` }}
         >
           <span />
-          <span className="flex justify-between text-[10px] text-[var(--muted)]">
+          <span className="flex justify-between text-caption text-[var(--muted)]">
             <span>{scale.left}</span>
             <span>{scale.mid}</span>
             <span>{scale.right}</span>
@@ -118,7 +118,7 @@ export function MagnitudeRows({ rows, max, valueWidth = "104px" }: Props) {
                 style={{ width: `${width}%`, background: "var(--chart-in)" }}
               />
             </span>
-            <span className="text-right text-[12px] tabular-nums text-[var(--muted)]">{row.value}</span>
+            <span className="text-right text-caption tabular-nums text-[var(--muted)]">{row.value}</span>
           </Wrapper>
         );
       })}

@@ -27,7 +27,7 @@ export function SubTabs<T extends string>({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(item.id)}
-            className={`flex-1 whitespace-nowrap rounded-[0.7rem] px-3 py-1.5 text-[13px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none ${
+            className={`flex-1 whitespace-nowrap rounded-[0.7rem] px-3 py-1.5 text-meta font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none ${
               active ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] shadow-[inset_0_0_0_1px_var(--accent)]" : "text-[var(--muted)] hover:text-[var(--text)]"
             }`}
           >

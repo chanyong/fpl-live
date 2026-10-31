@@ -27,10 +27,10 @@ export function Filters({
         onChange={(event) => setSearch(event.target.value)}
         placeholder={tr("매니저 또는 팀 이름 검색", "Search manager or team")}
         aria-label={tr("매니저 또는 팀 이름 검색", "Search manager or team")}
-        className="min-h-10 w-full flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-[15px] outline-none focus:border-[var(--accent)] md:text-sm"
+        className="min-h-10 w-full flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-body-lg outline-none focus:border-[var(--accent)] md:text-body"
       />
       <div className="flex items-center justify-between gap-3 md:justify-start">
-        <label className="flex items-center gap-2 text-[13px] text-[var(--muted)] md:text-sm">
+        <label className="flex items-center gap-2 text-meta text-[var(--muted)] md:text-body">
           <input
             type="checkbox"
             checked={chipOnly}
@@ -42,7 +42,7 @@ export function Filters({
           value={topN}
           onChange={(event) => setTopN(event.target.value)}
           aria-label={tr("표시 범위", "Rows shown")}
-          className="min-h-10 rounded-full border border-[var(--border)] bg-white px-4 text-[15px] outline-none focus:border-[var(--accent)] md:text-sm"
+          className="min-h-10 rounded-full border border-[var(--border)] bg-white px-4 text-body-lg outline-none focus:border-[var(--accent)] md:text-body"
         >
           <option value="all">{tr("전체", "All")}</option>
           <option value="10">{tr("상위 10", "Top 10")}</option>

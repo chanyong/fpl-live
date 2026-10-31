@@ -16,8 +16,8 @@ function PlayerPill({ player, tone }: { player: PlayerLiveCard; tone: string }) 
   const { tr } = useLocale();
   return (
     <div className={`rounded-lg border px-2 py-1.5 ${tone}`}>
-      <div className="truncate text-[13px] font-semibold leading-4 md:text-sm">{player.webName}</div>
-      <div className="mt-0.5 flex items-center justify-between gap-1 text-[11px] leading-4 text-[var(--muted)]">
+      <div className="truncate text-meta font-semibold leading-4 md:text-body">{player.webName}</div>
+      <div className="mt-0.5 flex items-center justify-between gap-1 text-caption leading-4 text-[var(--muted)]">
         <span className="truncate">{player.teamShortName}</span>
         <span className="tabular-nums">{player.status === "not_played" ? "-" : `${player.livePoints}${tr("점", " pts")}`}</span>
       </div>
@@ -50,7 +50,7 @@ function SharedRing({ shared, total }: { shared: number; total: number }) {
           strokeDasharray={`${(shared / total) * circumference} ${circumference}`}
         />
       </svg>
-      <div className="absolute inset-0 grid place-items-center text-sm font-semibold tabular-nums">
+      <div className="absolute inset-0 grid place-items-center text-body font-semibold tabular-nums">
         {shared}/{total}
       </div>
     </div>
@@ -69,10 +69,10 @@ function PositionBars({ a, b }: { a: LeagueRow; b: LeagueRow }) {
 
   return (
     <section className="border-b border-[var(--border)] px-3 py-3 md:px-5">
-      <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+      <h3 className="text-caption font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
         {tr("포지션별 GW 득점", "GW points by position")}
       </h3>
-      <p className="mb-2 text-[11px] text-[var(--muted)]">
+      <p className="mb-2 text-caption text-[var(--muted)]">
         {tr(
           "포지션별로 선발 11명이 얻은 점수 합계입니다 (주장 2배 반영, 벤치·이적 차감 제외)",
           "Points earned by the starting 11 per position (captain doubled; bench and transfer cost excluded)"
@@ -82,7 +82,7 @@ function PositionBars({ a, b }: { a: LeagueRow; b: LeagueRow }) {
         {COMPARE_POSITIONS.map((position) => (
           <li
             key={position}
-            className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.75rem_minmax(0,1fr)_2.5rem] items-center gap-1.5 text-[12px] tabular-nums md:grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)_3rem]"
+            className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.75rem_minmax(0,1fr)_2.5rem] items-center gap-1.5 text-caption tabular-nums md:grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)_3rem]"
           >
             <span className="text-right font-semibold" style={{ color: "var(--chart-in)" }}>
               {pointsA[position]}{tr("점", " pts")}
@@ -90,7 +90,7 @@ function PositionBars({ a, b }: { a: LeagueRow; b: LeagueRow }) {
             <span className="flex h-3 justify-end overflow-hidden rounded-l-full bg-[var(--chart-mute-soft)]/50">
               <span className="h-full rounded-l-full" style={{ width: width(pointsA[position]), backgroundColor: "var(--chart-in)" }} />
             </span>
-            <span className="text-center text-[11px] font-semibold text-[var(--muted)]">{position}</span>
+            <span className="text-center text-caption font-semibold text-[var(--muted)]">{position}</span>
             <span className="flex h-3 overflow-hidden rounded-r-full bg-[var(--chart-mute-soft)]/50">
               <span className="h-full rounded-r-full" style={{ width: width(pointsB[position]), backgroundColor: "var(--chart-out)" }} />
             </span>
@@ -99,15 +99,15 @@ function PositionBars({ a, b }: { a: LeagueRow; b: LeagueRow }) {
             </span>
           </li>
         ))}
-        <li className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.75rem_minmax(0,1fr)_2.5rem] items-center gap-1.5 border-t border-[var(--border)] pt-1.5 text-[12px] font-semibold tabular-nums md:grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)_3rem]">
+        <li className="grid grid-cols-[2.5rem_minmax(0,1fr)_2.75rem_minmax(0,1fr)_2.5rem] items-center gap-1.5 border-t border-[var(--border)] pt-1.5 text-caption font-semibold tabular-nums md:grid-cols-[3rem_minmax(0,1fr)_3rem_minmax(0,1fr)_3rem]">
           <span className="text-right" style={{ color: "var(--chart-in)" }}>{totalA}{tr("점", " pts")}</span>
           <span />
-          <span className="text-center text-[11px] text-[var(--muted)]">{tr("합계", "Total")}</span>
+          <span className="text-center text-caption text-[var(--muted)]">{tr("합계", "Total")}</span>
           <span />
           <span style={{ color: "var(--chart-out)" }}>{totalB}{tr("점", " pts")}</span>
         </li>
       </ul>
-      <div className="mt-2 flex justify-between text-[11px] font-semibold">
+      <div className="mt-2 flex justify-between text-caption font-semibold">
         <span className="flex items-center gap-1" style={{ color: "var(--chart-in)" }}>
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "var(--chart-in)" }} />
           {a.teamName}
@@ -132,7 +132,7 @@ function PositionGrid({
   const rows = Math.max(...columns.map((players) => players.length));
 
   if (rows === 0) {
-    return <div className="py-2 text-center text-xs text-[var(--muted)]">-</div>;
+    return <div className="py-2 text-center text-caption text-[var(--muted)]">-</div>;
   }
 
   return (
@@ -202,7 +202,7 @@ export function SquadCompareDialog({
         <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-3 py-3 md:px-5">
           <div className="min-w-0">
             <h2 className="text-lg font-semibold leading-6">{tr("스쿼드 비교", "Squad comparison")}</h2>
-            <p className="text-xs text-[var(--muted)]">
+            <p className="text-caption text-[var(--muted)]">
               {tr(
                 `게임위크 라인업 15명 기준 · 공통 ${comparison.sharedCount}명`,
                 `Based on the gameweek's 15 players · ${comparison.sharedCount} shared`
@@ -222,29 +222,29 @@ export function SquadCompareDialog({
         <div className="grid grid-cols-[repeat(3,minmax(0,1fr))] items-center gap-2 border-b border-[var(--border)] px-3 py-3 text-center md:px-5">
           <div className="min-w-0">
             <div className="text-xl font-semibold tabular-nums md:text-2xl">{a.gwPoints}</div>
-            <div className="text-[11px] text-[var(--muted)]">{tr(`GW · 총 ${a.totalPoints}`, `GW · total ${a.totalPoints}`)}</div>
+            <div className="text-caption text-[var(--muted)]">{tr(`GW · 총 ${a.totalPoints}`, `GW · total ${a.totalPoints}`)}</div>
           </div>
           <div className="mx-auto">
             <SharedRing shared={comparison.sharedCount} total={15} />
           </div>
           <div className="min-w-0">
             <div className="text-xl font-semibold tabular-nums md:text-2xl">{b.gwPoints}</div>
-            <div className="text-[11px] text-[var(--muted)]">{tr(`GW · 총 ${b.totalPoints}`, `GW · total ${b.totalPoints}`)}</div>
+            <div className="text-caption text-[var(--muted)]">{tr(`GW · 총 ${b.totalPoints}`, `GW · total ${b.totalPoints}`)}</div>
           </div>
         </div>
 
         <div className="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-2 border-b border-[var(--border)] bg-[var(--surface-strong)]/40 px-3 py-2 text-center md:px-5">
           <div className="min-w-0">
-            <div className="truncate text-[13px] font-semibold md:text-sm">{a.teamName}</div>
-            <div className="text-[11px] text-sky-700">{tr(`단독 보유 ${comparison.onlyACount}`, `Only ${comparison.onlyACount}`)}</div>
+            <div className="truncate text-meta font-semibold md:text-body">{a.teamName}</div>
+            <div className="text-caption text-sky-700">{tr(`단독 보유 ${comparison.onlyACount}`, `Only ${comparison.onlyACount}`)}</div>
           </div>
           <div className="min-w-0">
-            <div className="text-[13px] font-semibold md:text-sm">{tr("공통", "Shared")}</div>
-            <div className="text-[11px] text-emerald-700">{tr(`${comparison.sharedCount}명`, String(comparison.sharedCount))}</div>
+            <div className="text-meta font-semibold md:text-body">{tr("공통", "Shared")}</div>
+            <div className="text-caption text-emerald-700">{tr(`${comparison.sharedCount}명`, String(comparison.sharedCount))}</div>
           </div>
           <div className="min-w-0">
-            <div className="truncate text-[13px] font-semibold md:text-sm">{b.teamName}</div>
-            <div className="text-[11px] text-rose-700">{tr(`단독 보유 ${comparison.onlyBCount}`, `Only ${comparison.onlyBCount}`)}</div>
+            <div className="truncate text-meta font-semibold md:text-body">{b.teamName}</div>
+            <div className="text-caption text-rose-700">{tr(`단독 보유 ${comparison.onlyBCount}`, `Only ${comparison.onlyBCount}`)}</div>
           </div>
         </div>
 
@@ -253,7 +253,7 @@ export function SquadCompareDialog({
         <div className="space-y-4 px-3 py-3 md:px-5 md:py-4">
           {comparison.positions.map((group) => (
             <section key={group.position}>
-              <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+              <h3 className="mb-1.5 text-caption font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
                 {tr(positionLabel[group.position].ko, positionLabel[group.position].en)} ({group.position})
               </h3>
               <PositionGrid

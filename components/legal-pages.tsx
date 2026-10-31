@@ -12,14 +12,14 @@ function Shell({ title, children }: { title: string; children: ReactNode }) {
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col px-6 py-12">
       <div className="flex items-center justify-between gap-3">
-        <Link href="/" className="text-sm font-semibold text-[var(--muted)] hover:text-[var(--accent)]">← FPL Live</Link>
+        <Link href="/" className="text-body font-semibold text-[var(--muted)] hover:text-[var(--accent)]">← FPL Live</Link>
         <LocaleToggle />
       </div>
       <h1 className="mt-6 text-3xl font-semibold leading-tight">{title}</h1>
-      <p className="mt-2 text-sm text-[var(--muted)]">
+      <p className="mt-2 text-body text-[var(--muted)]">
         {tr(`시행일·최종 갱신: ${UPDATED} (초안 — 법률 검토 전)`, `Effective / last updated: ${UPDATED} (draft, not yet legally reviewed)`)}
       </p>
-      <div className="mt-6 space-y-6 break-keep text-[15px] leading-7 [&_a]:font-semibold [&_a]:text-[var(--accent)] [&_a]:underline [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_li]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_table]:w-full [&_td]:border [&_td]:border-[var(--border)] [&_td]:p-2 [&_td]:align-top [&_th]:border [&_th]:border-[var(--border)] [&_th]:bg-[var(--surface)] [&_th]:p-2 [&_th]:text-left">
+      <div className="mt-6 space-y-6 break-keep text-body-lg leading-7 [&_a]:font-semibold [&_a]:text-[var(--accent)] [&_a]:underline [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_li]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_table]:w-full [&_td]:border [&_td]:border-[var(--border)] [&_td]:p-2 [&_td]:align-top [&_th]:border [&_th]:border-[var(--border)] [&_th]:bg-[var(--surface)] [&_th]:p-2 [&_th]:text-left">
         {children}
       </div>
     </main>

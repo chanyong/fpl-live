@@ -71,3 +71,19 @@ input,
 select {
   font: inherit;
 }
+/* 글자 크기 체계 (이슈 #2). 화면의 어떤 글자도 13px 미만이면 안 된다.
+   임의의 text-[Npx]를 쓰지 말고 아래 단계만 쓴다. 한 곳에서 바꾸면 전체가 같이 바뀐다.
+   caption  13px  배지·표 머리·시각/출처 줄·보조 설명
+   meta     14px  보조 설명·메타(조금 더 읽는 것)
+   body     15px  본문·표 숫자·선수 이름 (text-sm 대체)
+   body-lg  16px  강조 본문·카드 안 선수 이름·소제목
+   title    18px  카드 제목 */
+@theme {
+  --text-caption: 13px;
+  --text-meta: 14px;
+  --text-body: 15px;
+  --text-body-lg: 16px;
+  --text-title: 18px;
+  --text-title-lg: 19px;
+  --text-score: 23px;
+}

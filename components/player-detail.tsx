@@ -30,8 +30,8 @@ async function fetchHistory(elementId: number, fallbackError: string) {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[0.7rem] border border-[var(--border)] bg-[var(--surface-strong)]/35 px-2.5 py-1.5">
-      <div className="text-[10px] uppercase tracking-[0.08em] text-[var(--muted)]">{label}</div>
-      <div className="text-[15px] font-semibold tabular-nums">{value}</div>
+      <div className="text-caption uppercase tracking-[0.08em] text-[var(--muted)]">{label}</div>
+      <div className="text-body-lg font-semibold tabular-nums">{value}</div>
     </div>
   );
 }
@@ -40,8 +40,8 @@ function Panel({ title, hint, children }: { title: string; hint?: string; childr
   return (
     <section className="rounded-[0.9rem] border border-[var(--border)] bg-[var(--surface)] p-3">
       <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-        <h4 className="text-[13px] font-semibold">{title}</h4>
-        {hint ? <span className="text-[11px] text-[var(--muted)]">{hint}</span> : null}
+        <h4 className="text-meta font-semibold">{title}</h4>
+        {hint ? <span className="text-caption text-[var(--muted)]">{hint}</span> : null}
       </div>
       {children}
     </section>
@@ -103,17 +103,17 @@ export function PlayerDetail({
             alt=""
             fallback={player.webName.slice(0, 2)}
             className="h-12 w-12 shrink-0 rounded-full border border-[var(--border)] bg-[var(--surface-strong)] object-cover"
-            fallbackClassName="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-strong)] text-[13px] font-semibold text-[var(--muted)]"
+            fallbackClassName="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface-strong)] text-meta font-semibold text-[var(--muted)]"
           />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-baseline gap-2">
-              <h3 className="text-[1.15rem] font-semibold">{player.webName}</h3>
-              <span className="text-[12px] text-[var(--muted)]">
+              <h3 className="text-title-lg font-semibold">{player.webName}</h3>
+              <span className="text-caption text-[var(--muted)]">
                 {player.teamShortName} · {player.position} · {formatMoney(player.cost)}
               </span>
             </div>
             {player.status !== "a" ? (
-              <p className="mt-0.5 text-[12px] text-[var(--danger)]">
+              <p className="mt-0.5 text-caption text-[var(--danger)]">
                 {health.label}
                 {player.news ? ` · ${player.news}` : ""}
               </p>
@@ -122,7 +122,7 @@ export function PlayerDetail({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-[var(--border)] px-2.5 py-1 text-[12px] text-[var(--muted)] transition hover:text-[var(--text)]"
+            className="rounded-full border border-[var(--border)] px-2.5 py-1 text-caption text-[var(--muted)] transition hover:text-[var(--text)]"
           >
             {tr("닫기", "Close")}
           </button>
@@ -137,13 +137,13 @@ export function PlayerDetail({
 
         {leagueStat ? (
           <div className="mb-3 rounded-[0.9rem] border border-[var(--border)] bg-[var(--surface)] p-3">
-            <div className="text-[13px] font-semibold">
+            <div className="text-meta font-semibold">
               {tr(
                 `리그 보유 ${leagueStat.ownedBy}명 · EO ${leagueStat.effectiveOwnership}%`,
                 `Owned in league by ${leagueStat.ownedBy} · EO ${leagueStat.effectiveOwnership}%`
               )}
             </div>
-            <p className="mt-1 text-[12px] leading-relaxed text-[var(--muted)]">
+            <p className="mt-1 text-caption leading-relaxed text-[var(--muted)]">
               {owners.join(", ")}
               {leagueStat.captains.length > 0
                 ? ` · ${tr("주장", "Captain")} ${leagueStat.captains.map((index) => managerNames[index] ?? "?").join(", ")}`
@@ -179,7 +179,7 @@ export function PlayerDetail({
           ) : null}
 
           {query.error ? (
-            <div className="rounded-[0.9rem] border border-red-200 bg-red-50 p-3 text-[13px] text-[var(--danger)]">
+            <div className="rounded-[0.9rem] border border-red-200 bg-red-50 p-3 text-meta text-[var(--danger)]">
               {(query.error as Error).message}
             </div>
           ) : null}

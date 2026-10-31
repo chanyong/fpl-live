@@ -63,7 +63,7 @@ export function LocaleToggle({ className }: { className?: string }) {
     <div
       role="group"
       aria-label="Language / 언어"
-      className={`inline-flex shrink-0 rounded-full border border-[var(--border)] bg-white p-0.5 text-[12px] font-semibold ${className ?? ""}`}
+      className={`inline-flex shrink-0 rounded-full border border-[var(--border)] bg-white p-0.5 text-caption font-semibold ${className ?? ""}`}
     >
       {(
         [

@@ -100,8 +100,8 @@ export function PlayerTable({
   return (
     <div className="flex flex-col gap-2">
       <div className="px-1">
-        <h3 className="text-[1rem] font-semibold">{tr("전체 선수", "All players")}</h3>
-        <p className="text-[12px] text-[var(--muted)]">
+        <h3 className="text-body-lg font-semibold">{tr("전체 선수", "All players")}</h3>
+        <p className="text-caption text-[var(--muted)]">
           {tr(
             `${rows.length}명 · 출전 기록이 있는 선수와 우리 리그가 보유한 선수 전체입니다. 헤더를 눌러 정렬하고, 행을 누르면 상세가 열립니다.`,
             `${rows.length} players · everyone with minutes plus every player our league owns. Tap a header to sort, a row for details.`
@@ -118,7 +118,7 @@ export function PlayerTable({
           }}
           placeholder={tr("선수 또는 팀 검색", "Search player or team")}
           aria-label={tr("선수 또는 팀 검색", "Search player or team")}
-          className="min-h-10 w-full flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-[15px] outline-none focus:border-[var(--accent)] md:text-sm"
+          className="min-h-10 w-full flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-body-lg outline-none focus:border-[var(--accent)] md:text-body"
         />
         <div className="flex items-center gap-2">
           <div className="flex rounded-full border border-[var(--border)] bg-white p-0.5">
@@ -130,7 +130,7 @@ export function PlayerTable({
                   setPosition(item);
                   setLimit(PAGE_SIZE);
                 }}
-                className={`rounded-full px-2.5 py-1 text-[12px] font-semibold transition ${
+                className={`rounded-full px-2.5 py-1 text-caption font-semibold transition ${
                   position === item ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] shadow-[inset_0_0_0_1px_var(--accent)]" : "text-[var(--muted)]"
                 }`}
               >
@@ -138,7 +138,7 @@ export function PlayerTable({
               </button>
             ))}
           </div>
-          <label className="flex items-center gap-1.5 whitespace-nowrap text-[12px] text-[var(--muted)]">
+          <label className="flex items-center gap-1.5 whitespace-nowrap text-caption text-[var(--muted)]">
             <input
               type="checkbox"
               checked={leagueOnly}
@@ -153,9 +153,9 @@ export function PlayerTable({
       </div>
 
       <div className="overflow-x-auto rounded-[1rem] border border-[var(--border)] bg-[var(--surface)]">
-        <table className="min-w-[830px] w-full border-collapse text-[13px]">
+        <table className="min-w-[830px] w-full border-collapse text-meta">
           <thead>
-            <tr className="border-b border-[var(--border)] bg-[var(--surface-strong)]/40 text-[10px] uppercase tracking-[0.08em] text-[var(--muted)]">
+            <tr className="border-b border-[var(--border)] bg-[var(--surface-strong)]/40 text-caption uppercase tracking-[0.08em] text-[var(--muted)]">
               <th className="px-2 py-2 text-left">{tr("선수", "Player")}</th>
               {columns.map((column) => {
                 const active = sortKey === column.key;
@@ -199,13 +199,13 @@ export function PlayerTable({
                         />
                       ) : null}
                       <span className="font-semibold">{player.webName}</span>
-                      <span className="text-[11px] text-[var(--muted)]">
+                      <span className="text-caption text-[var(--muted)]">
                         {player.teamShortName} · {player.position}
                       </span>
                       {owned ? (
                         <span
                           title={tr("리그 내 보유 선수", "Owned in our league")}
-                          className="rounded-full bg-[var(--accent-soft)] px-1.5 text-[10px] font-semibold text-[var(--accent)]"
+                          className="rounded-full bg-[var(--accent-soft)] px-1.5 text-caption font-semibold text-[var(--accent)]"
                         >
                           {tr("리그", "League")}
                         </span>
@@ -242,7 +242,7 @@ export function PlayerTable({
         <button
           type="button"
           onClick={() => setLimit((current) => current + PAGE_SIZE)}
-          className="mx-auto flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[12px] text-[var(--muted)] transition hover:text-[var(--text)]"
+          className="mx-auto flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-caption text-[var(--muted)] transition hover:text-[var(--text)]"
         >
           {tr(`${rows.length - limit}명 더 보기`, `Show ${rows.length - limit} more`)} <CaretDown />
         </button>
@@ -252,7 +252,7 @@ export function PlayerTable({
         <button
           type="button"
           onClick={() => setLimit(PAGE_SIZE)}
-          className="mx-auto flex items-center gap-1 text-[12px] text-[var(--muted)] transition hover:text-[var(--text)]"
+          className="mx-auto flex items-center gap-1 text-caption text-[var(--muted)] transition hover:text-[var(--text)]"
         >
           {tr("접기", "Show less")} <CaretUp />
         </button>

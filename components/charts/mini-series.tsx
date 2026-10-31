@@ -38,7 +38,7 @@ export function BarSeries({
 }) {
   const { tr } = useLocale();
   if (points.length === 0) {
-    return <p className="py-6 text-center text-[12px] text-[var(--muted)]">{tr("기록 없음", "No data")}</p>;
+    return <p className="py-6 text-center text-caption text-[var(--muted)]">{tr("기록 없음", "No data")}</p>;
   }
 
   const values = points.map((point) => point.value);
@@ -52,17 +52,17 @@ export function BarSeries({
   const barWidth = Math.max(3, Math.min(26, step - 6));
 
   return (
-    <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full" role="img">
+    <div className="overflow-x-auto"><svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full min-w-[640px]" role="img">
       <line x1={M.left} x2={WIDTH - M.right} y1={zero} y2={zero} stroke="var(--border)" strokeWidth={1} />
-      <text x={M.left - 8} y={y(top) + 4} textAnchor="end" fontSize={10} fill="var(--muted)">
+      <text x={M.left - 8} y={y(top) + 4} textAnchor="end" fontSize={13} fill="var(--muted)">
         {format(top)}
       </text>
       {bottom < 0 ? (
-        <text x={M.left - 8} y={y(bottom) + 4} textAnchor="end" fontSize={10} fill="var(--muted)">
+        <text x={M.left - 8} y={y(bottom) + 4} textAnchor="end" fontSize={13} fill="var(--muted)">
           {format(bottom)}
         </text>
       ) : null}
-      <text x={M.left - 8} y={zero + 4} textAnchor="end" fontSize={10} fill="var(--muted)">
+      <text x={M.left - 8} y={zero + 4} textAnchor="end" fontSize={13} fill="var(--muted)">
         0
       </text>
 
@@ -96,13 +96,13 @@ export function BarSeries({
                 {format(point.value)}
               </text>
             ) : null}
-            <text x={cx} y={HEIGHT - 7} textAnchor="middle" fontSize={10} fill="var(--muted)">
+            <text x={cx} y={HEIGHT - 7} textAnchor="middle" fontSize={13} fill="var(--muted)">
               {point.label}
             </text>
           </g>
         );
       })}
-    </svg>
+    </svg></div>
   );
 }
 
@@ -116,7 +116,7 @@ export function LineSeries({
 }) {
   const { tr } = useLocale();
   if (points.length === 0) {
-    return <p className="py-6 text-center text-[12px] text-[var(--muted)]">{tr("기록 없음", "No data")}</p>;
+    return <p className="py-6 text-center text-caption text-[var(--muted)]">{tr("기록 없음", "No data")}</p>;
   }
 
   const values = points.map((point) => point.value);
@@ -134,13 +134,13 @@ export function LineSeries({
   const last = points[points.length - 1];
 
   return (
-    <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full" role="img">
+    <div className="overflow-x-auto"><svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="w-full min-w-[640px]" role="img">
       <line x1={M.left} x2={WIDTH - M.right} y1={y(max)} y2={y(max)} stroke="var(--border)" strokeWidth={0.6} />
       <line x1={M.left} x2={WIDTH - M.right} y1={y(min)} y2={y(min)} stroke="var(--border)" strokeWidth={0.6} />
-      <text x={M.left - 8} y={y(max) + 4} textAnchor="end" fontSize={10} fill="var(--muted)">
+      <text x={M.left - 8} y={y(max) + 4} textAnchor="end" fontSize={13} fill="var(--muted)">
         {format(max)}
       </text>
-      <text x={M.left - 8} y={y(min) + 4} textAnchor="end" fontSize={10} fill="var(--muted)">
+      <text x={M.left - 8} y={y(min) + 4} textAnchor="end" fontSize={13} fill="var(--muted)">
         {format(min)}
       </text>
 
@@ -157,7 +157,7 @@ export function LineSeries({
         x={x(points.length - 1)}
         y={y(last.value) - 10}
         textAnchor="end"
-        fontSize={11}
+        fontSize={13}
         fontWeight={600}
         fill="var(--text)"
       >
@@ -165,10 +165,10 @@ export function LineSeries({
       </text>
 
       {points.map((point, index) => (
-        <text key={`x${point.label}`} x={x(index)} y={HEIGHT - 7} textAnchor="middle" fontSize={10} fill="var(--muted)">
+        <text key={`x${point.label}`} x={x(index)} y={HEIGHT - 7} textAnchor="middle" fontSize={13} fill="var(--muted)">
           {point.label}
         </text>
       ))}
-    </svg>
+    </svg></div>
   );
 }

@@ -164,7 +164,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
     return (
       <span
         aria-hidden="true"
-        className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[11px] font-bold ${
+        className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-caption font-bold ${
           order >= 0
             ? "border-[var(--accent)] bg-[var(--accent)] text-white"
             : "border-[var(--border)] bg-white text-transparent"
@@ -189,7 +189,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
           topN={topN}
           setTopN={setTopN}
         />
-        <div className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] px-4 py-10 text-center text-sm text-[var(--muted)]">
+        <div className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] px-4 py-10 text-center text-body text-[var(--muted)]">
           {tr("조건에 맞는 매니저가 없습니다. 검색어나 필터를 바꿔 보세요.", "No managers match. Try a different search or filter.")}
         </div>
       </div>
@@ -209,7 +209,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
 
       <div className="flex flex-wrap items-center justify-between gap-1.5">
         {compareMode ? (
-          <p className="text-[12px] text-[var(--muted)] md:text-[13px]">
+          <p className="text-caption text-[var(--muted)] md:text-meta">
             {tr("비교할 매니저 2명을 선택하세요.", "Pick two managers to compare.")}
           </p>
         ) : (
@@ -226,7 +226,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                 type="button"
                 aria-pressed={quick === item.id}
                 onClick={() => setQuick(item.id)}
-                className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-2.5 text-[13px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+                className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-2.5 text-meta font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
                   quick === item.id
                     ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
                     : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--accent)]"
@@ -241,7 +241,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
           type="button"
           aria-pressed={compareMode}
           onClick={() => (compareMode ? exitCompareMode() : setCompareMode(true))}
-          className={`min-h-9 shrink-0 rounded-full border px-3 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+          className={`min-h-9 shrink-0 rounded-full border px-3 text-body font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
             compareMode
               ? "border-[var(--accent)] bg-[var(--accent)] text-white"
               : "border-[var(--border)] bg-white text-[var(--text)] hover:border-[var(--accent)]"
@@ -253,9 +253,9 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
 
       <div className="overflow-hidden rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] shadow-[0_14px_32px_rgba(55,40,20,0.08)] md:hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-[12px]">
+          <table className="min-w-full border-collapse text-caption">
             <thead>
-              <tr className="border-b border-[var(--border)] bg-[var(--surface-strong)]/40 text-[10px] uppercase tracking-[0.08em] text-[var(--muted)]">
+              <tr className="border-b border-[var(--border)] bg-[var(--surface-strong)]/40 text-caption uppercase tracking-[0.08em] text-[var(--muted)]">
                 <th className="w-[48px] px-1 py-2 text-left">{tr("순위", "Rank")}</th>
                 <th className="px-1 py-2 text-left">{tr("팀", "Team")}</th>
                 <th className="px-1 py-2 text-left">{tr("주장", "Captain")}</th>
@@ -286,17 +286,17 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                           )}
                           <span>{row.projectedRank}</span>
                         </div>
-                        <div className="mt-0.5 pl-4 text-[10px]">
+                        <div className="mt-0.5 pl-4 text-caption">
                           <RankDelta from={row.rank} to={row.projectedRank} />
                         </div>
                       </td>
                       <td className="px-1 py-1.5 align-top">
-                        <div className="truncate text-[13px] font-semibold leading-4">{row.teamName}</div>
-                        <div className="mt-0.5 truncate text-[10px] leading-4 text-[var(--muted)]">{row.managerName}</div>
+                        <div className="truncate text-meta font-semibold leading-4">{row.teamName}</div>
+                        <div className="mt-0.5 truncate text-caption leading-4 text-[var(--muted)]">{row.managerName}</div>
                       </td>
                       <td className="px-1 py-1.5 align-top">
-                        <div className="truncate text-[13px] font-semibold leading-4">{row.captainName}</div>
-                        <div className="mt-0.5 truncate text-[10px] leading-4 text-[var(--muted)]">
+                        <div className="truncate text-meta font-semibold leading-4">{row.captainName}</div>
+                        <div className="mt-0.5 truncate text-caption leading-4 text-[var(--muted)]">
                           {row.chip ? chipLabel(row.chip, true, locale) : tr(`${row.playersPlayed}명 출전`, `${row.playersPlayed} played`)}
                         </div>
                       </td>
@@ -321,7 +321,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
       </div>
 
       <div className="hidden overflow-x-auto rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:block">
-        <table className="min-w-full border-collapse text-[14px]">
+        <table className="min-w-full border-collapse text-body">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-[var(--border)] bg-[var(--surface-strong)]/50">
@@ -331,7 +331,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                   return (
                     <th
                       key={header.id}
-                      className={`px-2.5 py-2 text-left text-[12px] font-semibold ${
+                      className={`px-2.5 py-2 text-left text-caption font-semibold ${
                         NARROW_COLUMNS.has(header.column.id) ? "w-px whitespace-nowrap" : ""
                       }`}
                     >
@@ -383,7 +383,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
 
       {compareMode ? (
         <div className="sticky bottom-3 z-40 flex items-center justify-between gap-3 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2 shadow-[0_10px_30px_rgba(55,40,20,0.2)]">
-          <div className="min-w-0 truncate text-sm">
+          <div className="min-w-0 truncate text-body">
             {selectedRows.length === 0
               ? tr("0/2 선택", "0/2 selected")
               : selectedRows.map((row) => row.teamName).join(" vs ")}
@@ -392,7 +392,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
             type="button"
             disabled={selectedRows.length < 2}
             onClick={() => setCompareOpen(true)}
-            className="min-h-10 shrink-0 rounded-full bg-[var(--accent)] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="min-h-10 shrink-0 rounded-full bg-[var(--accent)] px-4 text-body font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             {tr("비교하기", "Compare")} ({selectedRows.length}/2)
           </button>

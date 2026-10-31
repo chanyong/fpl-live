@@ -21,7 +21,7 @@ export function SiteFooter() {
   const { tr } = useLocale();
 
   return (
-    <footer className="mx-auto mt-4 w-full max-w-[1440px] px-3 pb-6 text-center text-[12px] leading-relaxed text-[var(--muted)]">
+    <footer className="mx-auto mt-4 w-full max-w-[1440px] px-3 pb-6 text-center text-caption leading-relaxed text-[var(--muted)]">
       <p>
         {tr(
           "FPL Live는 비공식 팬 서비스이며 Premier League 및 Fantasy Premier League와 제휴 관계가 없습니다.",

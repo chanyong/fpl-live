@@ -91,7 +91,7 @@ export function FormScatter({ players, ownershipCut, formCut, ownedIds, onSelect
 
   if (model.visible.length === 0) {
     return (
-      <p className="py-8 text-center text-[13px] text-[var(--muted)]">
+      <p className="py-8 text-center text-meta text-[var(--muted)]">
         {tr(
           `아직 ${MIN_MINUTES}분 이상 출전한 선수가 없습니다. 첫 경기가 끝나면 채워집니다.`,
           `No player has played ${MIN_MINUTES}+ minutes yet. This fills in after the first match.`
@@ -123,7 +123,7 @@ export function FormScatter({ players, ownershipCut, formCut, ownedIds, onSelect
       {model.formTicks.map((tick) => (
         <g key={`f${tick}`}>
           <line x1={M.left} x2={WIDTH - M.right} y1={y(tick)} y2={y(tick)} stroke="var(--border)" strokeWidth={0.6} />
-          <text x={M.left - 8} y={y(tick) + 3.5} textAnchor="end" fontSize={10} fill="var(--muted)">
+          <text x={M.left - 8} y={y(tick) + 3.5} textAnchor="end" fontSize={13} fill="var(--muted)">
             {tick}
           </text>
         </g>
@@ -131,7 +131,7 @@ export function FormScatter({ players, ownershipCut, formCut, ownedIds, onSelect
       {model.selTicks.map((tick) => (
         <g key={`s${tick}`}>
           <line x1={x(tick)} x2={x(tick)} y1={M.top} y2={M.top + PLOT_H} stroke="var(--border)" strokeWidth={0.6} />
-          <text x={x(tick)} y={M.top + PLOT_H + 15} textAnchor="middle" fontSize={10} fill="var(--muted)">
+          <text x={x(tick)} y={M.top + PLOT_H + 15} textAnchor="middle" fontSize={13} fill="var(--muted)">
             {tick}%
           </text>
         </g>
@@ -156,30 +156,30 @@ export function FormScatter({ players, ownershipCut, formCut, ownedIds, onSelect
         strokeDasharray="3 3"
       />
 
-      <text x={M.left + 6} y={M.top + 14} fontSize={10.5} fill="var(--muted)" letterSpacing="0.06em">
+      <text x={M.left + 6} y={M.top + 14} fontSize={13} fill="var(--muted)" letterSpacing="0.06em">
         {tr("차별화 후보", "Differentials")}
       </text>
-      <text x={WIDTH - M.right - 6} y={M.top + 14} textAnchor="end" fontSize={10.5} fill="var(--muted)" letterSpacing="0.06em">
+      <text x={WIDTH - M.right - 6} y={M.top + 14} textAnchor="end" fontSize={13} fill="var(--muted)" letterSpacing="0.06em">
         {tr("템플릿 핵심", "Template core")}
       </text>
       <text
         x={WIDTH - M.right - 6}
         y={M.top + PLOT_H - 7}
         textAnchor="end"
-        fontSize={10.5}
+        fontSize={13}
         fill="var(--muted)"
         letterSpacing="0.06em"
       >
         {tr("탈출 후보", "Sell candidates")}
       </text>
 
-      <text x={M.left + PLOT_W / 2} y={HEIGHT - 6} textAnchor="middle" fontSize={10} fill="var(--muted)">
+      <text x={M.left + PLOT_W / 2} y={HEIGHT - 6} textAnchor="middle" fontSize={13} fill="var(--muted)">
         {tr("전체 소유율 (제곱근 척도)", "Overall ownership (square-root scale)")}
       </text>
       <text
         transform={`translate(11, ${M.top + PLOT_H / 2}) rotate(-90)`}
         textAnchor="middle"
-        fontSize={10}
+        fontSize={13}
         fill="var(--muted)"
       >
         {tr("최근 폼", "Recent form")}
@@ -218,7 +218,7 @@ export function FormScatter({ players, ownershipCut, formCut, ownedIds, onSelect
           x={label.x}
           y={label.y}
           textAnchor={label.anchor}
-          fontSize={11}
+          fontSize={13}
           fill="var(--text)"
           pointerEvents="none"
         >

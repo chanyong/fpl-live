@@ -140,13 +140,13 @@ export default function FaqPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col px-6 py-12">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
-      <Link href="/" className="text-sm font-semibold text-[var(--muted)] hover:text-[var(--accent)]">← FPL Live</Link>
-      <p className="mt-6 text-sm uppercase tracking-[0.3em] text-[var(--muted)]">FAQ</p>
+      <Link href="/" className="text-body font-semibold text-[var(--muted)] hover:text-[var(--accent)]">← FPL Live</Link>
+      <p className="mt-6 text-body uppercase tracking-[0.3em] text-[var(--muted)]">FAQ</p>
       <h1 className="mt-2 text-3xl font-semibold leading-tight md:text-4xl">자주 묻는 질문</h1>
       <p className="mt-3 leading-7 text-[var(--muted)]">리그 ID 찾는 법부터 잠정 점수 읽는 법, 숫자가 다르게 보일 때 확인할 것까지 모았습니다.</p>
       <nav aria-label="질문 분류" className="mt-5 flex flex-wrap gap-2">
         {CATEGORIES.map((c) => (
-          <a key={c.id} href={`#${c.id}`} className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-[13px] font-semibold text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">{c.title}</a>
+          <a key={c.id} href={`#${c.id}`} className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-meta font-semibold text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">{c.title}</a>
         ))}
       </nav>
       {CATEGORIES.map((c) => (
@@ -160,11 +160,11 @@ export default function FaqPage() {
                   <span className="flex-1 break-keep">{it.q}</span>
                   <span aria-hidden className="text-[var(--muted)] transition-transform group-open:rotate-180">▾</span>
                 </summary>
-                <div className="space-y-2 break-keep px-5 pb-5 pl-10 text-[15px] leading-7 text-[var(--muted)] [&_a]:font-semibold [&_a]:text-[var(--accent)] [&_a]:underline [&_b]:text-[var(--text)] [&_li]:my-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5">{it.a}</div>
+                <div className="space-y-2 break-keep px-5 pb-5 pl-10 text-body-lg leading-7 text-[var(--muted)] [&_a]:font-semibold [&_a]:text-[var(--accent)] [&_a]:underline [&_b]:text-[var(--text)] [&_li]:my-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_ul]:list-disc [&_ul]:pl-5">{it.a}</div>
               </details>
             ))}
           </div>
-          <p className="mt-2 text-[13px] text-[var(--muted)] [&_a]:font-semibold [&_a]:underline">여기서 해결되지 않았다면 <Feedback />에 남겨 주세요. 어떤 화면에서 무엇을 하다가 생긴 일인지 적어 주시면 빨리 확인할 수 있습니다.</p>
+          <p className="mt-2 text-meta text-[var(--muted)] [&_a]:font-semibold [&_a]:underline">여기서 해결되지 않았다면 <Feedback />에 남겨 주세요. 어떤 화면에서 무엇을 하다가 생긴 일인지 적어 주시면 빨리 확인할 수 있습니다.</p>
         </section>
       ))}
     </main>
