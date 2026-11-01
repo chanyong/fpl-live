@@ -32,7 +32,7 @@ export function RankMovementCard({ rows, fixtures, gw }: { rows: LeagueRow[]; fi
       <h2 id="rank-move-title" className="text-body font-semibold">
         {allDone
           ? tr(`GW ${gw} 순위 변화`, `GW ${gw} rank changes`)
-          : tr(`GW ${gw} 순위 변화`, `GW ${gw} rank changes`)}
+          : tr(`GW ${gw} 순위 변화 (잠정)`, `GW ${gw} rank changes (live)`)}
       </h2>
       <p className="text-caption text-[var(--muted)]">
         {tr("지난 GW → 이번 GW", "Last GW → this GW")}

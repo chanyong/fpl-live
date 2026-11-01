@@ -120,7 +120,7 @@ export function RivalCard({
               </div>
             </div>
             <div className="rounded-md bg-[var(--bg)] px-2 py-2">
-              <div className="text-caption text-[var(--muted)]">{tr("총점", "Total")}</div>
+              <div className="text-caption text-[var(--muted)]">{tr("총점(잠정)", "Total (live)")}</div>
               <div className={`text-lg font-bold tabular-nums ${gapTone(gap.totalGap)}`}>{signed(gap.totalGap)}</div>
               <div className="text-caption tabular-nums text-[var(--muted)]">
                 {me.projectedTotalPoints} : {rival.projectedTotalPoints}

@@ -119,6 +119,15 @@ describe("RivalCard choice", () => {
     expect(screen.queryByText(/기억/)).not.toBeInTheDocument();
   });
 
+  it("labels the total gap as provisional while the gameweek is live", () => {
+    render(<Harness rows={ROWS} />);
+
+    choose(1, 2);
+
+    expect(screen.getByText("총점(잠정)")).toBeInTheDocument();
+    expect(screen.getByText("+20")).toBeInTheDocument();
+  });
+
   it("ignores a choice saved by an earlier version and deletes it", () => {
     window.localStorage.setItem(`fpl-live-rival:${LEAGUE_ID}`, JSON.stringify({ me: 1, rival: 2 }));
     window.localStorage.setItem("fpl-live-rival:123", JSON.stringify({ me: 7, rival: 8 }));
