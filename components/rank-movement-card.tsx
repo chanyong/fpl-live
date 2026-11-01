@@ -28,7 +28,7 @@ export function RankMovementCard({ rows, fixtures, gw }: { rows: LeagueRow[]; fi
   );
 
   return (
-    <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3" aria-labelledby="rank-move-title">
+    <section className="h-full rounded-md border border-[var(--border)] bg-[var(--surface)] p-3" aria-labelledby="rank-move-title">
       <h2 id="rank-move-title" className="text-body font-semibold">
         {allDone
           ? tr(`GW ${gw} 순위 변화`, `GW ${gw} rank changes`)
