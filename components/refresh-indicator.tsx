@@ -41,7 +41,7 @@ export function RefreshIndicator({
 
       {isProvisional ? (
         <span
-          className="rounded-full bg-amber-100 px-2 py-0.5 text-caption font-medium text-amber-800"
+          className="rounded-md bg-amber-100 px-2 py-0.5 text-caption font-medium text-amber-800"
           title={tr(
             "보너스 포인트와 자동 교체는 FPL이 게임위크를 확정한 뒤 바뀔 수 있습니다",
             "Bonus points and auto-subs may change once FPL finalises the gameweek"
@@ -55,7 +55,7 @@ export function RefreshIndicator({
         type="button"
         onClick={onRefresh}
         disabled={isFetching}
-        className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-[var(--border)] bg-white px-3 font-semibold text-[var(--text)] transition hover:border-[var(--accent)] disabled:opacity-50"
+        className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 font-semibold text-[var(--text)] transition hover:border-[var(--accent)] disabled:opacity-50"
       >
         <RefreshIcon className={isFetching ? "animate-spin" : undefined} />
         {tr("새로고침", "Refresh")}

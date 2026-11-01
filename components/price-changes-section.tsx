@@ -29,7 +29,7 @@ const POSITIONS: FplPosition[] = ["GKP", "DEF", "MID", "FWD"];
 const STATUS_STYLE: Record<PriceStatus, string> = {
   "very-likely-rise": "bg-[var(--accent)] text-white",
   "likely-rise": "bg-[#b9e6d2] text-[var(--accent-ink)]",
-  "no-change": "bg-[#ece8df] text-[var(--muted)]",
+  "no-change": "bg-[var(--surface-strong)] text-[var(--muted)]",
   "likely-drop": "bg-[#f4c7c2] text-[#7a1f1f]",
   "very-likely-drop": "bg-[var(--danger)] text-white"
 };
@@ -212,7 +212,7 @@ function Filters({
   const selectClass =
     // 16px on touch screens (phones in any orientation, tablets): iOS Safari zooms the page when a
     // form control under 16px gets focus. Only a mouse-driven screen at md and up gets 14px.
-    "min-h-9 rounded-full border border-[var(--border)] bg-white px-3 text-body-lg outline-none transition focus:border-[var(--accent)] md:pointer-fine:text-meta";
+    "min-h-9 rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 text-body-lg outline-none transition focus:border-[var(--accent)] md:pointer-fine:text-meta";
 
   return (
     <div className="mb-2 flex flex-wrap items-center gap-1.5">
@@ -221,7 +221,7 @@ function Filters({
         onChange={(event) => onSearch(event.target.value)}
         aria-label={tr("선수 또는 팀 검색", "Search player or team")}
         placeholder={tr("선수·팀 검색", "Search player or team")}
-        className="min-h-9 min-w-[10rem] flex-1 rounded-full border border-[var(--border)] bg-white px-4 text-body-lg outline-none transition focus:border-[var(--accent)] md:max-w-[20rem] md:pointer-fine:text-meta"
+        className="min-h-9 min-w-[10rem] flex-1 rounded-md border border-[var(--border)] bg-[var(--bg)] px-4 text-body-lg outline-none transition focus:border-[var(--accent)] md:max-w-[20rem] md:pointer-fine:text-meta"
       />
       <select
         value={direction}
@@ -293,7 +293,7 @@ function useFilters() {
 
 function Card({ title, hint, children }: { title: string; hint: ReactNode; children: ReactNode }) {
   return (
-    <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
+    <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3">
       <div className="mb-2">
         <h3 className="text-body-lg font-semibold">{title}</h3>
         <div className="text-caption leading-relaxed text-[var(--muted)]">{hint}</div>
@@ -329,7 +329,7 @@ function ShowMore({ remaining, onClick }: { remaining: number; onClick: () => vo
     <button
       type="button"
       onClick={onClick}
-      className="mt-2 w-full rounded-full border border-[var(--border)] bg-white py-2 text-meta font-semibold text-[var(--muted)] transition hover:border-[var(--accent)]"
+      className="mt-2 w-full rounded-md border border-[var(--border)] bg-[var(--bg)] py-2 text-meta font-semibold text-[var(--muted)] transition hover:border-[var(--accent)]"
     >
       {tr(`더 보기 (${remaining})`, `Show more (${remaining})`)}
     </button>
@@ -361,7 +361,7 @@ function NextUpdate({ nextUpdate }: { nextUpdate: string | null }) {
   }).format(target);
 
   return (
-    <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-xl border border-[var(--border)] bg-white px-3 py-2">
+    <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2">
       <span className="text-meta">{tr("다음 가격 변동까지", "Next price changes happen in")}</span>
       <span className="text-lg font-semibold tabular-nums">
         {pad(Math.floor(seconds / 3600))}:{pad(Math.floor((seconds % 3600) / 60))}:{pad(seconds % 60)}
@@ -408,10 +408,7 @@ function PredictionsTable({ players, nextUpdate, onSelect }: { players: PlayerSt
   return (
     <Card
       title={tr("가격 변동 예측", "Price change predictions")}
-      hint={tr(
-        "공식 FPL 가격 변동 페이지와 같은 데이터입니다. 진행률은 지금 위치, 예상 진행률은 다음 갱신 시점의 예상치이며, 상태는 FPL이 직접 판정합니다. 15분마다 갱신됩니다.",
-        "The same data as FPL's official price changes page. Progress is where a player stands now, predicted progress where FPL expects him at the next update, and the status is FPL's own call. Updates every 15 minutes."
-      )}
+      hint={tr("공식 FPL 가격 변동 데이터 · 15분마다 갱신", "Official FPL price data · updates every 15 min")}
     >
       <NextUpdate nextUpdate={nextUpdate} />
       <Filters
@@ -455,18 +452,18 @@ function PredictionsTable({ players, nextUpdate, onSelect }: { players: PlayerSt
                   />
                   <td className="border-t border-[var(--border)] px-2 py-1.5">
                     {player.priceLockedUntil ? (
-                      <span className={`rounded-full px-2 py-0.5 text-caption font-semibold ${STATUS_STYLE["no-change"]}`}>
+                      <span className={`rounded-md px-2 py-0.5 text-caption font-semibold ${STATUS_STYLE["no-change"]}`}>
                         {tr(
                           `${daysUntilUnlock(player.priceLockedUntil)}일 후 잠금 해제`,
                           `Unlocks in ${daysUntilUnlock(player.priceLockedUntil)} days`
                         )}
                       </span>
                     ) : player.priceCalibrating ? (
-                      <span className={`rounded-full px-2 py-0.5 text-caption font-semibold ${STATUS_STYLE["no-change"]}`}>
+                      <span className={`rounded-md px-2 py-0.5 text-caption font-semibold ${STATUS_STYLE["no-change"]}`}>
                         {tr("보정 중", "Calibrating")}
                       </span>
                     ) : (
-                      <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-caption font-semibold ${STATUS_STYLE[status]}`}>
+                      <span className={`whitespace-nowrap rounded-md px-2 py-0.5 text-caption font-semibold ${STATUS_STYLE[status]}`}>
                         {statusLabel[status]}
                       </span>
                     )}
@@ -542,10 +539,7 @@ function HistoryTable({
   return (
     <Card
       title={tr("최근 가격 변동", "Recent price changes")}
-      hint={tr(
-        "FPL이 기록한 실제 가격 변동 내역입니다. 변동 날짜는 현지 시간 기준입니다.",
-        "Every price move FPL has recorded, dated in your local time."
-      )}
+      hint={tr("실제 가격 변동 · 현지 시간", "Recorded price moves · local time")}
     >
       <Filters
         search={filters.search}
@@ -621,12 +615,12 @@ export function PriceChangesSection({ onSelect }: { onSelect: (id: number) => vo
   });
 
   if (query.isLoading) {
-    return <div className="h-64 animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80" />;
+    return <div className="h-64 animate-pulse rounded-md border border-[var(--border)] bg-[var(--surface)]/80" />;
   }
 
   if (!query.data) {
     return (
-      <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-[var(--danger)]">
+      <div className="rounded-md border border-red-200 bg-red-50 p-6 text-[var(--danger)]">
         {(query.error as Error | null)?.message ?? tr("가격 데이터를 불러오지 못했습니다.", "Could not load price data.")}
       </div>
     );

@@ -15,7 +15,7 @@ export function SubTabs<T extends string>({
     <div
       role="tablist"
       aria-label={label}
-      className="inline-flex w-full rounded-[0.9rem] border border-[var(--border)] bg-[var(--surface)] p-1 md:w-auto"
+      className="inline-flex w-full rounded-md border border-[var(--border)] bg-[var(--surface)] p-1 md:w-auto"
     >
       {items.map((item) => {
         const active = value === item.id;
@@ -27,7 +27,7 @@ export function SubTabs<T extends string>({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(item.id)}
-            className={`flex-1 whitespace-nowrap rounded-[0.7rem] px-3 py-1.5 text-meta font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none ${
+            className={`flex-1 whitespace-nowrap rounded-md px-3 py-1.5 text-meta font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none ${
               active ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] shadow-[inset_0_0_0_1px_var(--accent)]" : "text-[var(--muted)] hover:text-[var(--text)]"
             }`}
           >

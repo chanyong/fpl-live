@@ -47,7 +47,7 @@ function ChipCell({ chip }: { chip: ChipStatus | undefined }) {
   if (chip.usedEvent !== null) {
     return (
       <span
-        className="inline-block rounded-full bg-[var(--accent)] px-2 py-0.5 text-caption font-semibold text-white"
+        className="inline-block rounded-md bg-[var(--accent)] px-2 py-0.5 text-caption font-semibold text-white"
         title={tr(
           `${chipLabel(chip.name, false, locale)} · GW${chip.usedEvent} 사용`,
           `${chipLabel(chip.name, false, locale)} · played in GW${chip.usedEvent}`
@@ -61,7 +61,7 @@ function ChipCell({ chip }: { chip: ChipStatus | undefined }) {
   if (chip.expired) {
     return (
       <span
-        className="inline-block rounded-full bg-stone-200 px-2 py-0.5 text-caption font-medium text-stone-500 line-through"
+        className="inline-block rounded-md bg-stone-200 px-2 py-0.5 text-caption font-medium text-stone-500 line-through"
         title={tr(
           `${chipLabel(chip.name, false, locale)} · GW${chip.stop}까지 못 씀`,
           `${chipLabel(chip.name, false, locale)} · not used by GW${chip.stop}`
@@ -74,7 +74,7 @@ function ChipCell({ chip }: { chip: ChipStatus | undefined }) {
 
   return (
     <span
-      className="inline-block rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-caption font-semibold text-emerald-800"
+      className="inline-block rounded-md border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-caption font-semibold text-emerald-800"
       title={tr(
         `${chipLabel(chip.name, false, locale)} · GW${chip.start}~${chip.stop} 사용 가능`,
         `${chipLabel(chip.name, false, locale)} · available GW${chip.start}–${chip.stop}`
@@ -100,14 +100,11 @@ export function ChipStatusPanel({ managers }: { managers: RankChangeManager[] })
   );
 
   return (
-    <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
+    <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3">
       <div className="mb-3">
         <div className="text-body-lg font-semibold">{tr("칩 사용 현황", "Chip status")}</div>
         <div className="text-caption text-[var(--muted)]">
-          {tr(
-            "남은 칩이 많은 순입니다. 칩은 전·후반기에 각각 한 번씩 주어집니다.",
-            "Sorted by chips remaining. Each chip is granted once per half of the season."
-          )}
+          {tr("남은 칩 많은 순", "Most chips left first")}
         </div>
       </div>
 
@@ -151,7 +148,7 @@ export function ChipStatusPanel({ managers }: { managers: RankChangeManager[] })
               const byKey = new Map(manager.season.chips.map((chip) => [windowKey(chip), chip]));
 
               return (
-                <tr key={manager.entry} className="border-b border-[var(--border)] bg-white">
+                <tr key={manager.entry} className="border-b border-[var(--border)] bg-[var(--bg)]">
                   <td className="px-2 py-2">
                     <span className="flex min-w-0 items-center gap-1.5">
                       <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: manager.color }} />

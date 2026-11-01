@@ -175,7 +175,7 @@ function CollapsibleSection({
   }, []);
 
   return (
-    <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
+    <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3">
       <button
         type="button"
         aria-expanded={open}
@@ -206,7 +206,7 @@ function StatCard({
 }) {
   const { tr } = useLocale();
   return (
-    <article className="rounded-[1.1rem] border border-[var(--border)] bg-white/90 p-3 shadow-[0_8px_24px_rgba(55,40,20,0.05)]">
+    <article className="rounded-md border border-[var(--border)] bg-[var(--bg)] p-3">
       <div className="text-body-lg font-semibold">{title}</div>
       <div className="mt-1 text-caption text-[var(--muted)]">{subtitle}</div>
       <div className="mt-3 grid gap-2">
@@ -344,15 +344,12 @@ function TrendChart({
   const gwLabelEvery = stepX > 0 && stepX < 40 ? 2 : 1;
 
   return (
-    <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-4">
+    <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3 md:p-4">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div>
           <div className="text-title font-semibold">{tr("개인별 순위 변화", "Rank by manager")}</div>
           <div className="text-caption leading-5 text-[var(--muted)]">
-            {tr(
-              "누적점수 기준 리그 등수입니다. 게임위크를 누르면 그 주의 순위가 아래에 나옵니다.",
-              "League rank by cumulative points. Tap a gameweek to list that week's ranks below."
-            )}
+            {tr("GW를 누르면 그 주 순위가 나옵니다.", "Tap a GW for that week's ranks.")}
           </div>
         </div>
         {headerRight}
@@ -472,7 +469,7 @@ function TrendChart({
           {activeRows.map(({ manager, point }) => (
             <li
               key={manager.entry}
-              className="flex min-w-0 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white px-2 py-1.5 text-caption"
+              className="flex min-w-0 items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--bg)] px-2 py-1.5 text-caption"
             >
               <span className="w-6 shrink-0 font-semibold tabular-nums">
                 {tr(`${point.rank}위`, `#${point.rank}`)}
@@ -502,14 +499,14 @@ type PeriodId = (typeof PERIODS)[number]["id"];
 function PeriodTabs({ value, onChange }: { value: PeriodId; onChange: (value: PeriodId) => void }) {
   const { tr } = useLocale();
   return (
-    <div role="group" aria-label={tr("표시 기간", "Period shown")} className="flex gap-1 rounded-full border border-[var(--border)] bg-white p-0.5">
+    <div role="group" aria-label={tr("표시 기간", "Period shown")} className="flex gap-1 rounded-md border border-[var(--border)] bg-[var(--bg)] p-0.5">
       {PERIODS.map((period) => (
         <button
           key={period.id}
           type="button"
           aria-pressed={value === period.id}
           onClick={() => onChange(period.id)}
-          className={`rounded-full px-3 py-1 text-caption font-semibold transition ${
+          className={`rounded-md px-3 py-1 text-caption font-semibold transition ${
             value === period.id ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] shadow-[inset_0_0_0_1px_var(--accent)]" : "text-[var(--muted)] hover:text-[var(--text)]"
           }`}
         >
@@ -542,14 +539,11 @@ function GwHeatmap({ managers, gameweeks }: { managers: TrendManager[]; gameweek
   const shade = (value: number) => (max === min ? 0.5 : (value - min) / (max - min));
 
   return (
-    <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-4">
+    <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3 md:p-4">
       <div className="mb-3">
         <div className="text-title font-semibold">{tr("GW별 점수 히트맵", "GW score heatmap")}</div>
         <div className="text-caption leading-5 text-[var(--muted)]">
-          {tr(
-            "진할수록 그 주 점수가 높습니다. 옆으로 밀어 모든 게임위크를 볼 수 있어요.",
-            "Darker means a higher score that week. Scroll sideways to see every gameweek."
-          )}
+          {tr("진할수록 고득점", "Darker = higher score")}
         </div>
       </div>
       <div className="overflow-x-auto">
@@ -606,18 +600,18 @@ function GwHeatmap({ managers, gameweeks }: { managers: TrendManager[]; gameweek
 function StandingsSoFar({ managers, currentGw }: { managers: TrendManager[]; currentGw: number }) {
   const { tr } = useLocale();
   return (
-    <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-4">
+    <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3 md:p-4">
       <div className="mb-3">
         <div className="text-title font-semibold">{tr(`GW${currentGw} 현재 순위`, `GW${currentGw} current ranks`)}</div>
         <div className="text-caption leading-5 text-[var(--muted)]">
-          {tr("게임위크가 2주차에 접어들면 순위 변화 차트가 여기에 표시됩니다.", "The rank trend chart appears here once gameweek 2 begins.")}
+          {tr("2주차부터 표시됩니다.", "Shows from GW 2.")}
         </div>
       </div>
       <ol className="grid gap-1.5">
         {managers.map((manager) => (
           <li
             key={manager.entry}
-            className="grid grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-3 rounded-[0.9rem] border border-[var(--border)] bg-white px-3 py-2"
+            className="grid grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-3 rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2"
           >
             <span className="flex items-center gap-1.5 font-semibold tabular-nums">
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: manager.color }} />
@@ -695,20 +689,20 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
   const topJump = stats.rankJumpTop[0];
 
   const selector = hasChart ? (
-        <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
+        <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3">
           <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div className="text-body-lg font-semibold">{tr("매니저 선택", "Select managers")}</div>
             <div className="flex gap-2">
               <button
                 type="button"
-                className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-caption font-semibold transition hover:border-[var(--accent)]"
+                className="rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-caption font-semibold transition hover:border-[var(--accent)]"
                 onClick={() => setSelectedEntries(data.managers.map((manager) => manager.entry))}
               >
                 {tr("전체 선택", "Select all")}
               </button>
               <button
                 type="button"
-                className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-caption font-semibold transition hover:border-[var(--accent)]"
+                className="rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-caption font-semibold transition hover:border-[var(--accent)]"
                 onClick={() => setSelectedEntries([])}
               >
                 {tr("전체 해제", "Clear all")}
@@ -722,8 +716,8 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
               return (
                 <label
                   key={manager.entry}
-                  className={`flex items-center gap-2 rounded-[0.9rem] border px-3 py-2 ${
-                    active ? "border-[var(--accent)]/40 bg-[var(--accent-soft)]/50" : "border-[var(--border)] bg-white"
+                  className={`flex items-center gap-2 rounded-md border px-3 py-2 ${
+                    active ? "border-[var(--accent)]/40 bg-[var(--accent-soft)]/50" : "border-[var(--border)] bg-[var(--bg)]"
                   }`}
                 >
                   <input
@@ -807,7 +801,7 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
           }
         />
       ) : (
-        <section className="grid min-h-[220px] place-items-center rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-4 text-center text-body text-[var(--muted)]">
+        <section className="grid min-h-[220px] place-items-center rounded-md border border-[var(--border)] bg-[var(--surface)] p-4 text-center text-body text-[var(--muted)]">
           {tr("매니저를 하나 이상 선택해 주세요.", "Select at least one manager.")}
         </section>
       )}
@@ -858,21 +852,15 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
         title={tr("GW 통계", "GW statistics")}
         subtitle={
           statsReady
-            ? tr(
-                `GW1부터 현재까지 ${stats.trackedGameweeks}개 게임위크 기준입니다.`,
-                `Based on ${stats.trackedGameweeks} gameweeks, GW1 to now.`
-              )
-            : tr(
-                `게임위크 ${MIN_GW_FOR_STATS}주차부터 의미 있는 값이 나옵니다. 현재 ${stats.trackedGameweeks}주차.`,
-                `Meaningful from gameweek ${MIN_GW_FOR_STATS}. Currently ${stats.trackedGameweeks}.`
-              )
+            ? tr(`GW1~현재 ${stats.trackedGameweeks}주 기준`, `GW1 to now, ${stats.trackedGameweeks} weeks`)
+            : tr(`${MIN_GW_FOR_STATS}주차부터 표시 (현재 ${stats.trackedGameweeks}주)`, `From GW ${MIN_GW_FOR_STATS} (now ${stats.trackedGameweeks})`)
         }
       >
         {!statsReady ? (
           <button
             type="button"
             onClick={() => setShowStats((current) => !current)}
-            className="rounded-full border border-[var(--border)] bg-white px-3 py-1.5 text-caption font-semibold transition hover:border-[var(--accent)]"
+            className="rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-caption font-semibold transition hover:border-[var(--accent)]"
           >
             {showStats ? tr("접기", "Hide") : tr("그래도 보기", "Show anyway")}
           </button>

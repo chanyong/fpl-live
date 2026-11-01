@@ -15,7 +15,7 @@ const positionLabel = {
 function PlayerPill({ player, tone }: { player: PlayerLiveCard; tone: string }) {
   const { tr } = useLocale();
   return (
-    <div className={`rounded-lg border px-2 py-1.5 ${tone}`}>
+    <div className={`rounded-md border px-2 py-1.5 ${tone}`}>
       <div className="truncate text-meta font-semibold leading-4 md:text-body">{player.webName}</div>
       <div className="mt-0.5 flex items-center justify-between gap-1 text-caption leading-4 text-[var(--muted)]">
         <span className="truncate">{player.teamShortName}</span>
@@ -197,23 +197,20 @@ export function SquadCompareDialog({
         aria-modal="true"
         aria-label={tr("스쿼드 비교", "Squad comparison")}
         onClick={(event) => event.stopPropagation()}
-        className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-[1.4rem] border border-[var(--border)] bg-[var(--surface)] shadow-2xl md:max-w-3xl md:rounded-[1.4rem]"
+        className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-md border border-[var(--border)] bg-[var(--surface)] shadow-2xl md:max-w-3xl md:rounded-md"
       >
         <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-3 py-3 md:px-5">
           <div className="min-w-0">
             <h2 className="text-lg font-semibold leading-6">{tr("스쿼드 비교", "Squad comparison")}</h2>
             <p className="text-caption text-[var(--muted)]">
-              {tr(
-                `게임위크 라인업 15명 기준 · 공통 ${comparison.sharedCount}명`,
-                `Based on the gameweek's 15 players · ${comparison.sharedCount} shared`
-              )}
+              {tr(`공통 ${comparison.sharedCount}명`, `${comparison.sharedCount} shared`)}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label={tr("닫기", "Close")}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[var(--border)] bg-white text-lg leading-none"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[var(--border)] bg-[var(--bg)] text-lg leading-none"
           >
             ×
           </button>

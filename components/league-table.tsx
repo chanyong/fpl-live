@@ -167,7 +167,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
         className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-caption font-bold ${
           order >= 0
             ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-            : "border-[var(--border)] bg-white text-transparent"
+            : "border-[var(--border)] bg-[var(--bg)] text-transparent"
         }`}
       >
         {order >= 0 ? order + 1 : "·"}
@@ -176,7 +176,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
   };
 
   const rowSelectedClass = (entryId: number) =>
-    compareMode && selectedIds.includes(entryId) ? "bg-[var(--accent-soft)]" : "bg-white";
+    compareMode && selectedIds.includes(entryId) ? "bg-[var(--accent-soft)]" : "bg-[var(--bg)]";
 
   if (filteredRows.length === 0) {
     return (
@@ -189,8 +189,8 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
           topN={topN}
           setTopN={setTopN}
         />
-        <div className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] px-4 py-10 text-center text-body text-[var(--muted)]">
-          {tr("조건에 맞는 매니저가 없습니다. 검색어나 필터를 바꿔 보세요.", "No managers match. Try a different search or filter.")}
+        <div className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-4 py-10 text-center text-body text-[var(--muted)]">
+          {tr("일치하는 매니저가 없습니다.", "No managers match.")}
         </div>
       </div>
     );
@@ -226,10 +226,10 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
                 type="button"
                 aria-pressed={quick === item.id}
                 onClick={() => setQuick(item.id)}
-                className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-2.5 text-meta font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+                className={`min-h-9 shrink-0 whitespace-nowrap rounded-md border px-2.5 text-meta font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
                   quick === item.id
                     ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
-                    : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--accent)]"
+                    : "border-[var(--border)] bg-[var(--bg)] text-[var(--muted)] hover:border-[var(--accent)]"
                 }`}
               >
                 {item.label} <span className="tabular-nums">{item.count}</span>
@@ -241,17 +241,17 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
           type="button"
           aria-pressed={compareMode}
           onClick={() => (compareMode ? exitCompareMode() : setCompareMode(true))}
-          className={`min-h-9 shrink-0 rounded-full border px-3 text-body font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+          className={`min-h-9 shrink-0 rounded-md border px-3 text-body font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
             compareMode
               ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-              : "border-[var(--border)] bg-white text-[var(--text)] hover:border-[var(--accent)]"
+              : "border-[var(--border)] bg-[var(--bg)] text-[var(--text)] hover:border-[var(--accent)]"
           }`}
         >
           {compareMode ? tr("비교 종료", "Exit compare") : tr("스쿼드 비교", "Compare squads")}
         </button>
       </div>
 
-      <div className="overflow-hidden rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] shadow-[0_14px_32px_rgba(55,40,20,0.08)] md:hidden">
+      <div className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--surface)] md:hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse text-caption">
             <thead>
@@ -320,7 +320,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
         </div>
       </div>
 
-      <div className="hidden overflow-x-auto rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:block">
+      <div className="hidden overflow-x-auto rounded-md border border-[var(--border)] bg-[var(--surface)] md:block">
         <table className="min-w-full border-collapse text-body">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -382,7 +382,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
       </div>
 
       {compareMode ? (
-        <div className="sticky bottom-3 z-40 flex items-center justify-between gap-3 rounded-full border border-[var(--border)] bg-[var(--surface)] px-4 py-2 shadow-[0_10px_30px_rgba(55,40,20,0.2)]">
+        <div className="sticky bottom-3 z-40 flex items-center justify-between gap-3 rounded-md border border-[var(--border)] bg-[var(--surface)] px-4 py-2">
           <div className="min-w-0 truncate text-body">
             {selectedRows.length === 0
               ? tr("0/2 선택", "0/2 selected")
@@ -392,7 +392,7 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
             type="button"
             disabled={selectedRows.length < 2}
             onClick={() => setCompareOpen(true)}
-            className="min-h-10 shrink-0 rounded-full bg-[var(--accent)] px-4 text-body font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="min-h-10 shrink-0 rounded-md bg-[var(--accent)] px-4 text-body font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             {tr("비교하기", "Compare")} ({selectedRows.length}/2)
           </button>

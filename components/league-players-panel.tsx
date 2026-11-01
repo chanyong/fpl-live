@@ -183,29 +183,20 @@ export function LeaguePlayersPanel({
 
   return (
     <div className="flex flex-col gap-3">
-      <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
+      <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3">
         <div className="mb-2">
           <h3 className="text-body-lg font-semibold">{tr("순위 상승에 기여한 선수", "Players driving the rank")}</h3>
           <p className="text-caption leading-relaxed text-[var(--muted)]">
-            {tr(
-              "보유자가 리그 평균 대비 벌어놓은 점수입니다. 적게 보유될수록 커지고, 전원이 가진 선수는 아무도 끌어올리지 못합니다.",
-              "Points owners gained on the league average. The fewer own him the bigger it is; a player everyone has lifts nobody."
-            )}
+            {tr("보유자가 리그 평균 대비 번 점수", "Points owners gained on the league average")}
             <span className="block">
               {swingWindow === "season"
-                ? tr(
-                    "누적 = 시즌 점수 × (1 − 리그 보유율). 과거 라인업은 남지 않으므로 현재 스쿼드 기준입니다.",
-                    "Season = season points × (1 − league ownership). Past lineups are not kept, so today's squads are used."
-                  )
-                : tr(
-                    "이번 GW = 획득 점수 × (1 − 유효 소유율). 전원이 벤치에 앉힌 선수는 0입니다.",
-                    "This GW = points × (1 − effective ownership). A player everyone benched is 0."
-                  )}
+                ? tr("누적 = 시즌 점수 × (1 − 보유율) · 현재 스쿼드 기준", "Season = points × (1 − ownership) · current squads")
+                : tr("이번 GW = 점수 × (1 − EO)", "This GW = points × (1 − EO)")}
             </span>
           </p>
         </div>
 
-        <div className="mb-2 flex rounded-full border border-[var(--border)] bg-white p-0.5 text-caption">
+        <div className="mb-2 flex rounded-md border border-[var(--border)] bg-[var(--bg)] p-0.5 text-caption">
           {(
             [
               { id: "season", label: tr("누적", "Season") },
@@ -216,7 +207,7 @@ export function LeaguePlayersPanel({
               key={option.id}
               type="button"
               onClick={() => setSwingWindow(option.id)}
-              className={`rounded-full px-3 py-1 font-semibold transition ${
+              className={`rounded-md px-3 py-1 font-semibold transition ${
                 swingWindow === option.id ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] shadow-[inset_0_0_0_1px_var(--accent)]" : "text-[var(--muted)]"
               }`}
             >
@@ -231,19 +222,19 @@ export function LeaguePlayersPanel({
           </div>
         ) : (
           <p className="py-4 text-center text-meta text-[var(--muted)]">
-            {tr("아직 이번 게임위크에 점수를 낸 보유 선수가 없습니다.", "No owned player has scored this gameweek yet.")}
+            {tr("이번 GW 득점 선수 없음", "No owned player has scored yet")}
           </p>
         )}
       </section>
 
       {summary.solo.length > 0 ? (
-        <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
+        <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3">
           <div className="mb-2">
             <h3 className="text-body-lg font-semibold">
               {tr(`단독 보유 ${summary.solo.length}명`, `Owned by one manager: ${summary.solo.length}`)}
             </h3>
             <p className="text-caption text-[var(--muted)]">
-              {tr("한 명만 가진 선수. 이 선수들이 리그 순위를 벌립니다.", "Players only one manager has. These open up the league table.")}
+              {tr("한 명만 보유", "Owned by one manager")}
             </p>
           </div>
           <ul className="flex flex-col gap-1">
@@ -271,17 +262,14 @@ export function LeaguePlayersPanel({
         </section>
       ) : null}
 
-      <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
+      <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3">
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
           <div>
             <h3 className="text-body-lg font-semibold">
               {tr(`리그 보유 선수 ${leaguePlayers.length}명`, `Players owned in league: ${leaguePlayers.length}`)}
             </h3>
             <p className="text-caption text-[var(--muted)]">
-              {tr(
-                `${managerCount}명 전원이 가진 선수 ${summary.template.length}명 · 헤더를 눌러 정렬하고, 행을 누르면 상세가 열립니다.`,
-                `${summary.template.length} players owned by all ${managerCount} managers · tap a header to sort, a row for details.`
-              )}
+              {tr(`전원 보유 ${summary.template.length}명`, `Owned by all: ${summary.template.length}`)}
             </p>
           </div>
         </div>
@@ -315,7 +303,7 @@ export function LeaguePlayersPanel({
                 <tr
                   key={row.elementId}
                   onClick={() => onSelect(row.elementId)}
-                  className="cursor-pointer border-b border-[var(--border)] bg-white transition last:border-b-0 hover:bg-[var(--surface-strong)]/40"
+                  className="cursor-pointer border-b border-[var(--border)] bg-[var(--bg)] transition last:border-b-0 hover:bg-[var(--surface-strong)]/40"
                 >
                   <td className="px-2 py-1.5">
                     <span className="font-semibold">{row.webName}</span>
@@ -346,14 +334,11 @@ export function LeaguePlayersPanel({
         ) : null}
       </section>
 
-      <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
+      <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3">
         <div className="mb-2">
           <h3 className="text-body-lg font-semibold">{tr("누가 갖고 있나", "Who owns whom")}</h3>
           <p className="text-caption text-[var(--muted)]">
-            {tr(
-              "가장 많이 보유된 선수 6명. 세로로 훑으면 한 매니저가 템플릿에서 얼마나 벗어나 있는지 보입니다.",
-              "The six most-owned players. Read down a column to see how far one manager strays from the template."
-            )}
+            {tr("보유 상위 6명", "Six most owned")}
           </p>
         </div>
         <div className="overflow-x-auto">

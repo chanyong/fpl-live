@@ -65,16 +65,16 @@ export function DeadlineBanner({ gw, deadlineTime }: { gw: number; deadlineTime:
   return (
     <section
       aria-label={tr(`게임위크 ${gw} 마감`, `Gameweek ${gw} deadline`)}
-      className={`mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-0.5 rounded-xl border px-3 py-2 shadow-sm md:flex-nowrap md:gap-x-3 md:py-1.5 ${
+      className={`mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-0.5 rounded-md border px-3 py-2 md:flex-nowrap md:gap-x-3 md:py-1.5 ${
         urgent
           ? "border-amber-500 bg-amber-50"
-          : "border-[var(--info-border)] bg-[var(--info-soft)]"
+          : "border-[var(--border)] bg-[var(--surface-strong)]"
       }`}
     >
       <div className="min-w-0 md:flex md:items-baseline md:gap-3">
         <div className="whitespace-nowrap text-caption font-semibold text-[var(--muted)] md:text-caption">
           <span className="text-body-lg font-extrabold text-[var(--text)] md:text-body-lg">GW{gw}</span>{" "}
-          {tr("마감 (내 시간대)", "deadline (local time)")}
+          {tr("마감", "deadline")}
         </div>
         <div className="whitespace-nowrap text-body-lg font-semibold md:text-lg">
           {LOCAL_FORMATTERS[locale].format(new Date(deadline))}
@@ -86,7 +86,7 @@ export function DeadlineBanner({ gw, deadlineTime }: { gw: number; deadlineTime:
       <div
         aria-hidden="true"
         className={`hidden h-px min-w-8 flex-1 border-t border-dashed md:block ${
-          urgent ? "border-amber-400" : "border-[var(--info-border)]"
+          urgent ? "border-amber-400" : "border-[var(--border)]"
         }`}
       />
       <div className="text-right md:flex md:items-baseline md:gap-3">
@@ -95,7 +95,7 @@ export function DeadlineBanner({ gw, deadlineTime }: { gw: number; deadlineTime:
         </div>
         <div
           className={`whitespace-nowrap text-lg font-semibold tabular-nums leading-tight md:text-xl ${
-            urgent ? "text-amber-800" : "text-[var(--info)]"
+            urgent ? "text-amber-800" : "text-[var(--accent-ink)]"
           }`}
         >
           {passed ? (

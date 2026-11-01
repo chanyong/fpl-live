@@ -17,7 +17,7 @@ vi.mock("@/components/premier-league-table", () => ({ PremierLeagueTable: () => 
 vi.mock("@/components/player-trends-panel", () => ({ PlayerTrendsPanel: () => null }));
 
 const LEAGUE_ID = "915874";
-const TITLE = "내 라이벌과 점수 차";
+const TITLE = "라이벌 점수 차";
 
 function row(entryId: number, rank: number, gwPoints: number, total: number): LeagueRow {
   return {
@@ -111,11 +111,11 @@ afterEach(() => {
 });
 
 describe("RivalCard choice", () => {
-  it("starts with nobody chosen and says the choice is not kept", () => {
+  it("starts with nobody chosen (the removed instruction note stays gone)", () => {
     render(<Harness rows={ROWS} />);
 
     expectPick("", "");
-    expect(screen.getByText(/페이지를 새로 열면 다시 고릅니다/)).toBeInTheDocument();
+    expect(screen.queryByText(/페이지를 새로 열면/)).not.toBeInTheDocument();
     expect(screen.queryByText(/기억/)).not.toBeInTheDocument();
   });
 

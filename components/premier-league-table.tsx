@@ -42,16 +42,13 @@ export function PremierLeagueTable({ table }: { table: PremierLeagueTableRow[] }
   const numberCell = "px-1 py-2.5 text-center text-body-lg tabular-nums";
 
   return (
-    <section className="mt-3 rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-2">
+    <section className="mt-3 rounded-md border border-[var(--border)] bg-[var(--surface)] p-1.5 md:p-2">
       <div className="mb-1.5 px-1.5">
         <div className="text-body font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
           {tr("프리미어리그 현재 순위", "Premier League table")}
         </div>
         <div className="mt-1 text-meta text-[var(--muted)]">
-          {tr(
-            "진행 중인 경기는 현재 스코어로 반영됩니다. 동률은 골득실, 다득점 순.",
-            "Matches in play count at their current score. Ties break on goal difference, then goals scored."
-          )}
+          {tr("진행 중 경기는 현재 스코어 반영", "Live matches count at current score")}
         </div>
       </div>
 

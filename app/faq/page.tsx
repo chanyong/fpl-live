@@ -141,18 +141,16 @@ export default function FaqPage() {
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col px-6 py-12">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
       <Link href="/" className="text-body font-semibold text-[var(--muted)] hover:text-[var(--accent)]">← FPL Live</Link>
-      <p className="mt-6 text-body uppercase tracking-[0.3em] text-[var(--muted)]">FAQ</p>
-      <h1 className="mt-2 text-3xl font-semibold leading-tight md:text-4xl">자주 묻는 질문</h1>
-      <p className="mt-3 leading-7 text-[var(--muted)]">리그 ID 찾는 법부터 잠정 점수 읽는 법, 숫자가 다르게 보일 때 확인할 것까지 모았습니다.</p>
-      <nav aria-label="질문 분류" className="mt-5 flex flex-wrap gap-2">
+      <h1 className="mt-6 text-3xl font-semibold leading-tight md:text-4xl">자주 묻는 질문</h1>
+            <nav aria-label="질문 분류" className="mt-5 flex flex-wrap gap-2">
         {CATEGORIES.map((c) => (
-          <a key={c.id} href={`#${c.id}`} className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-meta font-semibold text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">{c.title}</a>
+          <a key={c.id} href={`#${c.id}`} className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-meta font-semibold text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">{c.title}</a>
         ))}
       </nav>
       {CATEGORIES.map((c) => (
         <section key={c.id} id={c.id} aria-labelledby={`${c.id}-t`} className="mt-10 scroll-mt-6">
           <h2 id={`${c.id}-t`} className="mb-3 text-lg font-semibold">{c.title}</h2>
-          <div className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-[0_12px_40px_-20px_rgba(55,40,20,0.35)]">
+          <div className="divide-y divide-[var(--border)] overflow-hidden rounded-md border border-[var(--border)] bg-[var(--surface)]">
             {c.items.map((it) => (
               <details key={it.q} className="group open:bg-[var(--accent-soft)]">
                 <summary className="flex cursor-pointer list-none items-start gap-2 border-l-4 border-transparent px-5 py-4 font-semibold hover:bg-[var(--surface-strong)]/40 group-open:border-[var(--accent)] [&::-webkit-details-marker]:hidden">
@@ -164,7 +162,7 @@ export default function FaqPage() {
               </details>
             ))}
           </div>
-          <p className="mt-2 text-meta text-[var(--muted)] [&_a]:font-semibold [&_a]:underline">여기서 해결되지 않았다면 <Feedback />에 남겨 주세요. 어떤 화면에서 무엇을 하다가 생긴 일인지 적어 주시면 빨리 확인할 수 있습니다.</p>
+          <p className="mt-2 text-meta text-[var(--muted)] [&_a]:font-semibold [&_a]:underline">해결되지 않았다면 <Feedback />에 남겨 주세요.</p>
         </section>
       ))}
     </main>

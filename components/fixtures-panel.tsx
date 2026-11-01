@@ -235,13 +235,13 @@ function StatGroup({
     );
 
   return (
-    <div className="overflow-hidden rounded-[0.9rem] border border-[var(--border)] bg-white">
+    <div className="overflow-hidden rounded-md border border-[var(--border)] bg-[var(--bg)]">
       <div className="border-b border-[var(--border)] bg-amber-50 px-3 py-2 text-center text-caption font-semibold uppercase tracking-[0.14em] text-amber-800">
         {label}
       </div>
       <div className="grid grid-cols-2 gap-px bg-[var(--border)]">
-        <div className="bg-white px-3 py-3">{column(home)}</div>
-        <div className="bg-white px-3 py-3">{column(away)}</div>
+        <div className="bg-[var(--bg)] px-3 py-3">{column(home)}</div>
+        <div className="bg-[var(--bg)] px-3 py-3">{column(away)}</div>
       </div>
       {hidden > 0 ? (
         <button
@@ -268,21 +268,21 @@ function BonusLine({ fixture, ownedElementIds }: { fixture: LeagueFixture; owned
   return (
     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-caption">
       <span
-        className={`shrink-0 rounded-full px-1.5 py-0.5 font-semibold ${
+        className={`shrink-0 rounded-md px-1.5 py-0.5 font-semibold ${
           preview.status === "confirmed" ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"
         }`}
         title={
           preview.status === "confirmed"
-            ? tr("FPL이 확정한 보너스", "Bonus confirmed by FPL")
-            : tr("실시간 BPS 순위로 계산한 예상 보너스(3·2·1점, 동점은 같은 점수)", "Projected from live BPS (3-2-1, ties share)")
+            ? tr("FPL 확정", "Confirmed by FPL")
+            : tr("실시간 BPS 기준 3·2·1점", "Live BPS, 3-2-1")
         }
       >
-        {preview.status === "confirmed" ? tr("보너스 확정", "Bonus") : tr("보너스 예상", "Proj. bonus")}
+        {preview.status === "confirmed" ? tr("보너스", "Bonus") : tr("예상 보너스", "Proj. bonus")}
       </span>
       {preview.items.map((item) => (
         <span key={item.elementId} className={`whitespace-nowrap ${ownedElementIds.has(item.elementId) ? "font-semibold text-[var(--accent)]" : "text-[var(--muted)]"}`}>
           {item.playerName} <b className="tabular-nums text-[var(--text)]">+{item.bonus}</b>
-          {item.bps !== null ? <span className="ml-0.5 tabular-nums opacity-70">({item.bps})</span> : null}
+          {item.bps !== null ? <span className="ml-0.5 tabular-nums">({item.bps})</span> : null}
         </span>
       ))}
     </div>
@@ -365,7 +365,7 @@ export function FixturesPanel({
 
   if (fixtures.length === 0) {
     return (
-      <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-4 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
+      <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-4">
         <div className="text-body text-[var(--muted)]">
           {tr(`게임위크 ${currentGw} 경기가 없습니다.`, `No fixtures in gameweek ${currentGw}.`)}
         </div>
@@ -400,7 +400,7 @@ export function FixturesPanel({
     </KpiGrid>
       }
     >
-    <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-2">
+    <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-1.5 md:p-2">
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5 px-1.5">
         <div className="text-caption font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
           {tr(`게임위크 ${currentGw} 경기`, `Gameweek ${currentGw} fixtures`)}
@@ -412,10 +412,10 @@ export function FixturesPanel({
               type="button"
               aria-pressed={statusFilter === item.id}
               onClick={() => setStatusFilter(item.id)}
-              className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-3 text-caption font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+              className={`min-h-9 shrink-0 whitespace-nowrap rounded-md border px-3 text-caption font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
                 statusFilter === item.id
                   ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
-                  : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--accent)]"
+                  : "border-[var(--border)] bg-[var(--bg)] text-[var(--muted)] hover:border-[var(--accent)]"
               }`}
             >
               {tr(item.ko, item.en)} <span className="tabular-nums">{statusCounts[item.id]}</span>
@@ -447,10 +447,10 @@ export function FixturesPanel({
                 return (
                   <article
                     key={fixture.id}
-                    className={`overflow-hidden rounded-[1rem] border transition ${
+                    className={`overflow-hidden rounded-md border transition ${
                       isSelected
                         ? "border-[var(--accent)] bg-[var(--accent-soft)]/35"
-                        : "border-[var(--border)] bg-white"
+                        : "border-[var(--border)] bg-[var(--bg)]"
                     }`}
                   >
                     <button
@@ -466,14 +466,14 @@ export function FixturesPanel({
                             <span className="ml-1.5 font-semibold text-[var(--accent)]">{countdown}</span>
                           ) : null}
                         </span>
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 font-semibold ${fixtureStatusClass(fixture)}`}>
+                        <span className={`shrink-0 rounded-md px-2 py-0.5 font-semibold ${fixtureStatusClass(fixture)}`}>
                           {fixtureStatus(fixture, tr)}
                         </span>
                       </div>
 
                       <div className="mt-1 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-body font-semibold md:text-body-lg">
                         <TeamLine name={fixture.homeTeam} code={fixture.homeCode} align="left" />
-                        <span className="shrink-0 rounded-full bg-[var(--accent)]/10 px-3 py-1 text-meta tabular-nums text-[var(--accent)]">
+                        <span className="shrink-0 rounded-md bg-[var(--accent)]/10 px-3 py-1 text-meta tabular-nums text-[var(--accent)]">
                           {scoreLabel(fixture)}
                         </span>
                         <TeamLine name={fixture.awayTeam} code={fixture.awayCode} align="right" />
@@ -517,9 +517,9 @@ export function FixturesPanel({
                     </button>
 
                     {isSelected ? (
-                      <div className="border-t border-[var(--border)] bg-white/88 px-3 py-3">
+                      <div className="border-t border-[var(--border)] bg-[var(--bg)] px-3 py-3">
                         {owned && owned.players.length > 0 ? (
-                          <div className="rounded-[0.9rem] border border-[var(--border)] bg-white px-3 py-2.5">
+                          <div className="rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5">
                             <div className="text-caption font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
                               {tr("우리 리그 보유 현황", "Owned in our league")}
                             </div>
@@ -546,7 +546,7 @@ export function FixturesPanel({
 
                         <div className="mt-3 space-y-2">
                           {fixture.stats.length === 0 ? (
-                            <div className="rounded-[0.9rem] border border-[var(--border)] bg-stone-50 px-3 py-3 text-body text-[var(--muted)]">
+                            <div className="rounded-md border border-[var(--border)] bg-stone-50 px-3 py-3 text-body text-[var(--muted)]">
                               {tr("아직 선수 기록이 없습니다.", "No player stats yet.")}
                             </div>
                           ) : (
