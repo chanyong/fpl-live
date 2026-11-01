@@ -162,11 +162,7 @@ export function RivalCard({
             ))}
           </div>
         </div>
-      ) : (
-        <p className="mt-3 text-caption text-[var(--muted)]">
-          {tr("나와 라이벌을 고르면 점수 차를 보여 줍니다.", "Pick yourself and a rival to see the gap.")}
-        </p>
-      )}
+      ) : null}
     </section>
   );
 }
