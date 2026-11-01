@@ -10,5 +10,3 @@ export function siteUrl() {
 
   return FALLBACK_URL;
 }
-
-export const FEEDBACK_URL = "https://github.com/chanyong/fpl-live/issues";

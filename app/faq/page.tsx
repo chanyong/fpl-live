@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { isValidElement, type ReactNode } from "react";
 import Link from "next/link";
-import { FEEDBACK_URL } from "@/lib/site";
 
 const TITLE = "자주 묻는 질문 | FPL Live";
 const DESCRIPTION =
@@ -17,9 +16,7 @@ export const metadata: Metadata = {
 
 // 사이트의 다른 화면은 한국어·영어를 바꿔 볼 수 있지만 이 페이지는 한국어로만 쓴다.
 // 정책이 정해지지 않은 답은 [정책 확인 필요] 로 남겨 둔다.
-const Feedback = () => (
-  <a href={FEEDBACK_URL} target="_blank" rel="noreferrer">피드백 · 버그 제보</a>
-);
+const Feedback = () => <b>화면 아래 ‘의견·질문’ 버튼</b>;
 
 type Item = { q: string; a: ReactNode };
 const CATEGORIES: { id: string; title: string; items: Item[] }[] = [
@@ -106,7 +103,7 @@ const CATEGORIES: { id: string; title: string; items: Item[] }[] = [
       { q: "‘리그 데이터를 불러오지 못했습니다’가 떠요", a: <ol><li>리그 ID 숫자가 맞는지 확인하세요.</li><li>게임위크 마감·집계 직후에는 FPL 서버가 잠시 응답하지 않을 수 있습니다. 몇 분 뒤 다시 시도하세요.</li><li>계속되면 <Feedback />에 리그 ID와 시각을 남겨 주세요.</li></ol> },
       { q: "점수가 FPL 공식 앱과 달라요", a: <p>경기 중에는 잠정 점수라 보너스 포인트와 자동 교체가 아직 반영되지 않았을 수 있습니다. 게임위크가 확정되면 공식 점수와 같아집니다.</p> },
       { q: "가격 변동 예측과 실제 결과가 달라요", a: <p>가격 변동은 FPL이 공개하지 않는 기준으로 결정되어 예측이 빗나갈 수 있습니다. 참고용으로만 보세요.</p> },
-      { q: "버그를 발견했어요", a: <p><Feedback />(GitHub)에 어떤 화면에서 무엇을 했는지, 리그 ID와 함께 남겨 주세요.</p> }
+      { q: "버그를 발견했어요", a: <p><Feedback />으로 어떤 화면에서 무엇을 했는지, 리그 ID와 함께 남겨 주세요.</p> }
     ]
   }
 ];

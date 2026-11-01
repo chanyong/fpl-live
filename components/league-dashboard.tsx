@@ -258,13 +258,6 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
             })}
           </div>
 
-          {tab === "standings" && query.data && query.data.rows.length > 1 ? (
-            <div className="mb-2 grid items-start gap-2 md:grid-cols-2">
-              <RivalCard rows={query.data.rows} pick={rivalPick} onPickChange={setRivalPick} />
-              <RankMovementCard rows={query.data.rows} fixtures={query.data.fixtures} gw={query.data.league.currentGw} />
-            </div>
-          ) : null}
-
           {tab === "standings" ? (
             <div className="mb-2">
               <SubTabs<StandingsView>
@@ -277,6 +270,13 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
                 value={standingsView}
                 onChange={setStandingsView}
               />
+            </div>
+          ) : null}
+
+          {tab === "standings" && standingsView === "table" && query.data && query.data.rows.length > 1 ? (
+            <div className="mb-2 grid gap-2 md:grid-cols-2">
+              <RivalCard rows={query.data.rows} pick={rivalPick} onPickChange={setRivalPick} />
+              <RankMovementCard rows={query.data.rows} fixtures={query.data.fixtures} gw={query.data.league.currentGw} />
             </div>
           ) : null}
 

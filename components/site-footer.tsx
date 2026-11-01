@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useLocale } from "@/components/locale-provider";
 import { NETWORK_SITES, networkHref } from "@/lib/network";
-import { FEEDBACK_URL } from "@/lib/site";
 
 export function SiteFooter() {
   const { tr } = useLocale();
@@ -54,9 +53,6 @@ export function SiteFooter() {
           <Link href="/faq" className="font-semibold hover:text-[var(--accent)]">
             {tr("자주 묻는 질문", "FAQ")}
           </Link>
-          <a href={FEEDBACK_URL} target="_blank" rel="noreferrer" className="font-semibold hover:text-[var(--accent)]">
-            {tr("피드백 · 버그 제보", "Feedback & bug reports")}
-          </a>
           <Link href="/privacy" className="font-semibold hover:text-[var(--accent)]">
             {tr("개인정보처리방침", "Privacy")}
           </Link>

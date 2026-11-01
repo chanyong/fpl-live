@@ -435,7 +435,8 @@ export function FixturesPanel({
           <div key={group.label} className="space-y-2">
             <div className="px-2 text-body-lg font-semibold text-[var(--muted)] md:text-title">{group.label}</div>
             <div className="grid gap-2 md:grid-cols-2">
-              {group.items.map((fixture) => {
+              {group.items.map((fixture, fixtureIndex) => {
+                const spanLast = fixtureIndex === group.items.length - 1 && group.items.length % 2 === 1;
                 const isSelected = fixture.id === selectedId;
                 const owned = ownership.get(fixture.id);
                 const topOwned = owned?.players[0];
@@ -448,6 +449,8 @@ export function FixturesPanel({
                   <article
                     key={fixture.id}
                     className={`overflow-hidden rounded-md border transition ${
+                      spanLast ? "md:col-span-2" : ""
+                    } ${
                       isSelected
                         ? "border-[var(--accent)] bg-[var(--accent-soft)]/35"
                         : "border-[var(--border)] bg-[var(--bg)]"

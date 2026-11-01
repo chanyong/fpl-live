@@ -203,6 +203,8 @@ describe("LeagueDashboard rival choice", () => {
     const fetchMock = stubFetch(current);
     renderDashboard();
 
+    // The card lives in the 순위표 sub-tab, not on the first (경기 일정) screen.
+    fireEvent.click(await screen.findByRole("tab", { name: "순위표" }));
     expect(await screen.findByText(TITLE)).toBeInTheDocument();
     expectPick("", "");
 
@@ -231,6 +233,8 @@ describe("LeagueDashboard rival choice", () => {
     fireEvent.click(screen.getByRole("tab", { name: "순위표" }));
     fireEvent.click(screen.getByRole("tab", { name: "순위 추이" }));
     fireEvent.click(screen.getByRole("tab", { name: "경기 일정" }));
+    expect(screen.queryByText(TITLE)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "순위표" }));
     expectPick("1", "2");
 
     // Leaving for another browser tab and coming back refetches; the choice stays.
@@ -251,6 +255,7 @@ describe("LeagueDashboard rival choice", () => {
     stubFetch({ rows: ROWS });
     const first = renderDashboard(client);
 
+    fireEvent.click(await screen.findByRole("tab", { name: "순위표" }));
     await screen.findByText(TITLE);
     choose(1, 2);
     expectPick("1", "2");
@@ -258,6 +263,7 @@ describe("LeagueDashboard rival choice", () => {
 
     // Even with the league data still cached (navigating back within the site), the choice is gone.
     renderDashboard(client);
+    fireEvent.click(await screen.findByRole("tab", { name: "순위표" }));
     await screen.findByText(TITLE);
     expectPick("", "");
   });
@@ -267,6 +273,7 @@ describe("LeagueDashboard rival choice", () => {
     stubFetch({ rows: ROWS });
     renderDashboard();
 
+    fireEvent.click(await screen.findByRole("tab", { name: "순위표" }));
     await screen.findByText(TITLE);
     expectPick("", "");
     expect(window.localStorage.getItem(`fpl-live-rival:${LEAGUE_ID}`)).toBeNull();

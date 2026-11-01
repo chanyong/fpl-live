@@ -100,7 +100,7 @@ export function RivalCard({
   );
 
   return (
-    <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3" aria-labelledby="rival-card-title">
+    <section className="h-full rounded-md border border-[var(--border)] bg-[var(--surface)] p-3" aria-labelledby="rival-card-title">
       <h2 id="rival-card-title" className="text-body font-semibold">
         {tr("라이벌 점수 차", "Rival gap")}
       </h2>
