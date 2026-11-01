@@ -58,7 +58,7 @@ function gwClassName(row: LeagueRowType, lowCut: number, highCut: number) {
     return "text-rose-700";
   }
 
-  return "text-amber-700";
+  return "text-amber-800";
 }
 
 export function LeagueTable({ data }: { data: LeagueLiveResponse }) {

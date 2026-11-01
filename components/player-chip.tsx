@@ -31,7 +31,7 @@ function scoreTone(points: number, status: PlayerLiveCard["status"]) {
   }
 
   if (points >= 4) {
-    return "text-amber-700";
+    return "text-amber-800";
   }
 
   return "text-stone-700";

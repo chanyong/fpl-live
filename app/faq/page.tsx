@@ -142,7 +142,7 @@ export default function FaqPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
       <Link href="/" className="text-body font-semibold text-[var(--muted)] hover:text-[var(--accent)]">← FPL Live</Link>
       <h1 className="mt-6 text-3xl font-semibold leading-tight md:text-4xl">자주 묻는 질문</h1>
-            <nav aria-label="질문 분류" className="mt-5 flex flex-wrap gap-2">
+      <nav aria-label="질문 분류" className="mt-5 flex flex-wrap gap-2">
         {CATEGORIES.map((c) => (
           <a key={c.id} href={`#${c.id}`} className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-meta font-semibold text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]">{c.title}</a>
         ))}
