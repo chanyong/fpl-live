@@ -4,15 +4,18 @@
 @source not "../tests";
 
 :root {
-  --bg: #f4f1ea;
-  --surface: #fffdfa;
-  --surface-strong: #f0e7d7;
-  --border: #d7c7a7;
-  --text: #1d1b18;
-  --muted: #6b6458;
-  --accent: #0b6e4f;
-  --accent-soft: #ddf5ea;
-  --accent-ink: #084d38;
+  /* Matchday-ticket palette (from the home page, PR #5), lifted to every screen (issue #8).
+     ink #2a1d17 on bg #eaeae5 = 13.5:1; muted #5f5047 on bg 6.4:1; white on accent #3a6230 = 7.1:1;
+     accent on bg 5.4:1. One radius (6px), flat panels, no shadows. */
+  --bg: #eaeae5;
+  --surface: #f6f6f2;
+  --surface-strong: #d9d9d1;
+  --border: #cbcbc1;
+  --text: #2a1d17;
+  --muted: #5f5047;
+  --accent: #3a6230;
+  --accent-soft: #dde7d6;
+  --accent-ink: #2a4a22;
   --info: #2a5d9f;
   --info-soft: #edf3fa;
   --info-border: #bccde5;
@@ -41,7 +44,7 @@
 }
 
 html {
-  background: linear-gradient(180deg, #efe7d9 0%, #f7f5ef 50%, #efede7 100%);
+  background: var(--bg);
   color: var(--text);
 }
 
@@ -64,15 +67,14 @@ body {
   }
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button,
-input,
-select {
-  font: inherit;
+/* Base layer, so Tailwind utilities (text-white on a link) win over it. The old unlayered
+   `button, input, select { font: inherit }` beat every layered text-* utility, which is why button and
+   input text sizes never applied (#6); Tailwind's preflight already makes controls inherit the font. */
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
 /* 글자 크기 체계 (이슈 #2). 화면의 어떤 글자도 13px 미만이면 안 된다.
    임의의 text-[Npx]를 쓰지 말고 아래 단계만 쓴다. 한 곳에서 바꾸면 전체가 같이 바뀐다.

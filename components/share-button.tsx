@@ -33,7 +33,7 @@ export function ShareButton({ leagueName }: { leagueName?: string }) {
     <button
       type="button"
       onClick={share}
-      className="inline-flex shrink-0 items-center rounded-full border border-[var(--accent)] bg-[var(--accent-soft)] px-3.5 py-1.5 text-caption font-semibold text-[var(--accent-ink)] transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+      className="inline-flex shrink-0 items-center rounded-md border border-[var(--accent)] bg-[var(--accent-soft)] px-3.5 py-1.5 text-caption font-semibold text-[var(--accent-ink)] transition hover:bg-[var(--bg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
     >
       {copied ? tr("링크 복사됨", "Link copied") : tr("리그 공유", "Share league")}
     </button>

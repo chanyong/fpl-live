@@ -67,14 +67,14 @@ export function LeagueSearchForm() {
           aria-label={tr("공개 클래식 리그 ID", "Public classic league ID")}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? "league-id-error" : undefined}
-          placeholder={tr("공개 클래식 리그 ID (예: 915874)", "Public classic league ID (e.g. 915874)")}
-          className={`min-h-14 flex-1 rounded-[var(--radius)] border-2 px-5 text-body-lg! outline-hidden transition focus:border-[var(--stub)] focus:ring-2 focus:ring-[var(--stub)] focus:ring-offset-2 focus:ring-offset-[var(--paper)] md:text-lg! ${
+          placeholder={tr("리그 ID (예: 915874)", "League ID (e.g. 915874)")}
+          className={`min-h-14 flex-1 rounded-[var(--radius)] border-2 px-5 text-body-lg outline-hidden transition focus:border-[var(--stub)] focus:ring-2 focus:ring-[var(--stub)] focus:ring-offset-2 focus:ring-offset-[var(--paper)] md:text-lg ${
             error ? "border-[var(--danger)] bg-red-50" : "border-[var(--ink)] bg-white"
           }`}
         />
         <button
           type="submit"
-          className="min-h-14 rounded-[var(--radius)] bg-[var(--stub)] px-8 text-body-lg! font-bold! text-white transition hover:bg-[var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
+          className="min-h-14 rounded-[var(--radius)] bg-[var(--stub)] px-8 text-body-lg font-bold text-white transition hover:bg-[var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ink)]"
         >
           {tr("대시보드 열기", "Open dashboard")}
         </button>
@@ -98,7 +98,7 @@ export function LeagueSearchForm() {
                 <button
                   type="button"
                   onClick={() => openLeague(String(item.id))}
-                  className="min-w-0 max-w-[16rem] truncate rounded-l-[var(--radius)] py-2 pl-4 pr-2 font-medium! transition hover:text-[var(--stub)]"
+                  className="min-w-0 max-w-[16rem] truncate rounded-l-[var(--radius)] py-2 pl-4 pr-2 font-medium transition hover:text-[var(--stub)]"
                 >
                   {item.name ? `${item.name} ` : ""}
                   <span className="text-caption text-[var(--ink-soft)] tabular-nums">#{item.id}</span>

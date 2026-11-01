@@ -31,7 +31,7 @@ function scoreTone(points: number, status: PlayerLiveCard["status"]) {
   }
 
   if (points >= 4) {
-    return "text-amber-700";
+    return "text-amber-800";
   }
 
   return "text-stone-700";
@@ -46,14 +46,14 @@ export function PlayerChip({ player, onSelect }: { player: PlayerLiveCard; onSel
       type="button"
       onClick={onSelect}
       title={tr(`${player.webName} 득점 상세 보기`, `View ${player.webName} points breakdown`)}
-      className={`flex w-full min-w-0 gap-2.5 rounded-[1rem] border border-[var(--border)] border-l-4 bg-white px-2.5 py-2.5 text-left shadow-sm transition hover:border-[var(--accent)] md:px-3 md:py-3 ${positionTone[player.position]}`}
+      className={`flex w-full min-w-0 gap-2.5 rounded-md border border-[var(--border)] border-l-4 bg-[var(--bg)] px-2.5 py-2.5 text-left transition hover:border-[var(--accent)] md:px-3 md:py-3 ${positionTone[player.position]}`}
     >
       <RemoteImage
         src={player.photoUrl}
         alt=""
         fallback={player.webName.slice(0, 2).toUpperCase()}
-        className="h-11 w-9 shrink-0 self-start rounded-[0.55rem] bg-[var(--surface-strong)] object-cover object-top"
-        fallbackClassName="grid h-11 w-9 shrink-0 place-items-center self-start rounded-[0.55rem] bg-[var(--surface-strong)] text-caption font-semibold text-[var(--muted)]"
+        className="h-11 w-9 shrink-0 self-start rounded-md bg-[var(--surface-strong)] object-cover object-top"
+        fallbackClassName="grid h-11 w-9 shrink-0 place-items-center self-start rounded-md bg-[var(--surface-strong)] text-caption font-semibold text-[var(--muted)]"
       />
 
       <div className="min-w-0 flex-1">
@@ -62,11 +62,11 @@ export function PlayerChip({ player, onSelect }: { player: PlayerLiveCard; onSel
             {player.webName}
           </div>
           {player.isCaptain ? (
-            <span className="shrink-0 rounded-full bg-rose-600 px-2 py-0.5 text-caption font-bold leading-none text-white">
+            <span className="shrink-0 rounded-md bg-rose-600 px-2 py-0.5 text-caption font-bold leading-none text-white">
               C
             </span>
           ) : player.isViceCaptain ? (
-            <span className="shrink-0 rounded-full bg-sky-600 px-2 py-0.5 text-caption font-bold leading-none text-white">
+            <span className="shrink-0 rounded-md bg-sky-600 px-2 py-0.5 text-caption font-bold leading-none text-white">
               VC
             </span>
           ) : null}
@@ -81,7 +81,7 @@ export function PlayerChip({ player, onSelect }: { player: PlayerLiveCard; onSel
             {player.teamShortName} · {player.position}
             {player.minutes > 0 ? <span className="ml-1">{player.minutes}&apos;</span> : null}
           </div>
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-caption font-medium ${statusTone[player.status]}`}>
+          <span className={`shrink-0 rounded-md px-2 py-0.5 text-caption font-medium ${statusTone[player.status]}`}>
             {tr(statusLabel[player.status].ko, statusLabel[player.status].en)}
           </span>
         </div>

@@ -75,7 +75,7 @@ export function DifferentialList({
   if (rows.length === 0) {
     return (
       <p className="py-6 text-center text-meta text-[var(--muted)]">
-        {tr("지금은 조건을 만족하는 선수가 없습니다. 경기가 진행되면 채워집니다.", "No player meets the criteria yet. This fills in as matches are played.")}
+        {tr("해당 선수 없음", "No players match")}
       </p>
     );
   }
@@ -85,10 +85,7 @@ export function DifferentialList({
   return (
     <div className="flex flex-col gap-2">
       <p className="text-caption text-[var(--muted)]">
-        {tr(
-          `${rows.length}명 · 이 중 우리 리그가 이미 가진 선수는 ${ownedCount}명입니다.`,
-          `${rows.length} players · ${ownedCount} of them are already owned in our league.`
-        )}
+        {tr(`${rows.length}명 · 리그 보유 ${ownedCount}명`, `${rows.length} players · ${ownedCount} owned in league`)}
       </p>
 
       <div className="overflow-x-auto">
@@ -126,7 +123,7 @@ export function DifferentialList({
                 <tr
                   key={player.id}
                   onClick={() => onSelect(player.id)}
-                  className="cursor-pointer border-b border-[var(--border)] bg-white transition last:border-b-0 hover:bg-[var(--surface-strong)]/40"
+                  className="cursor-pointer border-b border-[var(--border)] bg-[var(--bg)] transition last:border-b-0 hover:bg-[var(--surface-strong)]/40"
                 >
                   <td className="px-2 py-1.5">
                     <span className="flex items-center gap-1.5">
@@ -143,7 +140,7 @@ export function DifferentialList({
                       {owned ? (
                         <span
                           title={tr("우리 리그가 이미 보유", "Already owned in our league")}
-                          className="rounded-full bg-[var(--accent-soft)] px-1.5 text-caption font-semibold text-[var(--accent)]"
+                          className="rounded-md bg-[var(--accent-soft)] px-1.5 text-caption font-semibold text-[var(--accent)]"
                         >
                           {tr("리그", "League")}
                         </span>

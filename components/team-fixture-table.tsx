@@ -47,7 +47,7 @@ function FixtureCell({ fixtures }: { fixtures: TeamFixtureOutlook[] | undefined 
             `GW${fixture.gw} · ${fixture.home ? "Home" : "Away"} ${fixture.opponent} · difficulty ${fixture.difficulty}`
           )}
         >
-          {fixture.opponent} <span className="font-normal opacity-80">({fixture.home ? tr("홈", "H") : tr("원정", "A")})</span>
+          {fixture.opponent} <span className="font-normal">({fixture.home ? tr("홈", "H") : tr("원정", "A")})</span>
         </div>
       ))}
     </div>
@@ -153,7 +153,7 @@ export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
   };
 
   return (
-    <section className="mt-3 rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-[0_12px_36px_rgba(55,40,20,0.07)] md:p-2">
+    <section className="mt-3 rounded-md border border-[var(--border)] bg-[var(--surface)] p-1.5 md:p-2">
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5 px-1.5">
         <div>
           <div className="text-body font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">

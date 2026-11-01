@@ -53,7 +53,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] p-3 shadow-[0_12px_36px_rgba(55,40,20,0.07)]">
+    <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3">
       <div className="mb-2">
         <h3 className="text-body-lg font-semibold">{title}</h3>
         {hint ? <p className="text-caption leading-relaxed text-[var(--muted)]">{hint}</p> : null}
@@ -174,7 +174,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
       <div
         role="tablist"
         aria-label={tr("선수 데이터 보기", "Player data views")}
-        className="inline-flex w-full rounded-[0.9rem] border border-[var(--border)] bg-[var(--surface)] p-1 md:w-auto"
+        className="inline-flex w-full rounded-md border border-[var(--border)] bg-[var(--surface)] p-1 md:w-auto"
       >
         {VIEWS.map((item) => {
           const active = view === item.id;
@@ -186,7 +186,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
               role="tab"
               aria-selected={active}
               onClick={() => setView(item.id)}
-              className={`flex-1 rounded-[0.7rem] px-3 py-1.5 text-meta font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none ${
+              className={`flex-1 rounded-md px-3 py-1.5 text-meta font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none ${
                 active ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] shadow-[inset_0_0_0_1px_var(--accent)]" : "text-[var(--muted)] hover:text-[var(--text)]"
               }`}
             >
@@ -203,10 +203,10 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
             type="button"
             aria-pressed={position === item.id}
             onClick={() => setPosition(item.id)}
-            className={`min-h-9 shrink-0 rounded-full border px-3.5 text-meta font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+            className={`min-h-9 shrink-0 rounded-md border px-3.5 text-meta font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
               position === item.id
                 ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]"
-                : "border-[var(--border)] bg-white text-[var(--muted)] hover:border-[var(--accent)]"
+                : "border-[var(--border)] bg-[var(--bg)] text-[var(--muted)] hover:border-[var(--accent)]"
             }`}
           >
             {tr(item.ko, item.en)}
@@ -218,10 +218,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
         <>
           <Section
             title={tr("영입과 방출", "Transfers in and out")}
-            hint={tr(
-              `${transferWindowLabel} 이적 수치입니다. 이 값은 데드라인마다 0으로 초기화됩니다.`,
-              `Transfer figures ${transferWindowLabel}. They reset to 0 at every deadline.`
-            )}
+            hint={tr(`${transferWindowLabel} 이적 · 마감마다 초기화`, `Transfers ${transferWindowLabel} · reset each deadline`)}
           >
             <div className="mb-2 flex flex-wrap gap-3 text-caption text-[var(--muted)]">
               <span className="flex items-center gap-1.5">
@@ -251,10 +248,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
         <>
           <Section
             title={tr("폼 × 소유율", "Form × ownership")}
-            hint={tr(
-              `소유율 ${OWNERSHIP_CUT}% 이하이면서 폼 ${FORM_CUT} 이상인 선수를 강조했습니다. 테두리가 진한 점은 우리 리그가 이미 보유한 선수입니다. 점을 누르면 상세가 열립니다.`,
-              `Players owned by ${OWNERSHIP_CUT}% or less with form ${FORM_CUT}+ are highlighted. Dots with a dark outline are already owned in our league. Tap a dot for details.`
-            )}
+            hint={tr(`소유율 ${OWNERSHIP_CUT}% 이하 · 폼 ${FORM_CUT}+ 강조 · 진한 테두리는 우리 리그 보유`, `≤${OWNERSHIP_CUT}% owned · form ${FORM_CUT}+ highlighted · dark outline = owned in league`)}
           >
             <div className="overflow-x-auto">
               <div className="min-w-[720px]">
@@ -271,10 +265,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
 
           <Section
             title={tr(`차별화 후보 ${differentials.length}명`, `Differentials: ${differentials.length}`)}
-            hint={tr(
-              `소유율 ${OWNERSHIP_CUT}% 이하, 폼 ${FORM_CUT} 이상, ${DIFFERENTIAL_MIN_MINUTES}분 이상 출전. 위 산점도에서 강조된 선수와 같은 목록입니다.`,
-              `Owned by ${OWNERSHIP_CUT}% or less, form ${FORM_CUT}+, ${DIFFERENTIAL_MIN_MINUTES}+ minutes played. The same list as the highlighted dots above.`
-            )}
+            hint={tr(`소유율 ${OWNERSHIP_CUT}% 이하 · 폼 ${FORM_CUT}+ · ${DIFFERENTIAL_MIN_MINUTES}분+`, `≤${OWNERSHIP_CUT}% owned · form ${FORM_CUT}+ · ${DIFFERENTIAL_MIN_MINUTES}+ min`)}
           >
             <DifferentialList
               players={differentials}

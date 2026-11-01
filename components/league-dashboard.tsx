@@ -149,7 +149,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
         <ShareButton leagueName={query.data?.league.name} />
         <Link
           href="/"
-          className="inline-flex shrink-0 items-center rounded-full border border-[var(--border)] bg-white px-3.5 py-1.5 text-caption font-semibold text-[var(--text)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          className="inline-flex shrink-0 items-center rounded-md border border-[var(--border)] bg-[var(--bg)] px-3.5 py-1.5 text-caption font-semibold text-[var(--text)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
         >
           {tr("다른 리그 검색", "Search another league")}
         </Link>
@@ -157,38 +157,24 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
       </div>
       <div className="mb-2 flex flex-col gap-2 md:mb-3 md:flex-row md:items-end md:justify-between md:gap-3">
         <div className="min-w-0">
-          <h1 className="mt-1 text-2xl font-semibold leading-none md:text-3xl">
+          <h1 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight md:text-3xl">
             {query.data?.league.name ??
               rankChangeQuery.data?.league.name ??
               playerStatsQuery.data?.league.name ??
               tr(`리그 ${leagueId}`, `League ${leagueId}`)}
           </h1>
-          <p className="text-body text-[var(--muted)]">
+          <p className="mt-1 text-caption text-[var(--muted)]">
             {query.data
               ? tr(
-                  `게임위크 ${query.data.league.currentGw} 라이브 대시보드`,
-                  `Gameweek ${query.data.league.currentGw} live dashboard`
+                  `GW ${query.data.league.currentGw} · 갱신 ${new Date(query.data.league.lastUpdated).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })} · 잠정 점수, 30초마다`,
+                  `GW ${query.data.league.currentGw} · updated ${new Date(query.data.league.lastUpdated).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · live points, every 30s`
                 )
               : rankChangeQuery.data
-                ? tr(
-                    `게임위크 ${rankChangeQuery.data.league.currentGw} 순위 기록`,
-                    `Gameweek ${rankChangeQuery.data.league.currentGw} rank history`
-                  )
+                ? tr(`GW ${rankChangeQuery.data.league.currentGw} 순위 기록`, `GW ${rankChangeQuery.data.league.currentGw} rank history`)
                 : playerStatsQuery.data
-                  ? tr(
-                      `게임위크 ${playerStatsQuery.data.league.currentGw} 선수 데이터`,
-                      `Gameweek ${playerStatsQuery.data.league.currentGw} player data`
-                    )
-                  : tr("공식 FPL 데이터를 불러오는 중", "Loading official FPL data")}
+                  ? tr(`GW ${playerStatsQuery.data.league.currentGw} 선수 데이터`, `GW ${playerStatsQuery.data.league.currentGw} player data`)
+                  : tr("불러오는 중", "Loading")}
           </p>
-          {query.data ? (
-            <p className="mt-1 text-caption text-[var(--muted)]">
-              {tr(
-                `마지막 갱신 ${new Date(query.data.league.lastUpdated).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })} · 출처 FPL 공식 공개 API · 기준 GW ${query.data.league.currentGw} 잠정 점수(30초마다 갱신)`,
-                `Updated ${new Date(query.data.league.lastUpdated).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} · Source: official FPL public API · GW ${query.data.league.currentGw} provisional points (refreshes every 30s)`
-              )}
-            </p>
-          ) : null}
         </div>
 
         {query.data ? (
@@ -206,7 +192,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
           {Array.from({ length: isRankChangeTab ? 6 : 8 }).map((_, index) => (
             <div
               key={index}
-              className={`animate-pulse rounded-2xl border border-[var(--border)] bg-[var(--surface)]/80 ${
+              className={`animate-pulse rounded-md border border-[var(--border)] bg-[var(--surface)]/80 ${
                 isRankChangeTab ? "h-24" : "h-16"
               }`}
             />
@@ -215,16 +201,16 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
       ) : null}
 
       {activeError ? (
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-[var(--danger)]">
+        <div className="rounded-md border border-red-200 bg-red-50 p-6 text-[var(--danger)]">
           {(activeError as Error).message}
         </div>
       ) : null}
 
       {query.data && query.data.rows.length === 0 ? (
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6">
+        <div className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-6">
           {tr(
-            "FPL이 이 리그의 순위를 아직 내려주지 않고 있습니다. 순위 갱신 중이면 잠시 후 새로고침하면 나타납니다. 계속 비어 있으면 공개 클래식 리그 ID인지 확인해 주세요.",
-            "FPL is not returning standings for this league yet. If it is mid-update, refresh in a few minutes. If it stays empty, check that it is a public classic league ID."
+            "FPL이 아직 순위를 내려주지 않았습니다. 잠시 후 새로고침하세요.",
+            "FPL has no standings for this league yet. Refresh shortly."
           )}
         </div>
       ) : null}
@@ -232,10 +218,10 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
       {query.data || rankChangeQuery.data || playerStatsQuery.data ? (
         <>
           {query.data && query.data.errors.length > 0 && !isRankChangeTab && !isPlayerTab ? (
-            <div className="mb-4 rounded-3xl border border-amber-200 bg-amber-50 p-4 text-body text-[var(--warning)]">
+            <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-body text-[var(--warning)]">
               {tr(
-                `매니저 ${query.data.errors.length}명의 데이터를 불러오지 못했습니다. 킥오프 후 자동 반영됩니다.`,
-                `Could not load data for ${query.data.errors.length} manager(s). It will appear automatically after kickoff.`
+                `매니저 ${query.data.errors.length}명 데이터 없음. 킥오프 후 반영됩니다.`,
+                `${query.data.errors.length} manager(s) missing; appears after kickoff.`
               )}
             </div>
           ) : null}
@@ -250,7 +236,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
           <div
             role="tablist"
             aria-label={tr("대시보드 보기", "Dashboard views")}
-            className="mb-2 flex w-full gap-1 overflow-x-auto rounded-[1rem] border border-[var(--border)] bg-[var(--surface)] p-1 md:w-auto"
+            className="mb-2 flex w-full gap-1 overflow-x-auto rounded-md border border-[var(--border)] bg-[var(--surface)] p-1 md:w-auto"
           >
             {tabs.map((item) => {
               const active = tab === item.id;
@@ -262,8 +248,8 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
                   role="tab"
                   aria-selected={active}
                   onClick={() => setTab(item.id)}
-                  className={`flex-1 whitespace-nowrap rounded-[0.8rem] px-3 py-1.5 text-body font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none md:px-4 ${
-                    active ? "bg-[var(--accent)] text-white shadow-sm" : "text-[var(--muted)] hover:text-[var(--text)]"
+                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-1.5 text-body font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none md:px-4 ${
+                    active ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--text)]"
                   }`}
                 >
                   {item.label}
@@ -273,7 +259,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
           </div>
 
           {tab === "standings" && query.data && query.data.rows.length > 1 ? (
-            <div className="mb-2 grid gap-2 md:grid-cols-2">
+            <div className="mb-2 grid items-start gap-2 md:grid-cols-2">
               <RivalCard rows={query.data.rows} pick={rivalPick} onPickChange={setRivalPick} />
               <RankMovementCard rows={query.data.rows} fixtures={query.data.fixtures} gw={query.data.league.currentGw} />
             </div>
@@ -326,7 +312,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
                 <PremierLeagueTable table={playerStatsQuery.data.table} />
               </>
             ) : (
-              <div className="mt-3 rounded-[1.2rem] border border-[var(--border)] bg-[var(--surface)] px-4 py-6 text-center text-body text-[var(--muted)]">
+              <div className="mt-3 rounded-md border border-[var(--border)] bg-[var(--surface)] px-4 py-6 text-center text-body text-[var(--muted)]">
                 {playerStatsQuery.error
                   ? tr("팀별 일정 난이도를 불러오지 못했습니다.", "Could not load team fixture difficulty.")
                   : tr("팀별 일정 난이도를 불러오는 중…", "Loading team fixture difficulty…")}
@@ -340,7 +326,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
         </>
       ) : null}
 
-      <footer className="mt-auto pt-8 text-center text-caption text-[var(--muted)] opacity-70" title={tr("배포 버전", "Deployed version")}>
+      <footer className="mt-auto pt-8 text-center text-caption text-[var(--muted)]" title={tr("배포 버전", "Deployed version")}>
         build {buildId}
       </footer>
     </main>

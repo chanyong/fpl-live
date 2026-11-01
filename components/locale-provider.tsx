@@ -63,7 +63,7 @@ export function LocaleToggle({ className }: { className?: string }) {
     <div
       role="group"
       aria-label="Language / 언어"
-      className={`inline-flex shrink-0 rounded-full border border-[var(--border)] bg-white p-0.5 text-caption font-semibold ${className ?? ""}`}
+      className={`inline-flex shrink-0 gap-0.5 rounded-md border border-[var(--border)] bg-[var(--surface)] p-0.5 text-caption font-semibold ${className ?? ""}`}
     >
       {(
         [
@@ -76,8 +76,8 @@ export function LocaleToggle({ className }: { className?: string }) {
           type="button"
           aria-pressed={locale === item.id}
           onClick={() => setLocale(item.id)}
-          className={`rounded-full px-3 py-1 transition ${
-            locale === item.id ? "bg-[var(--info-soft)] text-[var(--info)] shadow-[inset_0_0_0_1px_var(--info)]" : "text-[var(--muted)] hover:text-[var(--text)]"
+          className={`min-h-8 rounded-md px-3 py-1 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
+            locale === item.id ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--text)]"
           }`}
         >
           {item.label}

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 /** Label and note stack on the left, the figure fills the right, so no side of the card sits empty. */
 export function KpiCard({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-white/80 px-2.5 py-1.5">
+    <div className="flex min-w-0 items-center justify-between gap-2 rounded-md border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1.5">
       <div className="min-w-0">
         <div className="truncate text-caption font-semibold text-[var(--muted)]">{label}</div>
         <div className="truncate text-caption text-[var(--muted)] md:text-caption">{sub}</div>

@@ -93,7 +93,7 @@ export default function RootLayout({
           <SiteFooter />
         </LocaleProvider>
         {/* 운영자 사이트 공통 의견·질문 버튼(딸깍랭크 의견함). 한/영 전환 시 <html lang> 을 따라 언어가 바뀐다 */}
-        <script src="https://ddalkkakrank.kr/feedback.js" defer data-color="#0b6e4f" />
+        <script src="https://ddalkkakrank.kr/feedback.js" defer data-color="#2a1d17" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }} />
         {PLAUSIBLE_DOMAIN ? (
           <Script defer data-domain={PLAUSIBLE_DOMAIN} src="https://plausible.io/js/script.js" strategy="afterInteractive" />

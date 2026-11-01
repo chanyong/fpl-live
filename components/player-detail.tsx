@@ -29,7 +29,7 @@ async function fetchHistory(elementId: number, fallbackError: string) {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[0.7rem] border border-[var(--border)] bg-[var(--surface-strong)]/35 px-2.5 py-1.5">
+    <div className="rounded-md border border-[var(--border)] bg-[var(--surface-strong)]/35 px-2.5 py-1.5">
       <div className="text-caption uppercase tracking-[0.08em] text-[var(--muted)]">{label}</div>
       <div className="text-body-lg font-semibold tabular-nums">{value}</div>
     </div>
@@ -38,7 +38,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function Panel({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-[0.9rem] border border-[var(--border)] bg-[var(--surface)] p-3">
+    <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3">
       <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
         <h4 className="text-meta font-semibold">{title}</h4>
         {hint ? <span className="text-caption text-[var(--muted)]">{hint}</span> : null}
@@ -94,7 +94,7 @@ export function PlayerDetail({
       onClick={onClose}
     >
       <div
-        className="max-h-[92vh] w-full max-w-[720px] overflow-y-auto rounded-t-[1.2rem] border border-[var(--border)] bg-[var(--bg)] p-3 shadow-[0_-8px_40px_rgba(55,40,20,0.2)] sm:rounded-[1.2rem]"
+        className="max-h-[92vh] w-full max-w-[720px] overflow-y-auto rounded-t-md border border-[var(--border)] bg-[var(--bg)] p-3 shadow-[0_-8px_40px_rgba(55,40,20,0.2)] sm:rounded-md"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-3 flex items-start gap-3">
@@ -122,7 +122,7 @@ export function PlayerDetail({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-[var(--border)] px-2.5 py-1 text-caption text-[var(--muted)] transition hover:text-[var(--text)]"
+            className="rounded-md border border-[var(--border)] px-2.5 py-1 text-caption text-[var(--muted)] transition hover:text-[var(--text)]"
           >
             {tr("닫기", "Close")}
           </button>
@@ -136,7 +136,7 @@ export function PlayerDetail({
         </div>
 
         {leagueStat ? (
-          <div className="mb-3 rounded-[0.9rem] border border-[var(--border)] bg-[var(--surface)] p-3">
+          <div className="mb-3 rounded-md border border-[var(--border)] bg-[var(--surface)] p-3">
             <div className="text-meta font-semibold">
               {tr(
                 `리그 보유 ${leagueStat.ownedBy}명 · EO ${leagueStat.effectiveOwnership}%`,
@@ -165,10 +165,7 @@ export function PlayerDetail({
             title={tr("다음 경기 난이도", "Upcoming fixture difficulty")}
             hint={
               fixtures.length > 0
-                ? tr(
-                    `평균 ${averageDifficulty(fixtures)?.toFixed(1)} · 숫자가 클수록 어려움`,
-                    `Average ${averageDifficulty(fixtures)?.toFixed(1)} · higher is harder`
-                  )
+                ? tr(`평균 ${averageDifficulty(fixtures)?.toFixed(1)}`, `Avg ${averageDifficulty(fixtures)?.toFixed(1)}`)
                 : tr("숫자가 클수록 어려움", "Higher is harder")
             }
           >
@@ -176,11 +173,11 @@ export function PlayerDetail({
           </Panel>
 
           {query.isLoading ? (
-            <div className="h-[140px] animate-pulse rounded-[0.9rem] border border-[var(--border)] bg-[var(--surface)]/80" />
+            <div className="h-[140px] animate-pulse rounded-md border border-[var(--border)] bg-[var(--surface)]/80" />
           ) : null}
 
           {query.error ? (
-            <div className="rounded-[0.9rem] border border-red-200 bg-red-50 p-3 text-meta text-[var(--danger)]">
+            <div className="rounded-md border border-red-200 bg-red-50 p-3 text-meta text-[var(--danger)]">
               {(query.error as Error).message}
             </div>
           ) : null}

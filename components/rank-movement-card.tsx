@@ -28,27 +28,27 @@ export function RankMovementCard({ rows, fixtures, gw }: { rows: LeagueRow[]; fi
   );
 
   return (
-    <section className="rounded-[1.1rem] border border-[var(--border)] bg-[var(--surface)] p-3" aria-labelledby="rank-move-title">
+    <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-3" aria-labelledby="rank-move-title">
       <h2 id="rank-move-title" className="text-body font-semibold">
         {allDone
-          ? tr(`GW ${gw} 경기 후 순위 변화`, `GW ${gw} final rank changes`)
-          : tr(`GW ${gw} 순위 변화 (진행 중 잠정)`, `GW ${gw} rank changes (live)`)}
+          ? tr(`GW ${gw} 순위 변화`, `GW ${gw} rank changes`)
+          : tr(`GW ${gw} 순위 변화 (잠정)`, `GW ${gw} rank changes (live)`)}
       </h2>
       <p className="text-caption text-[var(--muted)]">
-        {tr("지난 GW 종료 순위 → 지금 잠정 순위", "Rank after last GW → projected rank now")}
+        {tr("지난 GW → 이번 GW", "Last GW → this GW")}
       </p>
 
       {!anyStarted ? (
-        <p className="mt-2 text-caption text-[var(--muted)]">{tr("첫 경기가 시작되면 순위 변화가 나타납니다.", "Changes appear once the first match kicks off.")}</p>
+        <p className="mt-2 text-caption text-[var(--muted)]">{tr("첫 경기 후 표시됩니다.", "Shows after the first kickoff.")}</p>
       ) : summary.comparable === 0 ? (
-        <p className="mt-2 text-caption text-[var(--muted)]">{tr("이전 순위 정보가 없는 리그입니다.", "This league has no previous ranks yet.")}</p>
+        <p className="mt-2 text-caption text-[var(--muted)]">{tr("이전 순위가 없습니다.", "No previous ranks yet.")}</p>
       ) : (
         <div className="mt-2 grid grid-cols-2 gap-2 text-meta">
-          <div className="rounded-lg bg-white px-2 py-1.5">
+          <div className="rounded-md bg-[var(--bg)] px-2 py-1.5">
             <div className="mb-1 text-caption font-semibold text-emerald-700">{tr("가장 많이 오름", "Biggest climbs")}</div>
             {summary.risers.length ? <ul className="space-y-0.5">{summary.risers.map((move) => line(move, true))}</ul> : <p className="text-[var(--muted)]">-</p>}
           </div>
-          <div className="rounded-lg bg-white px-2 py-1.5">
+          <div className="rounded-md bg-[var(--bg)] px-2 py-1.5">
             <div className="mb-1 text-caption font-semibold text-[var(--danger)]">{tr("가장 많이 내림", "Biggest drops")}</div>
             {summary.fallers.length ? <ul className="space-y-0.5">{summary.fallers.map((move) => line(move, false))}</ul> : <p className="text-[var(--muted)]">-</p>}
           </div>
@@ -57,7 +57,7 @@ export function RankMovementCard({ rows, fixtures, gw }: { rows: LeagueRow[]; fi
 
       {anyStarted && summary.topScorer ? (
         <p className="mt-2 text-caption text-[var(--muted)]">
-          {tr("이번 GW 최고 점수", "Top GW score")}: <b className="text-[var(--text)]">{summary.topScorer.managerName}</b>{" "}
+          {tr("이번 GW 최고", "GW top")}: <b className="text-[var(--text)]">{summary.topScorer.managerName}</b>{" "}
           <span className="tabular-nums">{tr(`${summary.topScorer.gwPoints}점`, `${summary.topScorer.gwPoints} pts`)}</span>
           {summary.comparable > 0 ? (
             <span> · {tr(`${summary.movedCount}명 순위 변동`, `${summary.movedCount} managers moved`)}</span>

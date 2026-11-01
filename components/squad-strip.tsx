@@ -11,7 +11,7 @@ export function SquadStrip({ squad, gw }: { squad: SquadSplit; gw: number }) {
   const [selected, setSelected] = useState<PlayerLiveCard | null>(null);
 
   return (
-    <div className="rounded-[1.1rem] border border-[var(--border)] bg-[var(--surface)] p-2.5 md:rounded-[1.35rem] md:p-3.5">
+    <div className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-2.5 md:rounded-md md:p-3.5">
       <div className="text-caption uppercase tracking-[0.18em] text-[var(--muted)] md:text-caption">
         {tr("선발 11 · 카드를 누르면 득점 상세", "Starting 11 · tap a card for the points breakdown")}
       </div>
