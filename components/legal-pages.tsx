@@ -3,11 +3,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
+import { CONTACT_EMAIL } from "@/lib/site";
 
-// Each page carries its own date: the privacy table changed on 2026-10-31 (#2), the terms did not.
-const PRIVACY_UPDATED = "2026-10-31";
-const TERMS_UPDATED = "2026-10-29";
-const EMAIL = "cyjung@gmail.com";
+// Each page carries its own date. Both changed on 2026-11-03 when the contact address moved (#12).
+const PRIVACY_UPDATED = "2026-11-03";
+const TERMS_UPDATED = "2026-11-03";
+const EMAIL = CONTACT_EMAIL;
 
 function Shell({ title, updated, children }: { title: string; updated: string; children: ReactNode }) {
   const { tr } = useLocale();

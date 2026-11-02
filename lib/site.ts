@@ -1,5 +1,8 @@
 const FALLBACK_URL = "https://fpl-live-production-34f4.up.railway.app";
 
+/** Public contact address shown in the footer, legal pages and JSON-LD (operator-wide contact address, #12). */
+export const CONTACT_EMAIL = "1bangkr.info@gmail.com";
+
 /** Public origin used for canonical links, the sitemap and share cards. */
 export function siteUrl() {
   const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
