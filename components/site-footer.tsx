@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useLocale } from "@/components/locale-provider";
 import { NETWORK_SITES, networkHref } from "@/lib/network";
+import { CONTACT_EMAIL } from "@/lib/site";
 
 export function SiteFooter() {
   const { tr } = useLocale();
@@ -60,7 +61,7 @@ export function SiteFooter() {
             {tr("이용약관", "Terms")}
           </Link>
         </p>
-        <p className="mt-2">{tr("운영: chanyong · 문의 cyjung@gmail.com", "Run by chanyong · cyjung@gmail.com")}</p>
+        <p className="mt-2">{tr(`운영: chanyong · 문의 ${CONTACT_EMAIL}`, `Run by chanyong · ${CONTACT_EMAIL}`)}</p>
       </div>
     </footer>
   );

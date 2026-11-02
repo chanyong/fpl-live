@@ -3,7 +3,7 @@ import { Manrope } from "next/font/google";
 import { LocaleProvider } from "@/components/locale-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { SiteFooter } from "@/components/site-footer";
-import { siteUrl } from "@/lib/site";
+import { CONTACT_EMAIL, siteUrl } from "@/lib/site";
 import Script from "next/script";
 import "./globals.css";
 
@@ -78,7 +78,7 @@ const STRUCTURED_DATA = [
     url: siteUrl(),
     logo: `${siteUrl()}/icon.png`,
     founder: { "@type": "Person", name: "chanyong" },
-    email: "cyjung@gmail.com"
+    email: CONTACT_EMAIL
   }
 ];
 
