@@ -118,7 +118,7 @@ npm run build
 
 - `app/layout.tsx`: GA4 태그, Google Search Console 인증 메타.
 - `app/opengraph-image.tsx`, `app/sitemap.ts`, `app/robots.ts`, `lib/site.ts`(canonical origin).
-- 파비콘: `app/favicon.ico`, `app/icon.png`, `app/apple-icon.png` — 녹색(`--accent` #0b6e4f) 배경 + 흰 "F" (EPL 사자 아이콘과 구분). 다시 만들려면 PIL로 같은 규격 생성.
+- 파비콘: `app/favicon.ico`, `app/icon.png`, `app/apple-icon.png` — 주색(`--accent` #3a6230) 배경 + 흰 "F" (EPL 사자 아이콘과 구분). 색을 바꿀 때는 PIL로 기존 이미지의 초록만 다시 칠한다(옛 초록→새 초록, 흰색 유지; ico는 16·32·48·64 네 크기 모두). 테스트 `tests/favicon-color.test.ts`.
 - 사이트 규칙(#1): 보안 헤더 5종은 `lib/security-headers.ts` → `next.config.ts` `headers()`(CSP는 GA·Plausible·의견 버튼 출처 검토 뒤 따로), `/llms.txt`는 `lib/llms-text.ts`, `theme-color`는 `app/layout.tsx` `viewport`(= `--accent` #3a6230). 본문 글꼴은 Manrope(영문·숫자) 다음에 Pretendard(한글, jsDelivr 동적 서브셋을 `app/layout.tsx` `<head>`에서 불러옴). 테스트 `tests/site-rules.test.ts`.
 - `docs/blog/` 한/영 SEO 글 20편 + 이미지. ⚠️ ko/03·04, en/03·04 는 옛 ±95/±100 전망 기준을 설명하므로 6절 기준으로 고쳐야 함.
 - `docs/design.md`, `docs/marketing.md`.
