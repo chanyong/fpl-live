@@ -17,6 +17,7 @@ import { chipLabel } from "@/lib/chips";
 import { RankDelta } from "@/components/rank-delta";
 import { SquadCompareDialog } from "@/components/squad-compare-dialog";
 import { useLocale } from "@/components/locale-provider";
+import { useSearchTracking } from "@/components/analytics-events";
 
 const columnHelper = createColumnHelper<LeagueRowType>();
 
@@ -66,6 +67,8 @@ export function LeagueTable({ data }: { data: LeagueLiveResponse }) {
   const [sorting, setSorting] = useState<SortingState>([{ id: "projectedRank", desc: false }]);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [search, setSearch] = useState("");
+  // Manager and team names are people's names: count the search, never send the text.
+  useSearchTracking(search, "league_managers", false);
   const [chipOnly, setChipOnly] = useState(false);
   const [topN, setTopN] = useState("all");
   const columns = useMemo(() => buildColumns(tr), [tr]);

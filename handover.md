@@ -186,3 +186,9 @@ npm run build
 | 머지 시 | `design/network-footer` | 하단 '운영자의 다른 서비스'를 카드 띠로 개편(#4, 공통 사양 chanyong/ddalkkak-rank#12): 10곳 2/3/5열, 제목 18px·이름 16px·설명 14px, `utm_source=fpl&utm_medium=footer_network`, 법적 고지·정책 링크는 띠 아래로 분리. 리뷰 반영: 옛 브랜치를 옮기며 배포 기록 표 아래에 붙었던 설명 절을 본문으로 옮기고 표에 이 줄 추가. |
 | 머지 시 | `design/taste-all-pages-issue-8` | 전 화면 taste-skill(`--app`) 적용(#8, #6 후속): 경기 입장권 토큰(종이 #eaeae5·잉크 #2a1d17·초록 #3a6230, 반경 6px)을 `app/globals.css` 전역 토큰으로 올리고 패널 그림자·그라데이션·pill 모양 제거. 설명 문구 축약(라이벌 안내문 삭제, '보너스 확정'→'보너스', '지난 GW → 이번 GW' 등, 한/영). 전역 `button,input,select{font:inherit}`를 제거해 버튼·입력 글자 크기 유틸리티가 먹게 함(홈의 `!` 우회 제거), 언어 전환 버튼을 탭과 같은 모양으로, 입력 안내 320px 잘림 해결(짧은 placeholder), 의견 버튼 색을 `data-color=#2a1d17`로 바꿔 초록 칸과 구분. 계산·API·라이벌 선택 동작·하단 띠 미변경. |
 | 머지 시 | `fix/issue-1-site-rules` | 사이트 규칙 맞춤(#1): 한글 글꼴 Pretendard, 보안 헤더(HSTS·nosniff·Referrer-Policy·X-Frame-Options SAMEORIGIN·Permissions-Policy), `/llms.txt`, `theme-color` #3a6230. CSP는 미포함. |
+
+## 2026-11-03 GA4 전환 이벤트 (#19)
+- 기존 gtag에 이벤트만 더함(새 추적 도구 없음). `lib/analytics.ts`(보내기·검색어 정리·외부 링크 판정), `components/analytics-events.tsx`(문서 클릭 하나로 `outbound_click`·`feedback_open`, 입력이 멈춘 뒤 1.5초에 `search` 한 번).
+- `search`: 첫 화면 리그 ID 제출(`search_area=league_id`), 선수 표(`players`)·가격 변동(`price_changes`) 검색어, 리그 순위표 매니저·팀 이름 검색(`league_managers`)은 검색어 없이 횟수만. 이메일·9자리 이상 숫자는 검색어에서 뺀다.
+- `outbound_click`: 다른 도메인 http(s) 링크, `link_url`(쿼리·# 제외)·`link_domain`. `feedback_open`: 공통 의견 버튼(`#site-feedback` Shadow DOM의 `.open-btn`) — feedback.js 구조가 바뀌면 `isFeedbackOpenClick` 확인.
+- 제휴 링크·알림 신청 기능이 없어 `affiliate_click`·`alert_signup`은 없음. GA4 '핵심 이벤트' 지정은 관제 창 몫. 개인정보처리방침 GA 행에 '기능 이용 기록' 문구 추가. 테스트 `tests/analytics.test.tsx`.
