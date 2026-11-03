@@ -16,6 +16,7 @@ import {
 import { formatMoney } from "@/lib/season-summary";
 import type { FplPosition, PlayerStat, PriceChangeEvent, PriceChangesResponse } from "@/lib/types";
 import { useLocale } from "@/components/locale-provider";
+import { useSearchTracking } from "@/components/analytics-events";
 
 type PredictionKey = "progress" | "projected" | "status" | "ownership" | "cost";
 type HistoryKey = "date" | "change" | "before" | "after";
@@ -258,6 +259,7 @@ function matchesText(needle: string, webName: string, teamShortName: string) {
 
 function useFilters() {
   const [search, setSearch] = useState("");
+  useSearchTracking(search, "price_changes");
   const [direction, setDirection] = useState<PriceDirection>("all");
   const [position, setPosition] = useState<PositionFilter>("all");
   const [shown, setShown] = useState(PAGE_SIZE);

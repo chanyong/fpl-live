@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
+import { AnalyticsEvents } from "@/components/analytics-events";
 import { LocaleProvider } from "@/components/locale-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { SiteFooter } from "@/components/site-footer";
@@ -106,6 +107,7 @@ export default function RootLayout({
           <QueryProvider>{children}</QueryProvider>
           <SiteFooter />
         </LocaleProvider>
+        {GA_ID ? <AnalyticsEvents /> : null}
         {/* 운영자 사이트 공통 의견·질문 버튼(딸깍랭크 의견함). 한/영 전환 시 <html lang> 을 따라 언어가 바뀐다 */}
         <script src="https://ddalkkakrank.kr/feedback.js" defer data-color="#2a1d17" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }} />

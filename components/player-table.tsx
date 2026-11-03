@@ -7,6 +7,7 @@ import { availability, averageDifficulty } from "@/lib/player-metrics";
 import { formatMoney } from "@/lib/season-summary";
 import type { FplPosition, PlayerStat, TeamFixtureOutlook } from "@/lib/types";
 import { useLocale } from "@/components/locale-provider";
+import { useSearchTracking } from "@/components/analytics-events";
 
 /** Fixture difficulty is not in PlayerStat, so it is joined on for the table. */
 type Row = PlayerStat & { fixtures: TeamFixtureOutlook[]; avgDifficulty: number | null };
@@ -65,6 +66,7 @@ export function PlayerTable({
   const columns = useMemo(() => buildColumns(tr), [tr]);
   const [sortKey, setSortKey] = useState<SortKey>("totalPoints");
   const [search, setSearch] = useState("");
+  useSearchTracking(search, "players");
   const [position, setPosition] = useState<FplPosition | "ALL">("ALL");
   const [leagueOnly, setLeagueOnly] = useState(false);
   const [limit, setLimit] = useState(PAGE_SIZE);

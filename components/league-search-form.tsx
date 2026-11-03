@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { trackSearch } from "@/lib/analytics";
 import { parseLeagueId } from "@/lib/request-params";
 import { useLocale } from "@/components/locale-provider";
 import { loadRecentLeagues, rememberLeague, removeRecentLeague, saveRecentLeagues, type RecentLeague } from "@/lib/recent-leagues";
@@ -52,6 +53,7 @@ export function LeagueSearchForm() {
           }
 
           setError(null);
+          trackSearch("league_id", String(parsed.leagueId));
           openLeague(String(parsed.leagueId));
         }}
       >
