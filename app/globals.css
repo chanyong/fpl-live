@@ -51,7 +51,10 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: var(--font-sans), "Segoe UI", sans-serif;
+  /* Manrope (latin only) draws Latin letters and digits; Hangul has no glyph there, so it falls
+     through to Pretendard (loaded in app/layout.tsx) instead of the OS font (issue #1, SITE_RULES 1-2). */
+  font-family: var(--font-sans), "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   font-size: 16.5px;
   line-height: 1.45;
   text-rendering: optimizeLegibility;

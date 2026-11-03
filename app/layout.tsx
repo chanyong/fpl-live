@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import { LocaleProvider } from "@/components/locale-provider";
 import { QueryProvider } from "@/components/query-provider";
@@ -12,6 +12,16 @@ const manrope = Manrope({
   display: "swap",
   variable: "--font-sans"
 });
+
+/** Hangul face for the body stack in globals.css. Dynamic subset: the browser only downloads the
+ *  unicode-range slices a page actually uses (issue #1, SITE_RULES 1-2). */
+const PRETENDARD_CSS =
+  "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css";
+
+/** Browser UI colour (mobile address bar) = the site's primary colour, --accent in globals.css (SITE_RULES 1-1). */
+export const viewport: Viewport = {
+  themeColor: "#3a6230"
+};
 
 const TITLE = "FPL Live — FPL 미니리그 실시간 순위·가격 변동 예측";
 const DESCRIPTION =
@@ -87,6 +97,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko" className={manrope.variable}>
+      <head>
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
+        <link rel="stylesheet" href={PRETENDARD_CSS} crossOrigin="anonymous" />
+      </head>
       <body>
         <LocaleProvider>
           <QueryProvider>{children}</QueryProvider>
