@@ -1,6 +1,6 @@
 // 운영자의 다른 서비스(하단 상호 링크) 공통 데이터. 11개 사이트가 같은 목록을 쓰고, 현재 사이트만 뺀다.
-// 공통 사양: chanyong/ddalkkak-rank#12. 순서 = 분야순(여행 → 금융·생활 → 그 밖).
-// group 은 화면에 표시하지 않고 순서 기준으로만 쓴다. en·descEn 은 이 사이트의 영어 토글용.
+// 공통 사양: chanyong/ddalkkak-rank#12 '공통 사양 1장 갱신'(11-03). 순서 = SITE_RULES.md 1-4 표준 순서
+// (이전 분야순은 폐기). 순서를 바꿀 때는 SITE_RULES.md를 먼저 고친다. en·descEn 은 이 사이트의 영어 토글용.
 export const NETWORK_UTM = { source: "fpl", medium: "footer_network" } as const; // source = 이 사이트의 브랜드 key
 
 export type NetworkSite = {
@@ -10,21 +10,20 @@ export type NetworkSite = {
   desc: string;
   descEn: string;
   icon: string;
-  group: "travel" | "life" | "etc";
 };
 
 export const ALL_NETWORK_SITES: NetworkSite[] = [
-  { url: "https://www.airmoa.kr", name: "에어모아", en: "Airmoa", desc: "항공권 특가 모음", descEn: "Airfare deals", icon: "✈️", group: "travel" },
-  { url: "https://zoommytrip.kr", name: "내여행 찾아줌", en: "ZoomMyTrip", desc: "마일리지 좌석", descEn: "Award seats", icon: "🧳", group: "travel" },
-  { url: "https://ittaeda.com", name: "이때다", en: "Ittaeda", desc: "호텔 날짜별 가격", descEn: "Hotel prices by date", icon: "🏨", group: "travel" },
-  { url: "https://supgaja.com", name: "숲가자", en: "Supgaja", desc: "자연휴양림 빈자리", descEn: "Forest lodge vacancies", icon: "🌲", group: "travel" },
-  { url: "https://etfx.kr", name: "ETFX", en: "ETFX", desc: "ETF 구성종목 분석", descEn: "ETF holdings", icon: "📊", group: "life" },
-  { url: "https://cardmatch.kr", name: "카드매치", en: "CardMatch", desc: "카드 추천", descEn: "Card picker", icon: "💳", group: "life" },
-  { url: "https://myapgujeong.kr", name: "내 압구정", en: "My Apgujeong", desc: "아파트 실거래", descEn: "Apartment deals", icon: "🏢", group: "life" },
-  { url: "https://auto-insu-compare.vercel.app", name: "자동차보험 환급 비교", en: "Car insurance compare", desc: "보험료 비교", descEn: "Premium comparison", icon: "🚗", group: "life" },
-  { url: "https://www.ipsion.kr", name: "입시on", en: "Ipsion", desc: "대입 경쟁률", descEn: "Admission rates", icon: "🎓", group: "etc" },
-  { url: "https://fpl-live-production-34f4.up.railway.app", name: "FPL Live", en: "FPL Live", desc: "판타지 프리미어리그", descEn: "Fantasy Premier League", icon: "⚽", group: "etc" },
-  { url: "https://ddalkkakrank.kr", name: "딸깍랭크", en: "DdalkkakRank", desc: "AI 서비스 랭킹", descEn: "AI service ranking", icon: "🏆", group: "etc" }
+  { url: "https://ddalkkakrank.kr", name: "딸깍랭크", en: "DdalkkakRank", desc: "AI 서비스 랭킹", descEn: "AI service ranking", icon: "🏆" },
+  { url: "https://www.airmoa.kr", name: "에어모아", en: "Airmoa", desc: "항공권 특가 모음", descEn: "Airfare deals", icon: "✈️" },
+  { url: "https://zoommytrip.kr", name: "내여행 찾아줌", en: "ZoomMyTrip", desc: "마일리지 좌석", descEn: "Award seats", icon: "🧳" },
+  { url: "https://ittaeda.com", name: "이때다", en: "Ittaeda", desc: "호텔 날짜별 가격", descEn: "Hotel prices by date", icon: "🏨" },
+  { url: "https://supgaja.com", name: "숲가자", en: "Supgaja", desc: "자연휴양림 빈자리", descEn: "Forest lodge vacancies", icon: "🌲" },
+  { url: "https://etfx.kr", name: "ETFX", en: "ETFX", desc: "ETF 구성종목 분석", descEn: "ETF holdings", icon: "📊" },
+  { url: "https://cardmatch.kr", name: "카드매치", en: "CardMatch", desc: "카드 추천", descEn: "Card picker", icon: "💳" },
+  { url: "https://myapgujeong.kr", name: "내 압구정", en: "My Apgujeong", desc: "아파트 실거래", descEn: "Apartment deals", icon: "🏢" },
+  { url: "https://www.ipsion.kr", name: "입시on", en: "Ipsion", desc: "대입 경쟁률", descEn: "Admission rates", icon: "🎓" },
+  { url: "https://auto-insu-compare.vercel.app", name: "자동차보험 환급 비교", en: "Car insurance compare", desc: "보험료 비교", descEn: "Premium comparison", icon: "🚗" },
+  { url: "https://fpl-live-production-34f4.up.railway.app", name: "FPL Live", en: "FPL Live", desc: "판타지 프리미어리그", descEn: "Fantasy Premier League", icon: "⚽" }
 ];
 
 // 현재 사이트 자신은 주소 비교로 뺀다. 도메인을 바꾸면 위 목록의 FPL Live 주소와 함께 바꾼다.

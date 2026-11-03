@@ -5,11 +5,13 @@ import { ALL_NETWORK_SITES, NETWORK_SITES, SELF_URL, networkHref } from "@/lib/n
 
 // 하단 '운영자의 다른 서비스' 카드 띠(전 사이트 공통 사양 chanyong/ddalkkak-rank#12).
 describe("network footer", () => {
-  it("lists the 10 other sites in field order and leaves this site out", () => {
+  it("lists the 10 other sites in the SITE_RULES standard order and leaves this site out", () => {
     expect(ALL_NETWORK_SITES).toHaveLength(11);
     expect(NETWORK_SITES).toHaveLength(10);
     expect(NETWORK_SITES.some((site) => site.url === SELF_URL)).toBe(false);
+    // 11-03 표준 순서(ddalkkak-rank#12 '공통 사양 1장 갱신'). FPL Live 자신은 빠진다.
     expect(NETWORK_SITES.map((site) => site.name)).toEqual([
+      "딸깍랭크",
       "에어모아",
       "내여행 찾아줌",
       "이때다",
@@ -17,10 +19,20 @@ describe("network footer", () => {
       "ETFX",
       "카드매치",
       "내 압구정",
-      "자동차보험 환급 비교",
       "입시on",
-      "딸깍랭크"
+      "자동차보험 환급 비교"
     ]);
+  });
+
+  it("renders footer cards in the standard order", () => {
+    render(<SiteFooter />);
+    const nav = screen.getByRole("navigation", { name: "운영자의 다른 서비스" });
+    const hrefs = within(nav)
+      .getAllByRole("link")
+      .map((link) => new URL(link.getAttribute("href")!).origin);
+    expect(hrefs[0]).toBe("https://ddalkkakrank.kr");
+    expect(hrefs.at(-1)).toBe("https://auto-insu-compare.vercel.app");
+    expect(hrefs.indexOf("https://www.ipsion.kr")).toBe(hrefs.length - 2);
   });
 
   it("tags links with this site's utm key and keeps an existing query", () => {
