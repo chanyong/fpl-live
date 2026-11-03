@@ -5,7 +5,8 @@ import type { ReactNode } from "react";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
 import { CONTACT_EMAIL } from "@/lib/site";
 
-// Each page carries its own date. Both changed on 2026-11-03 when the contact address moved (#12).
+// Each page carries its own date. Both changed on 2026-11-03 when the contact address moved (#12);
+// the privacy page also lists the GA4 feature-use events added the same day (#19).
 const PRIVACY_UPDATED = "2026-11-03";
 const TERMS_UPDATED = "2026-11-03";
 const EMAIL = CONTACT_EMAIL;
@@ -53,7 +54,14 @@ export function PrivacyContent() {
             <tbody>
               <tr>
                 <td>{tr("이용 통계 (Google Analytics 4)", "Usage statistics (Google Analytics 4)")}</td>
-                <td>{tr("방문 페이지, 유입 경로, 기기·브라우저 정보, 대략적 지역, 쿠키 식별값(_ga, _ga_*)", "Pages viewed, referrer, device/browser, approximate region, cookie IDs (_ga, _ga_*)")}</td>
+                <td>
+                  {tr("방문 페이지, 유입 경로, 기기·브라우저 정보, 대략적 지역, 쿠키 식별값(_ga, _ga_*)", "Pages viewed, referrer, device/browser, approximate region, cookie IDs (_ga, _ga_*)")}
+                  <br />
+                  {tr(
+                    "기능 이용 기록: 검색 실행(검색어는 리그 ID·선수·구단 이름만, 리그 순위표의 매니저·팀 이름 검색은 횟수만), 외부 사이트 링크 클릭(이동한 주소), ‘의견·질문’ 버튼 열기",
+                    "Feature use: searches (search text only for league IDs and player/club names; manager/team-name searches in league tables are counted without the text), clicks on links to other sites (the destination address), opening the Feedback button"
+                  )}
+                </td>
                 <td>{tr("서비스 개선. Google Analytics 보관 설정(최대 14개월)에 따름", "Improving the Service. Kept per the GA retention setting (up to 14 months)")}</td>
               </tr>
               <tr>
