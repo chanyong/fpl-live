@@ -55,6 +55,9 @@ export function JournalPage() {
       setState("recovery");
       return;
     }
+    if (fromMail?.kind === "confirmed") {
+      setNotice(tr("이메일 확인이 끝났습니다. 로그인해 주세요.", "Email confirmed. Please log in."));
+    }
     if (fromMail?.kind === "error") {
       setNotice(tr("메일의 링크가 만료됐거나 이미 사용됐습니다. 아래에서 다시 요청해 주세요.", "The email link has expired or was already used. Please request a new one below."));
     }
@@ -215,7 +218,14 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
       if (response.ok) {
         setMode("login");
         setConfirm("");
-        return setMessage(tr("가입했습니다. 이메일로 간 확인 링크를 누른 뒤 로그인해 주세요.", "Signed up. Click the confirmation link in your email, then log in."));
+        setUnconfirmed(String(body.email ?? ""));
+        startCooldown();
+        return setMessage(
+          tr(
+            "확인 메일을 보냈습니다. 메일함(스팸함 포함)의 링크를 눌러야 로그인할 수 있습니다. 안 오면 1분 뒤 아래 버튼으로 다시 받을 수 있습니다.",
+            "We sent a confirmation email. Click the link in it (check spam too) before logging in. If it does not arrive, you can resend it below after a minute."
+          )
+        );
       }
       if (data.error === "email_not_confirmed") setUnconfirmed(String(body.email ?? ""));
       const known = data.error ? messages[data.error] : undefined;

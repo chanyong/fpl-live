@@ -94,14 +94,15 @@ describe("parseRecoveryHash", () => {
   it("reads the recovery token and error fragments", () => {
     expect(parseRecoveryHash("#access_token=abc&type=recovery&expires_in=3600")).toEqual({ kind: "recovery", accessToken: "abc" });
     expect(parseRecoveryHash("#error=access_denied&error_code=otp_expired")).toEqual({ kind: "error", code: "otp_expired" });
-    expect(parseRecoveryHash("#access_token=abc&type=signup")).toBeNull();
+    expect(parseRecoveryHash("#access_token=abc&type=signup")).toEqual({ kind: "confirmed" });
+    expect(parseRecoveryHash("#type=signup")).toBeNull();
     expect(parseRecoveryHash("")).toBeNull();
   });
 
-  it("returns null for a signup link but still clears its tokens from the address bar", () => {
+  it("reports a signup confirmation without keeping its tokens and clears them from the address bar", () => {
     const replaceState = vi.fn();
     const where = { hash: "#access_token=abc&refresh_token=def&type=signup", pathname: "/journal", search: "?a=1" };
-    expect(consumeAuthHash(where, { replaceState })).toBeNull();
+    expect(consumeAuthHash(where, { replaceState })).toEqual({ kind: "confirmed" });
     expect(replaceState).toHaveBeenCalledWith(null, "", "/journal?a=1");
   });
 

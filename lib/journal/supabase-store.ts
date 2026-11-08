@@ -38,8 +38,9 @@ export function createSupabaseStore(env: { url: string; anonKey: string; service
   };
 
   return {
-    async signUp(email, password) {
-      const response = await call("/auth/v1/signup", { method: "POST", key: env.anonKey, body: { email, password } });
+    async signUp(email, password, redirectTo) {
+      const query = redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : "";
+      const response = await call(`/auth/v1/signup${query}`, { method: "POST", key: env.anonKey, body: { email, password } });
       if (!response.ok) return { error: await errorText(response) };
       const body = (await response.json()) as {
         user?: { id?: unknown; email?: unknown; identities?: unknown[] };

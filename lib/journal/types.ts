@@ -37,7 +37,8 @@ export type JournalUser = { id: string; email: string };
 /** Storage seam. The Supabase implementation and the test fake both satisfy it. */
 export interface JournalStore {
   /** existing=true when the email already has an account (Supabase returns a fake user with no identities). */
-  signUp(email: string, password: string): Promise<{ user: JournalUser; existing: boolean } | { error: string }>;
+  /** redirectTo is where the confirmation mail link returns to (Supabase redirect allow list). */
+  signUp(email: string, password: string, redirectTo?: string): Promise<{ user: JournalUser; existing: boolean } | { error: string }>;
   signOut(accessToken: string): Promise<void>;
   /** code is GoTrue's error_code (e.g. email_not_confirmed); GoTrue only reports it after the password was right. */
   signIn(email: string, password: string): Promise<{ accessToken: string; user: JournalUser } | { error: string; code?: string }>;
