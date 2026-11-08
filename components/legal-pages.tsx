@@ -122,6 +122,7 @@ export function PrivacyContent() {
         <ul>
           <li>{tr("Railway (미국) — 웹 호스팅", "Railway (USA) — web hosting")}</li>
           <li>{tr("Google (미국) — 이용 통계(Google Analytics)", "Google (USA) — usage statistics (Google Analytics)")}</li>
+          <li>{tr("Supabase Inc. (서울 리전, ap-northeast-2) — 회원 인증·일지 저장", "Supabase Inc. (Seoul region, ap-northeast-2) — member authentication and journal storage")}</li>
           <li>{tr("딸깍랭크 서버(운영자 운영) — ‘의견·질문’ 접수", "DdalkkakRank server (same operator) — feedback inbox")}</li>
         </ul>
         <p>{tr("개인정보를 제3자에게 판매하거나 제공하지 않습니다.", "We never sell or share personal data with third parties.")}</p>

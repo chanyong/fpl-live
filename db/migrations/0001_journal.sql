@@ -1,5 +1,6 @@
 -- 주간 경기 리뷰 일지 (이슈 #21). 적용 전 대표 승인 필요. 이 파일은 코드 저장소에만 있고 아직 어떤 DB에도 적용하지 않았다.
 -- Supabase Postgres + Supabase Auth(이메일 가입). 저장하는 개인정보는 이메일(auth.users)과 FPL 팀 번호뿐이다.
+-- 적용은 SQL 편집기나 psql로 한다(파일에 begin/commit 포함). supabase CLI migration 흐름은 쓰지 않는다.
 begin;
 
 create table if not exists public.journal_profiles (

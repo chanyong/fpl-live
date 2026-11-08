@@ -65,7 +65,8 @@ export function createSupabaseStore(env: { url: string; anonKey: string; service
       return response.ok ? asUser((await response.json()) as { id?: unknown; email?: unknown }) : null;
     },
     async deleteUser(userId) {
-      await call(`/auth/v1/admin/users/${encodeURIComponent(userId)}`, { method: "DELETE", key: env.serviceKey });
+      const response = await call(`/auth/v1/admin/users/${encodeURIComponent(userId)}`, { method: "DELETE", key: env.serviceKey });
+      if (!response.ok) console.error(`journal: user delete failed (${response.status})`);
     },
     async teamTaken(teamId) {
       const response = await call(`/rest/v1/journal_profiles?select=user_id&fpl_team_id=eq.${teamId}&limit=1`, { key: env.serviceKey });
