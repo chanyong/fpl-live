@@ -5,22 +5,25 @@ import { AuthForms } from "@/components/journal-page";
 afterEach(() => vi.restoreAllMocks());
 
 describe("journal auth form", () => {
-  it("switches mode with aria-pressed buttons", () => {
+  it("switches mode with tabs (aria-selected, arrow keys)", () => {
     render(<AuthForms onDone={() => {}} />);
-    const login = screen.getByRole("button", { name: "로그인", pressed: true });
-    const signup = screen.getByRole("button", { name: "가입", pressed: false });
+    const login = screen.getByRole("tab", { name: "로그인", selected: true });
+    const signup = screen.getByRole("tab", { name: "가입", selected: false });
     expect(screen.queryByLabelText("비밀번호 확인")).toBeNull();
     fireEvent.click(signup);
-    expect(signup.getAttribute("aria-pressed")).toBe("true");
-    expect(login.getAttribute("aria-pressed")).toBe("false");
+    expect(signup.getAttribute("aria-selected")).toBe("true");
+    expect(login.getAttribute("aria-selected")).toBe("false");
     expect(screen.getByLabelText("비밀번호 확인")).toBeTruthy();
+    fireEvent.keyDown(signup, { key: "ArrowLeft" });
+    expect(login.getAttribute("aria-selected")).toBe("true");
+    expect(screen.queryByLabelText("비밀번호 확인")).toBeNull();
   });
 
   it("warns on mismatch, blocks submit, and never sends the confirm field", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
     vi.stubGlobal("fetch", fetchMock);
     render(<AuthForms onDone={() => {}} />);
-    fireEvent.click(screen.getByRole("button", { name: "가입", pressed: false }));
+    fireEvent.click(screen.getByRole("tab", { name: "가입", selected: false }));
     fireEvent.change(screen.getByLabelText("이메일"), { target: { value: "a@b.co" } });
     fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: "password1" } });
     fireEvent.change(screen.getByLabelText("비밀번호 확인"), { target: { value: "password2" } });
