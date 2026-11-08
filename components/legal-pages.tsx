@@ -7,8 +7,8 @@ import { CONTACT_EMAIL } from "@/lib/site";
 
 // Each page carries its own date. Both changed on 2026-11-03 when the contact address moved (#12);
 // the privacy page also lists the GA4 feature-use events added the same day (#19).
-const PRIVACY_UPDATED = "2026-11-03";
-const TERMS_UPDATED = "2026-11-03";
+const PRIVACY_UPDATED = "2026-11-08";
+const TERMS_UPDATED = "2026-11-08";
 const EMAIL = CONTACT_EMAIL;
 
 function Shell({ title, updated, children }: { title: string; updated: string; children: ReactNode }) {
@@ -36,8 +36,8 @@ export function PrivacyContent() {
     <Shell title={tr("개인정보처리방침", "Privacy Policy")} updated={PRIVACY_UPDATED}>
       <p>
         {tr(
-          "FPL Live(이하 ‘서비스’)는 운영자 chanyong 이 운영하는 비공식 FPL 팬 서비스입니다. 회원가입·로그인이 없으며, 아래에 적은 것 외의 개인정보는 받지 않습니다.",
-          "FPL Live (the “Service”) is an unofficial FPL fan service run by chanyong. There is no sign-up or login, and no personal data is collected beyond what is listed below."
+          "FPL Live(이하 ‘서비스’)는 운영자 chanyong 이 운영하는 비공식 FPL 팬 서비스입니다. 대시보드는 가입 없이 쓸 수 있고, 선택 기능인 ‘주간 경기 리뷰 일지’를 쓸 때만 회원가입(이메일)을 합니다. 아래에 적은 것 외의 개인정보는 받지 않습니다.",
+          "FPL Live (the “Service”) is an unofficial FPL fan service run by chanyong. The dashboard works without an account; sign-up (email) is needed only for the optional “Weekly review journal”. No personal data is collected beyond what is listed below."
         )}
       </p>
       <section>
@@ -70,6 +70,21 @@ export function PrivacyContent() {
                 <td>{tr("문의 답변·오류 수정. 운영자의 딸깍랭크(ddalkkakrank.kr) 의견함에 저장, 받은 날로부터 1년 뒤 자동 삭제", "Replying and fixing bugs. Stored in the operator's DdalkkakRank (ddalkkakrank.kr) inbox, deleted automatically after 1 year")}</td>
               </tr>
               <tr>
+                <td>{tr("주간 경기 리뷰 일지 (회원가입 시)", "Weekly review journal (members only)")}</td>
+                <td>
+                  {tr(
+                    "이메일, 비밀번호(암호화 저장은 인증 서비스가 처리), FPL 팀 번호, 게임위크별 자동 저장 기록(점수·순위·선발·벤치·주장·이적·경기 결과), 직접 적은 일지 내용. FPL 비밀번호는 받지 않습니다.",
+                    "Email, password (stored hashed by the auth provider), FPL team ID, per-gameweek saved records (points, rank, squad, bench, captain, transfers, results) and the notes you write. We never ask for your FPL password."
+                  )}
+                </td>
+                <td>
+                  {tr(
+                    "일지 제공·로그인. 본인만 열람할 수 있고, 탈퇴 요청 시 지체 없이 삭제합니다. 저장·인증은 Supabase(미국 등 해외 서버)에 맡깁니다. 로그인 상태 유지를 위한 쿠키 1개를 씁니다.",
+                    "Providing the journal and login. Only you can read it; deleted promptly on request. Storage and authentication are handled by Supabase (servers outside Korea). One login cookie is used."
+                  )}
+                </td>
+              </tr>
+              <tr>
                 <td>{tr("접속 기록", "Server logs")}</td>
                 <td>{tr("요청 주소, 시각, 오류 내용 (호스팅 업체 Railway 가 기록)", "Request path, time, errors (recorded by the host, Railway)")}</td>
                 <td>{tr("장애 대응·보안. 호스팅 업체 보관 정책에 따름", "Operations and security, per the host's retention")}</td>
@@ -93,8 +108,8 @@ export function PrivacyContent() {
         <h2>{tr("2. 쿠키와 거부 방법", "2. Cookies and how to opt out")}</h2>
         <p>
           {tr(
-            "서비스 자체는 쿠키를 만들지 않습니다. Google Analytics 가 이용 통계용 쿠키(_ga, _ga_*, 최대 2년)를 씁니다. 광고 목적의 쿠키는 쓰지 않습니다. 거부하려면 브라우저 설정에서 쿠키를 차단하거나 ",
-            "The Service sets no cookies itself. Google Analytics uses statistics cookies (_ga, _ga_*, up to 2 years). No advertising cookies are used. To opt out, block cookies in your browser or install the "
+            "서비스는 일지에 로그인했을 때만 로그인 유지용 쿠키 1개를 만듭니다(최대 1시간). Google Analytics 가 이용 통계용 쿠키(_ga, _ga_*, 최대 2년)를 씁니다. 광고 목적의 쿠키는 쓰지 않습니다. 거부하려면 브라우저 설정에서 쿠키를 차단하거나 ",
+            "The Service sets one login cookie only when you log in to the journal (up to 1 hour). Google Analytics uses statistics cookies (_ga, _ga_*, up to 2 years). No advertising cookies are used. To opt out, block cookies in your browser or install the "
           )}
           <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noreferrer">
             {tr("Google 애널리틱스 차단 부가기능", "Google Analytics Opt-out Add-on")}
@@ -122,7 +137,7 @@ export function PrivacyContent() {
       </section>
       <section>
         <h2>{tr("5. 만 14세 미만", "5. Children")}</h2>
-        <p>{tr("회원가입이 없으며 만 14세 미만 아동의 개인정보를 알고 수집하지 않습니다.", "There is no sign-up and we do not knowingly collect data from children under 14.")}</p>
+        <p>{tr("만 14세 미만 아동은 회원가입을 할 수 없으며, 그 개인정보를 알고 수집하지 않습니다.", "Children under 14 may not sign up and we do not knowingly collect their data.")}</p>
       </section>
       <section>
         <h2>{tr("6. 책임자·문의", "6. Contact")}</h2>
@@ -183,7 +198,15 @@ export function TermsContent() {
         </p>
       </section>
       <section>
-        <h2>{tr("6. 문의", "6. Contact")}</h2>
+        <h2>{tr("6. 회원(주간 경기 리뷰 일지)", "6. Members (weekly review journal)")}</h2>
+        <ul>
+          <li>{tr("가입은 이메일과 FPL 팀 번호로 하며, FPL 비밀번호는 받지 않습니다. 팀 번호당 계정은 하나입니다.", "Sign-up uses an email and an FPL team ID; we never ask for your FPL password. One account per team ID.")}</li>
+          <li>{tr("본인이 아닌 팀 번호로 가입하거나 타인의 계정에 접근하지 마세요. 팀 번호를 도용당했다면 문의처로 알려 주세요.", "Do not sign up with a team ID that is not yours or access others' accounts. If your team ID was taken, contact us.")}</li>
+          <li>{tr("자동 저장은 FPL 공개 데이터를 기준으로 하며 지연·누락될 수 있고, 일지 내용의 백업은 이용자 책임입니다. 탈퇴·삭제는 문의처로 요청하세요.", "Auto-saving relies on FPL's public data and may be delayed or missed; keeping a backup of your notes is your responsibility. Ask via the contact below to delete your account.")}</li>
+        </ul>
+      </section>
+      <section>
+        <h2>{tr("7. 문의", "7. Contact")}</h2>
         <p>{tr(`chanyong / ${EMAIL} / 화면 아래 ‘의견·질문’ 버튼`, `chanyong / ${EMAIL} / the Feedback button`)}</p>
       </section>
     </Shell>
