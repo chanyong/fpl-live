@@ -137,7 +137,7 @@ export function AuthForms({ onDone }: { onDone: () => void }) {
 
   return (
     <form onSubmit={submit} className="mt-8 space-y-4" aria-label={mode}>
-      <div role="group" aria-label={tr("로그인 또는 가입 선택", "Choose log in or sign up")} className="grid grid-cols-2 gap-1 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1">
+      <div role="tablist" aria-label={tr("로그인 또는 가입 선택", "Choose log in or sign up")} className="grid grid-cols-2 border-b border-[var(--border)]">
         {(
           [
             ["login", tr("로그인", "Log in")],
@@ -147,13 +147,26 @@ export function AuthForms({ onDone }: { onDone: () => void }) {
           <button
             key={value}
             type="button"
-            aria-pressed={mode === value}
+            role="tab"
+            aria-selected={mode === value}
+            tabIndex={mode === value ? 0 : -1}
             onClick={() => {
               setMode(value);
               setMessage(null);
             }}
-            className={`min-h-12 rounded-lg px-4 py-2 text-base font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
-              mode === value ? "bg-[var(--accent)] text-white shadow-sm" : "text-[var(--muted)] hover:text-[var(--accent)]"
+            onKeyDown={(event) => {
+              if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+              event.preventDefault();
+              const next = value === "login" ? "signup" : "login";
+              setMode(next);
+              setMessage(null);
+              (event.currentTarget.parentElement?.querySelector(`[data-tab="${next}"]`) as HTMLElement | null)?.focus();
+            }}
+            data-tab={value}
+            className={`-mb-px min-h-10 border-b-2 px-4 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
+              mode === value
+                ? "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_8%,transparent)] font-bold text-[var(--accent)]"
+                : "border-transparent font-medium text-[var(--muted)] hover:text-[var(--accent)]"
             }`}
           >
             {label}
