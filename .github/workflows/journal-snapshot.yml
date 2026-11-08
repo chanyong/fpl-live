@@ -1,0 +1,34 @@
+name: journal-snapshot
+
+# 주간 일지 자동 저장 (이슈 #21). 하루 2회 호출하면, 끝난 게임위크 중 저장 안 된 주만 채운다.
+# 필요한 저장소 시크릿: JOURNAL_CRON_SECRET, JOURNAL_SNAPSHOT_URL (예: https://<사이트>/api/journal/snapshot)
+on:
+  schedule:
+    - cron: "0 6 * * *"
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: journal-snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Call snapshot endpoint
+        env:
+          URL: ${{ secrets.JOURNAL_SNAPSHOT_URL }}
+          SECRET: ${{ secrets.JOURNAL_CRON_SECRET }}
+        run: |
+          test -n "$URL" && test -n "$SECRET" || { echo "missing secrets"; exit 1; }
+          status=$(curl --silent --show-error --max-time 280 --retry 2 --retry-delay 20 \
+            -o response.json -w "%{http_code}" \
+            -X POST -H "x-cron-secret: $SECRET" "$URL")
+          cat response.json; echo
+          if [ "$status" = "503" ]; then
+            echo "::warning::journal not configured yet (503); skipping"
+            exit 0
+          fi
+          test "$status" = "200"
