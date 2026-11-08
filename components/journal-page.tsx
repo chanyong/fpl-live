@@ -84,11 +84,14 @@ export function JournalPage() {
   );
 }
 
-function AuthForms({ onDone }: { onDone: () => void }) {
+export function AuthForms({ onDone }: { onDone: () => void }) {
   const { tr } = useLocale();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const mismatch = mode === "signup" && confirm !== "" && password !== confirm;
 
   const messages: Record<string, [string, string]> = {
     team_not_found: ["FPL에서 이 팀 번호를 찾지 못했습니다.", "FPL has no team with this ID."],
@@ -106,7 +109,9 @@ function AuthForms({ onDone }: { onDone: () => void }) {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (mode === "signup" && password !== confirm) return;
     const form = new FormData(event.currentTarget);
+    form.delete("passwordConfirm");
     setBusy(true);
     setMessage(null);
     try {
@@ -120,6 +125,7 @@ function AuthForms({ onDone }: { onDone: () => void }) {
       if (response.ok && mode === "login") return onDone();
       if (response.ok) {
         setMode("login");
+        setConfirm("");
         return setMessage(tr("가입했습니다. 이메일로 간 확인 링크를 누른 뒤 로그인해 주세요.", "Signed up. Click the confirmation link in your email, then log in."));
       }
       const known = data.error ? messages[data.error] : undefined;
@@ -131,13 +137,28 @@ function AuthForms({ onDone }: { onDone: () => void }) {
 
   return (
     <form onSubmit={submit} className="mt-8 space-y-4" aria-label={mode}>
-      <div className="flex gap-3 text-body font-semibold">
-        <button type="button" onClick={() => setMode("login")} className={mode === "login" ? "text-[var(--accent)] underline" : "text-[var(--muted)]"}>
-          {tr("로그인", "Log in")}
-        </button>
-        <button type="button" onClick={() => setMode("signup")} className={mode === "signup" ? "text-[var(--accent)] underline" : "text-[var(--muted)]"}>
-          {tr("가입", "Sign up")}
-        </button>
+      <div role="group" aria-label={tr("로그인 또는 가입 선택", "Choose log in or sign up")} className="grid grid-cols-2 gap-1 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1">
+        {(
+          [
+            ["login", tr("로그인", "Log in")],
+            ["signup", tr("가입", "Sign up")]
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={mode === value}
+            onClick={() => {
+              setMode(value);
+              setMessage(null);
+            }}
+            className={`min-h-12 rounded-lg px-4 py-2 text-base font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)] ${
+              mode === value ? "bg-[var(--accent)] text-white shadow-sm" : "text-[var(--muted)] hover:text-[var(--accent)]"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
       <label className="block text-body">
         {tr("이메일", "Email")}
@@ -152,9 +173,33 @@ function AuthForms({ onDone }: { onDone: () => void }) {
           minLength={mode === "signup" ? 8 : 1}
           maxLength={72}
           autoComplete={mode === "signup" ? "new-password" : "current-password"}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
           className={inputClass}
         />
       </label>
+      {mode === "signup" && (
+        <label className="block text-body">
+          {tr("비밀번호 확인", "Confirm password")}
+          <input
+            name="passwordConfirm"
+            type="password"
+            required
+            maxLength={72}
+            autoComplete="new-password"
+            value={confirm}
+            onChange={(event) => setConfirm(event.target.value)}
+            aria-invalid={mismatch}
+            aria-describedby={mismatch ? "password-mismatch" : undefined}
+            className={inputClass}
+          />
+        </label>
+      )}
+      {mismatch && (
+        <p id="password-mismatch" role="alert" className="text-sm text-red-700">
+          {tr("비밀번호가 서로 다릅니다. 다시 확인해 주세요.", "Passwords do not match. Please check again.")}
+        </p>
+      )}
       {mode === "signup" && (
         <label className="block text-body">
           {tr("FPL 팀 번호", "FPL team ID")}
@@ -174,7 +219,7 @@ function AuthForms({ onDone }: { onDone: () => void }) {
           </span>
         </label>
       )}
-      <button type="submit" disabled={busy} className={buttonClass}>
+      <button type="submit" disabled={busy || mismatch} className={buttonClass}>
         {mode === "login" ? tr("로그인", "Log in") : tr("가입하기", "Sign up")}
       </button>
       {message && <p role="status" className="text-body">{message}</p>}
