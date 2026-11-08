@@ -28,12 +28,13 @@ const buttonClass = "rounded-lg bg-[var(--accent)] px-4 py-2 text-body font-semi
 export function JournalPage() {
   const { tr } = useLocale();
   const [entries, setEntries] = useState<Entries | null>(null);
-  const [state, setState] = useState<"loading" | "guest" | "ready" | "unavailable">("loading");
+  const [state, setState] = useState<"loading" | "guest" | "ready" | "unavailable" | "failed">("loading");
 
   const load = useCallback(async () => {
     try {
       const response = await fetch("/api/journal/entries", { cache: "no-store" });
       if (response.status === 401) return setState("guest");
+      if (response.status === 502) return setState("failed");
       if (!response.ok) return setState("unavailable");
       setEntries((await response.json()) as Entries);
       setState("ready");
@@ -64,6 +65,11 @@ export function JournalPage() {
       {state === "unavailable" && (
         <p className="mt-8 text-body">{tr("일지 서비스를 아직 쓸 수 없습니다. 잠시 뒤 다시 시도해 주세요.", "The journal is not available yet. Please try again later.")}</p>
       )}
+      {state === "failed" && (
+        <p role="alert" className="mt-8 text-body">
+          {tr("일지를 불러오지 못했습니다. 기존 기록을 지키려고 저장을 막았습니다. 잠시 뒤 새로고침해 주세요.", "Could not load your journal. Saving is disabled to protect existing notes. Please refresh in a moment.")}
+        </p>
+      )}
       {state === "guest" && <AuthForms onDone={load} />}
       {state === "ready" && entries && (
         <Journal
@@ -86,6 +92,7 @@ function AuthForms({ onDone }: { onDone: () => void }) {
 
   const messages: Record<string, [string, string]> = {
     team_not_found: ["FPL에서 이 팀 번호를 찾지 못했습니다.", "FPL has no team with this ID."],
+    fpl_unavailable: ["FPL 서버가 응답하지 않습니다. 잠시 뒤 다시 시도해 주세요.", "FPL is not responding. Please try again shortly."],
     team_taken: [
       `이미 가입된 팀 번호입니다. 본인 팀인데 가입이 막혔다면 ${CONTACT_EMAIL} 로 문의해 주세요.`,
       `This team ID already has an account. If it is your team, contact ${CONTACT_EMAIL}.`
@@ -154,6 +161,16 @@ function AuthForms({ onDone }: { onDone: () => void }) {
           <input name="teamId" inputMode="numeric" pattern="[0-9]+" required className={inputClass} />
           <span className="mt-1 block text-sm text-[var(--muted)]">
             {tr("FPL 사이트 Points 화면 주소의 /entry/숫자/ 부분입니다. 팀 번호당 계정은 하나입니다.", "The number in /entry/<id>/ on the FPL Points page. One account per team.")}
+          </span>
+        </label>
+      )}
+      {mode === "signup" && (
+        <label className="flex items-start gap-2 text-body">
+          <input name="consent" type="checkbox" required className="mt-1" />
+          <span>
+            {tr("만 14세 이상이며 ", "I am 14 or older and have read the ")}
+            <Link href="/privacy" className="font-semibold text-[var(--accent)] underline">{tr("개인정보처리방침", "Privacy Policy")}</Link>
+            {tr("을 확인했습니다.", ".")}
           </span>
         </label>
       )}

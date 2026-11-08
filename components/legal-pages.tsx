@@ -79,8 +79,8 @@ export function PrivacyContent() {
                 </td>
                 <td>
                   {tr(
-                    "일지 제공·로그인. 본인만 열람할 수 있고, 탈퇴 요청 시 지체 없이 삭제합니다. 저장·인증은 Supabase(미국 등 해외 서버)에 맡깁니다. 로그인 상태 유지를 위한 쿠키 1개를 씁니다.",
-                    "Providing the journal and login. Only you can read it; deleted promptly on request. Storage and authentication are handled by Supabase (servers outside Korea). One login cookie is used."
+                    "일지 제공·로그인. 본인만 열람할 수 있고, 탈퇴 요청 시 지체 없이 삭제합니다. 저장·인증은 수탁자 Supabase Inc.가 운영하는 서울 리전 서버에서 처리합니다. 로그인 상태 유지를 위한 쿠키 1개를 씁니다.",
+                    "Providing the journal and login. Only you can read it; deleted promptly on request. Storage and authentication are processed by our processor, Supabase Inc., on servers in the Seoul region. One login cookie is used."
                   )}
                 </td>
               </tr>

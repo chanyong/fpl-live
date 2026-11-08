@@ -10,11 +10,18 @@ export async function GET(request: NextRequest) {
   const member = await currentMember(request, store);
   if (!member) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const [profile, snapshots, notes] = await Promise.all([
-    store.getProfile(member.user.id),
-    store.listSnapshots(member.user.id, member.token),
-    store.listNotes(member.user.id, member.token)
-  ]);
+  let loaded;
+  try {
+    loaded = await Promise.all([
+      store.getProfile(member.user.id),
+      store.listSnapshots(member.user.id, member.token),
+      store.listNotes(member.user.id, member.token)
+    ]);
+  } catch (error) {
+    console.error("journal: entries read failed", error instanceof Error ? error.message : "unknown");
+    return NextResponse.json({ error: "load_failed" }, { status: 502 });
+  }
+  const [profile, snapshots, notes] = loaded;
   const response = NextResponse.json({ email: member.user.email, teamId: profile?.teamId ?? null, snapshots, notes });
   response.headers.set("Cache-Control", "private, no-store");
   return response;

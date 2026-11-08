@@ -38,9 +38,17 @@ export function createSupabaseStore(env: { url: string; anonKey: string; service
     async signUp(email, password) {
       const response = await call("/auth/v1/signup", { method: "POST", key: env.anonKey, body: { email, password } });
       if (!response.ok) return { error: await errorText(response) };
-      const body = (await response.json()) as { user?: { id?: unknown; email?: unknown }; id?: unknown; email?: unknown };
-      const user = asUser(body.user ?? body);
-      return user ? { user } : { error: "signup failed" };
+      const body = (await response.json()) as {
+        user?: { id?: unknown; email?: unknown; identities?: unknown[] };
+        id?: unknown;
+        email?: unknown;
+        identities?: unknown[];
+      };
+      const raw = body.user ?? body;
+      const user = asUser(raw);
+      if (!user) return { error: "signup failed" };
+      // An already-registered email comes back as a user with an empty identities list.
+      return { user, existing: Array.isArray(raw.identities) && raw.identities.length === 0 };
     },
     async signIn(email, password) {
       const response = await call("/auth/v1/token?grant_type=password", { method: "POST", key: env.anonKey, body: { email, password } });
@@ -48,6 +56,9 @@ export function createSupabaseStore(env: { url: string; anonKey: string; service
       const body = (await response.json()) as { access_token?: string; user?: { id?: unknown; email?: unknown } };
       const user = asUser(body.user ?? null);
       return user && body.access_token ? { accessToken: body.access_token, user } : { error: "login failed" };
+    },
+    async signOut(accessToken) {
+      await call("/auth/v1/logout", { method: "POST", key: env.anonKey, token: accessToken }).catch(() => undefined);
     },
     async getUser(accessToken) {
       const response = await call("/auth/v1/user", { key: env.anonKey, token: accessToken });
@@ -66,7 +77,12 @@ export function createSupabaseStore(env: { url: string; anonKey: string; service
         key: env.serviceKey,
         body: { user_id: userId, fpl_team_id: teamId }
       });
-      return response.ok;
+      if (response.ok) return "ok";
+      const body = (await response.json().catch(() => null)) as { code?: string; message?: string; details?: string } | null;
+      const text = `${body?.message ?? ""} ${body?.details ?? ""}`;
+      if (body?.code === "23505" && text.includes("journal_profiles_team_unique")) return "team_taken";
+      console.error(`journal: profile create failed (${response.status}, ${body?.code ?? "no code"})`);
+      return "error";
     },
     async getProfile(userId) {
       const response = await call(`/rest/v1/journal_profiles?select=fpl_team_id&user_id=eq.${encodeURIComponent(userId)}&limit=1`, { key: env.serviceKey });
@@ -81,7 +97,8 @@ export function createSupabaseStore(env: { url: string; anonKey: string; service
     },
     async listSnapshots(userId, accessToken) {
       const response = await call(`/rest/v1/journal_snapshots?select=gw,snapshot&user_id=eq.${encodeURIComponent(userId)}&order=gw.desc`, { key: env.anonKey, token: accessToken });
-      return response.ok ? ((await response.json()) as Array<{ gw: number; snapshot: unknown }>) : [];
+      if (!response.ok) throw new Error(`snapshots read failed (${response.status})`);
+      return (await response.json()) as Array<{ gw: number; snapshot: unknown }>;
     },
     async savedGws(userId) {
       const response = await call(`/rest/v1/journal_snapshots?select=gw&user_id=eq.${encodeURIComponent(userId)}`, { key: env.serviceKey });
@@ -99,7 +116,8 @@ export function createSupabaseStore(env: { url: string; anonKey: string; service
     },
     async listNotes(userId, accessToken) {
       const response = await call(`/rest/v1/journal_notes?select=gw,review,good,bad,plan,principles&user_id=eq.${encodeURIComponent(userId)}`, { key: env.anonKey, token: accessToken });
-      return response.ok ? ((await response.json()) as JournalNotes[]) : [];
+      if (!response.ok) throw new Error(`notes read failed (${response.status})`);
+      return (await response.json()) as JournalNotes[];
     },
     async saveNotes(userId, accessToken, notes) {
       const response = await call("/rest/v1/journal_notes", {

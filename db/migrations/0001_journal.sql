@@ -1,5 +1,6 @@
 -- 주간 경기 리뷰 일지 (이슈 #21). 적용 전 대표 승인 필요. 이 파일은 코드 저장소에만 있고 아직 어떤 DB에도 적용하지 않았다.
 -- Supabase Postgres + Supabase Auth(이메일 가입). 저장하는 개인정보는 이메일(auth.users)과 FPL 팀 번호뿐이다.
+begin;
 
 create table if not exists public.journal_profiles (
   user_id uuid primary key references auth.users (id) on delete cascade,
@@ -35,19 +36,27 @@ alter table public.journal_profiles enable row level security;
 alter table public.journal_snapshots enable row level security;
 alter table public.journal_notes enable row level security;
 
+-- 권한: 비로그인(anon)은 아무것도 못 한다. 로그인 회원(authenticated)은 필요한 것만.
+revoke all on public.journal_profiles, public.journal_snapshots, public.journal_notes from anon, authenticated;
+grant select on public.journal_profiles to authenticated;
+grant select on public.journal_snapshots to authenticated;
+grant select, insert, update, delete on public.journal_notes to authenticated;
+
 create policy journal_profiles_select_own on public.journal_profiles
-  for select using (auth.uid() = user_id);
+  for select to authenticated using ((select auth.uid()) = user_id);
 
 create policy journal_snapshots_select_own on public.journal_snapshots
-  for select using (auth.uid() = user_id);
+  for select to authenticated using ((select auth.uid()) = user_id);
 
 create policy journal_notes_select_own on public.journal_notes
-  for select using (auth.uid() = user_id);
+  for select to authenticated using ((select auth.uid()) = user_id);
 create policy journal_notes_insert_own on public.journal_notes
-  for insert with check (auth.uid() = user_id);
+  for insert to authenticated with check ((select auth.uid()) = user_id);
 create policy journal_notes_update_own on public.journal_notes
-  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy journal_notes_delete_own on public.journal_notes
-  for delete using (auth.uid() = user_id);
+  for delete to authenticated using ((select auth.uid()) = user_id);
 
--- profiles와 snapshots는 회원용 쓰기 정책이 없다. 가입 처리와 자동 저장은 서버의 service role 키로만 한다.
+-- profiles와 snapshots는 회원용 쓰기 권한·정책이 없다. 가입 처리와 자동 저장은 서버의 service role 키로만 한다.
+
+commit;

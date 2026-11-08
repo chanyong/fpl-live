@@ -5,12 +5,13 @@ import { notesSchema, signupSchema, type JournalNotes, type JournalStore } from 
 function fakeStore(overrides: Partial<JournalStore> = {}) {
   const snapshots = new Map<string, Set<number>>();
   const store: JournalStore = {
-    signUp: vi.fn(async () => ({ user: { id: "u1", email: "a@b.co" } })),
+    signUp: vi.fn(async () => ({ user: { id: "u1", email: "a@b.co" }, existing: false })),
+    signOut: vi.fn(async () => {}),
     signIn: vi.fn(),
     deleteUser: vi.fn(async () => {}),
     teamTaken: vi.fn(async () => false),
     getUser: vi.fn(async () => null),
-    createProfile: vi.fn(async () => true),
+    createProfile: vi.fn(async (): Promise<"ok" | "team_taken" | "error"> => "ok"),
     getProfile: vi.fn(async () => null),
     listProfiles: vi.fn(async () => [
       { userId: "u1", teamId: 111 },
@@ -30,34 +31,66 @@ function fakeStore(overrides: Partial<JournalStore> = {}) {
 
 describe("signUpMember", () => {
   const input = { email: "a@b.co", password: "password1", teamId: 5 };
+  const found = async () => "found" as const;
 
   it("rejects an unknown FPL team before touching auth", async () => {
     const store = fakeStore();
-    expect(await signUpMember(store, input, async () => false)).toEqual({ ok: false, code: "team_not_found" });
+    expect(await signUpMember(store, input, async () => "missing" as const)).toEqual({ ok: false, code: "team_not_found" });
     expect(store.signUp).not.toHaveBeenCalled();
   });
 
   it("blocks a team number that already has an account", async () => {
     const store = fakeStore({ teamTaken: vi.fn(async () => true) });
-    expect(await signUpMember(store, input, async () => true)).toEqual({ ok: false, code: "team_taken" });
+    expect(await signUpMember(store, input, found)).toEqual({ ok: false, code: "team_taken" });
     expect(store.signUp).not.toHaveBeenCalled();
   });
 
-  it("removes the new account when it loses a race for the team number", async () => {
-    const store = fakeStore({ createProfile: vi.fn(async () => false) });
-    expect(await signUpMember(store, input, async () => true)).toEqual({ ok: false, code: "team_taken" });
+  it("removes only the new account when the team unique constraint is hit", async () => {
+    const store = fakeStore({ createProfile: vi.fn(async () => "team_taken" as const) });
+    expect(await signUpMember(store, input, found)).toEqual({ ok: false, code: "team_taken" });
     expect(store.deleteUser).toHaveBeenCalledWith("u1");
+  });
+
+  it("keeps the account on other profile errors and answers like a new sign-up", async () => {
+    const store = fakeStore({ createProfile: vi.fn(async () => "error" as const) });
+    expect(await signUpMember(store, input, found)).toMatchObject({ ok: true, needsConfirmation: true });
+    expect(store.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it("does not touch an already registered email and hides that it exists", async () => {
+    const store = fakeStore({ signUp: vi.fn(async () => ({ user: { id: "other", email: "a@b.co" }, existing: true })) });
+    expect(await signUpMember(store, input, found)).toMatchObject({ ok: true, needsConfirmation: true });
+    expect(store.createProfile).not.toHaveBeenCalled();
+    expect(store.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it("logs but survives a failed cleanup", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const store = fakeStore({
+      createProfile: vi.fn(async () => "team_taken" as const),
+      deleteUser: vi.fn(async () => {
+        throw new Error("boom");
+      })
+    });
+    expect(await signUpMember(store, input, found)).toEqual({ ok: false, code: "team_taken" });
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it("asks to retry when FPL is down instead of saying the team is missing", async () => {
+    const store = fakeStore();
+    expect(await signUpMember(store, input, async () => "unavailable" as const)).toEqual({ ok: false, code: "fpl_unavailable" });
   });
 
   it("creates account and profile", async () => {
     const store = fakeStore();
-    expect(await signUpMember(store, input, async () => true)).toMatchObject({ ok: true });
+    expect(await signUpMember(store, input, found)).toMatchObject({ ok: true });
     expect(store.createProfile).toHaveBeenCalledWith("u1", 5);
   });
 
   it("surfaces auth failures", async () => {
     const store = fakeStore({ signUp: vi.fn(async () => ({ error: "weak" })) });
-    expect(await signUpMember(store, input, async () => true)).toMatchObject({ ok: false, code: "signup_failed" });
+    expect(await signUpMember(store, input, found)).toMatchObject({ ok: false, code: "signup_failed" });
   });
 });
 
@@ -104,10 +137,12 @@ describe("runSnapshotJob", () => {
     expect(await runSnapshotJob(store, fpl())).toEqual({ users: 2, saved: 2, failed: 0 });
   });
 
-  it("skips weeks FPL has no history row for without counting a failure", async () => {
+  it("skips weeks FPL has no history row for without counting a failure or fetching picks", async () => {
     const store = fakeStore();
-    const lateJoiner = fpl({ history: async () => ({ current: [history.current[1]], chips: [] }) });
+    const picks = vi.fn(async () => [{ element: 1, position: 1, multiplier: 2, isCaptain: true }]);
+    const lateJoiner = fpl({ history: async () => ({ current: [history.current[1]], chips: [] }), picks });
     expect(await runSnapshotJob(store, lateJoiner)).toEqual({ users: 2, saved: 2, failed: 0 });
+    expect(picks).toHaveBeenCalledTimes(2);
   });
 });
 

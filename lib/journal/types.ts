@@ -26,13 +26,15 @@ export type JournalUser = { id: string; email: string };
 
 /** Storage seam. The Supabase implementation and the test fake both satisfy it. */
 export interface JournalStore {
-  signUp(email: string, password: string): Promise<{ user: JournalUser } | { error: string }>;
+  /** existing=true when the email already has an account (Supabase returns a fake user with no identities). */
+  signUp(email: string, password: string): Promise<{ user: JournalUser; existing: boolean } | { error: string }>;
+  signOut(accessToken: string): Promise<void>;
   signIn(email: string, password: string): Promise<{ accessToken: string; user: JournalUser } | { error: string }>;
   deleteUser(userId: string): Promise<void>;
   teamTaken(teamId: number): Promise<boolean>;
   getUser(accessToken: string): Promise<JournalUser | null>;
-  /** Returns false if the team id is already registered. */
-  createProfile(userId: string, teamId: number): Promise<boolean>;
+  /** team_taken only for the unique team constraint; other failures are 'error' and must not delete the account. */
+  createProfile(userId: string, teamId: number): Promise<"ok" | "team_taken" | "error">;
   getProfile(userId: string): Promise<{ teamId: number } | null>;
   listProfiles(): Promise<Array<{ userId: string; teamId: number }>>;
   listSnapshots(userId: string, accessToken: string): Promise<Array<{ gw: number; snapshot: unknown }>>;
