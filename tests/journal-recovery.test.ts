@@ -16,7 +16,9 @@ import { POST as login } from "@/app/api/journal/login/route";
 import { POST as recover } from "@/app/api/journal/recover/route";
 import { POST as resend } from "@/app/api/journal/resend/route";
 import { POST as resetPassword } from "@/app/api/journal/reset-password/route";
-import { parseRecoveryHash } from "@/lib/journal/recovery";
+import { allowMailRequest, resetRateLimits } from "@/lib/journal/rate-limit";
+import { consumeAuthHash, parseRecoveryHash } from "@/lib/journal/recovery";
+import { resetPasswordSchema, signupSchema } from "@/lib/journal/types";
 
 const post = (url: string, body: unknown, headers: Record<string, string> = { "sec-fetch-site": "same-origin" }) =>
   new NextRequest(`http://localhost${url}`, { method: "POST", headers, body: JSON.stringify(body) });
@@ -24,6 +26,7 @@ const post = (url: string, body: unknown, headers: Record<string, string> = { "s
 afterEach(() => {
   vi.clearAllMocks();
   vi.unstubAllEnvs();
+  resetRateLimits();
 });
 
 describe("recover", () => {
@@ -93,5 +96,66 @@ describe("parseRecoveryHash", () => {
     expect(parseRecoveryHash("#error=access_denied&error_code=otp_expired")).toEqual({ kind: "error", code: "otp_expired" });
     expect(parseRecoveryHash("#access_token=abc&type=signup")).toBeNull();
     expect(parseRecoveryHash("")).toBeNull();
+  });
+
+  it("returns null for a signup link but still clears its tokens from the address bar", () => {
+    const replaceState = vi.fn();
+    const where = { hash: "#access_token=abc&refresh_token=def&type=signup", pathname: "/journal", search: "?a=1" };
+    expect(consumeAuthHash(where, { replaceState })).toBeNull();
+    expect(replaceState).toHaveBeenCalledWith(null, "", "/journal?a=1");
+  });
+
+  it("clears recovery and error fragments, and leaves other hashes alone", () => {
+    const replaceState = vi.fn();
+    const base = { pathname: "/journal", search: "" };
+    expect(consumeAuthHash({ ...base, hash: "#access_token=abc&type=recovery" }, { replaceState })).toEqual({ kind: "recovery", accessToken: "abc" });
+    expect(consumeAuthHash({ ...base, hash: "#error=access_denied&error_code=otp_expired" }, { replaceState })).toEqual({ kind: "error", code: "otp_expired" });
+    expect(replaceState).toHaveBeenCalledTimes(2);
+    replaceState.mockClear();
+    expect(consumeAuthHash({ ...base, hash: "#section" }, { replaceState })).toBeNull();
+    expect(replaceState).not.toHaveBeenCalled();
+  });
+});
+
+describe("password byte limit", () => {
+  it("counts bytes, not characters, for sign-up and reset", () => {
+    const korean = "가".repeat(25); // 25 chars, 75 bytes
+    const ok = "가".repeat(24); // 72 bytes
+    expect(signupSchema.safeParse({ email: "a@b.co", password: korean, teamId: 1 }).success).toBe(false);
+    expect(signupSchema.safeParse({ email: "a@b.co", password: ok, teamId: 1 }).success).toBe(true);
+    const token = "t".repeat(30);
+    expect(resetPasswordSchema.safeParse({ accessToken: token, password: korean }).success).toBe(false);
+    expect(resetPasswordSchema.safeParse({ accessToken: token, password: ok }).success).toBe(true);
+  });
+});
+
+describe("mail request limits", () => {
+  const ipHeaders = (ip: string) => ({ "sec-fetch-site": "same-origin", "x-forwarded-for": `${ip}, 10.0.0.1` });
+
+  it("allows one mail per email per minute", () => {
+    expect(allowMailRequest("recover", "a@b.co", "1.1.1.1", 0)).toBe(true);
+    expect(allowMailRequest("recover", "a@b.co", "1.1.1.1", 30_000)).toBe(false);
+    expect(allowMailRequest("recover", "a@b.co", "1.1.1.1", 61_000)).toBe(true);
+    expect(allowMailRequest("resend", "a@b.co", "1.1.1.1", 62_000)).toBe(true);
+  });
+
+  it("allows five mails per IP per ten minutes", () => {
+    for (let i = 0; i < 5; i += 1) expect(allowMailRequest("recover", `u${i}@b.co`, "2.2.2.2", i)).toBe(true);
+    expect(allowMailRequest("recover", "u9@b.co", "2.2.2.2", 1000)).toBe(false);
+    expect(allowMailRequest("recover", "u9@b.co", "3.3.3.3", 1000)).toBe(true);
+    expect(allowMailRequest("recover", "u8@b.co", "2.2.2.2", 10 * 60_000 + 10)).toBe(true);
+  });
+
+  it("limited requests skip the mail but get the identical response", async () => {
+    const first = await recover(post("/api/journal/recover", { email: "r@b.co" }, ipHeaders("4.4.4.4")));
+    const second = await recover(post("/api/journal/recover", { email: "r@b.co" }, ipHeaders("4.4.4.4")));
+    expect(second.status).toBe(first.status);
+    expect(await second.json()).toEqual(await first.json());
+    expect(store.requestPasswordReset).toHaveBeenCalledTimes(1);
+
+    await resend(post("/api/journal/resend", { email: "r@b.co" }, ipHeaders("4.4.4.4")));
+    const again = await resend(post("/api/journal/resend", { email: "r@b.co" }, ipHeaders("4.4.4.4")));
+    expect(await again.json()).toEqual({ ok: true });
+    expect(store.resendConfirmation).toHaveBeenCalledTimes(1);
   });
 });

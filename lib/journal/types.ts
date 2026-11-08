@@ -1,8 +1,11 @@
 import { z } from "zod";
+import { passwordTooLong } from "@/lib/journal/password";
+
+const newPassword = z.string().min(8).refine((value) => !passwordTooLong(value));
 
 export const signupSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
-  password: z.string().min(8).max(72),
+  password: newPassword,
   teamId: z.coerce.number().int().positive().max(100_000_000)
 });
 
@@ -15,7 +18,7 @@ export const emailSchema = z.object({ email: z.string().trim().toLowerCase().ema
 
 export const resetPasswordSchema = z.object({
   accessToken: z.string().min(20).max(4000),
-  password: z.string().min(8).max(72)
+  password: newPassword
 });
 
 const text = z.string().max(4000);

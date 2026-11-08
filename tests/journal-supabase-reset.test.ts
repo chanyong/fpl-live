@@ -37,6 +37,16 @@ describe("password reset and sign-in codes", () => {
     await expect(store.requestPasswordReset("nobody@b.co", "https://site.test/journal")).resolves.toBeUndefined();
   });
 
+  it("updatePassword revokes the recovery session and stays ok if that fails", async () => {
+    const fetchMock = vi.fn(async (url: unknown) => {
+      if (String(url).includes("/logout")) throw new Error("network");
+      return new Response("{}", { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await store.updatePassword("tok", "newpassword1")).toBe("ok");
+    expect(String(fetchMock.mock.calls[1][0])).toBe("https://example.supabase.test/auth/v1/logout?scope=local");
+  });
+
   it("updatePassword maps token problems", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.stubGlobal("fetch", reply(200, {}));

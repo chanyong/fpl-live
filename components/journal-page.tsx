@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
 import { CONTACT_EMAIL } from "@/lib/site";
 import type { WeeklySnapshot } from "@/lib/journal-snapshot";
-import { parseRecoveryHash } from "@/lib/journal/recovery";
+import { passwordTooLong } from "@/lib/journal/password";
+import { consumeAuthHash } from "@/lib/journal/recovery";
 import type { JournalNotes } from "@/lib/journal/types";
 
 type Entries = {
@@ -48,8 +49,7 @@ export function JournalPage() {
 
   useEffect(() => {
     // A password-reset mail link comes back as /journal#access_token=...&type=recovery. Read it once, then clear it from the URL.
-    const fromMail = parseRecoveryHash(window.location.hash);
-    if (fromMail) window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    const fromMail = consumeAuthHash(window.location, window.history);
     if (fromMail?.kind === "recovery") {
       setRecoveryToken(fromMail.accessToken);
       setState("recovery");
@@ -125,6 +125,7 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const mismatch = mode === "signup" && confirm !== "" && password !== confirm;
+  const tooLong = mode === "signup" && passwordTooLong(password);
 
   const messages: Record<string, [string, string]> = {
     team_not_found: ["FPL에서 이 팀 번호를 찾지 못했습니다.", "FPL has no team with this ID."],
@@ -144,9 +145,18 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
     ]
   };
 
+  const coolTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (coolTimer.current) clearTimeout(coolTimer.current);
+    },
+    []
+  );
+
   function startCooldown() {
     setCooling(true);
-    setTimeout(() => setCooling(false), COOLDOWN_MS);
+    if (coolTimer.current) clearTimeout(coolTimer.current);
+    coolTimer.current = setTimeout(() => setCooling(false), COOLDOWN_MS);
   }
 
   async function resend() {
@@ -169,7 +179,7 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (mode === "signup" && password !== confirm) return;
+    if (mode === "signup" && (password !== confirm || tooLong)) return;
     const form = new FormData(event.currentTarget);
     form.delete("passwordConfirm");
     setBusy(true);
@@ -258,7 +268,7 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
           type="password"
           required
           minLength={mode === "signup" ? 8 : 1}
-          maxLength={72}
+          maxLength={mode === "signup" ? undefined : 72}
           autoComplete={mode === "signup" ? "new-password" : "current-password"}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
@@ -273,7 +283,6 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
             name="passwordConfirm"
             type="password"
             required
-            maxLength={72}
             autoComplete="new-password"
             value={confirm}
             onChange={(event) => setConfirm(event.target.value)}
@@ -288,6 +297,7 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
           {tr("비밀번호가 서로 다릅니다. 다시 확인해 주세요.", "Passwords do not match. Please check again.")}
         </p>
       )}
+      {tooLong && <p role="alert" className="text-sm text-red-700">{tr("비밀번호가 너무 깁니다. 72바이트 이하(영문 72자, 한글 약 24자)여야 합니다.", "Password is too long: 72 bytes max (72 letters; about 24 Korean characters).")}</p>}
       {mode === "signup" && (
         <label className="block text-body">
           {tr("FPL 팀 번호", "FPL team ID")}
@@ -307,7 +317,7 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
           </span>
         </label>
       )}
-      <button type="submit" disabled={busy || mismatch || (mode === "forgot" && cooling)} className={buttonClass}>
+      <button type="submit" disabled={busy || mismatch || tooLong || (mode === "forgot" && cooling)} className={buttonClass}>
         {mode === "login" ? tr("로그인", "Log in") : mode === "signup" ? tr("가입하기", "Sign up") : tr("재설정 메일 보내기", "Send reset email")}
       </button>
       {mode !== "signup" && (
@@ -340,10 +350,11 @@ export function ResetPasswordForm({ token, onDone, onExpired }: { token: string;
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const mismatch = confirm !== "" && password !== confirm;
+  const tooLong = passwordTooLong(password);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (password !== confirm) return;
+    if (password !== confirm || tooLong) return;
     setBusy(true);
     setMessage(null);
     try {
@@ -372,14 +383,13 @@ export function ResetPasswordForm({ token, onDone, onExpired }: { token: string;
       <h2 className="text-lg font-semibold">{tr("새 비밀번호 정하기", "Choose a new password")}</h2>
       <label className="block text-body">
         {tr("새 비밀번호", "New password")}
-        <input type="password" required minLength={8} maxLength={72} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className={inputClass} />
+        <input type="password" required minLength={8} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className={inputClass} />
       </label>
       <label className="block text-body">
         {tr("새 비밀번호 확인", "Confirm new password")}
         <input
           type="password"
           required
-          maxLength={72}
           autoComplete="new-password"
           value={confirm}
           onChange={(event) => setConfirm(event.target.value)}
@@ -392,7 +402,8 @@ export function ResetPasswordForm({ token, onDone, onExpired }: { token: string;
           {tr("비밀번호가 서로 다릅니다. 다시 확인해 주세요.", "Passwords do not match. Please check again.")}
         </p>
       )}
-      <button type="submit" disabled={busy || mismatch} className={buttonClass}>
+      {tooLong && <p role="alert" className="text-sm text-red-700">{tr("비밀번호가 너무 깁니다. 72바이트 이하(영문 72자, 한글 약 24자)여야 합니다.", "Password is too long: 72 bytes max (72 letters; about 24 Korean characters).")}</p>}
+      <button type="submit" disabled={busy || mismatch || tooLong} className={buttonClass}>
         {tr("비밀번호 바꾸기", "Change password")}
       </button>
       {message && <p role="status" className="text-body">{message}</p>}

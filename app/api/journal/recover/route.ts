@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { journalReturnUrl } from "@/lib/journal/recovery";
+import { allowMailRequest, clientIp } from "@/lib/journal/rate-limit";
 import { isSameOrigin, requireStore } from "@/lib/journal/session";
 import { emailSchema } from "@/lib/journal/types";
 
@@ -13,6 +14,9 @@ export async function POST(request: NextRequest) {
 
   const parsed = emailSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "invalid_input" }, { status: 400 });
+
+  // Over the limit: skip the mail but answer exactly the same.
+  if (!allowMailRequest("recover", parsed.data.email, clientIp(request.headers))) return NextResponse.json({ ok: true });
 
   try {
     await store.requestPasswordReset(parsed.data.email, journalReturnUrl());
