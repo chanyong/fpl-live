@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
-import { JournalPitch } from "@/components/journal-pitch";
+import { JournalPitch, StepHeading } from "@/components/journal-pitch";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
 import { CONTACT_EMAIL } from "@/lib/site";
 import type { WeeklySnapshot } from "@/lib/journal-snapshot";
@@ -18,12 +18,34 @@ type Entries = {
   notes: JournalNotes[];
 };
 
-const FIELDS: Array<{ key: keyof Omit<JournalNotes, "gw">; ko: string; en: string }> = [
-  { key: "review", ko: "이번 주 평가", en: "Weekly review" },
-  { key: "good", ko: "잘한 점", en: "What went well" },
-  { key: "bad", ko: "잘못한 점", en: "What went wrong" },
-  { key: "plan", ko: "향후 계획", en: "Plan ahead" },
-  { key: "principles", ko: "선수 관리 원칙", en: "Player management principles" }
+type Field = { key: keyof Omit<JournalNotes, "gw">; ko: string; en: string; helpKo: string; helpEn: string; exKo: string; exEn: string };
+
+const FIELDS: Field[] = [
+  {
+    key: "review", ko: "이번 주 평가", en: "Weekly review",
+    helpKo: "점수와 순위가 어땠는지 한두 줄로 적어 두세요.", helpEn: "A line or two on how the week went.",
+    exKo: "예) 평균보다 16점 높았지만 벤치에 24점이 남았다.", exEn: "e.g. 16 above average, but 24 points stayed on the bench."
+  },
+  {
+    key: "good", ko: "잘한 점", en: "What went well",
+    helpKo: "다음에도 반복하고 싶은 결정을 적습니다.", helpEn: "Decisions worth repeating.",
+    exKo: "예) Rogers를 이적으로 데려와 9점을 얻었다.", exEn: "e.g. Bringing in Rogers paid off with 9 points."
+  },
+  {
+    key: "bad", ko: "잘못한 점", en: "What went wrong",
+    helpKo: "아쉬웠던 선택과 그 이유를 적습니다.", helpEn: "Choices you regret, and why.",
+    exKo: "예) 주장을 Haaland로 정했는데 무득점이었다.", exEn: "e.g. Captained Haaland and he blanked."
+  },
+  {
+    key: "plan", ko: "향후 계획", en: "Plan ahead",
+    helpKo: "다음 게임위크에 할 일(이적·칩·주장)을 적습니다.", helpEn: "What you will do next week (transfers, chips, captain).",
+    exKo: "예) 부상 선수를 정리하고 이적 1회만 쓴다.", exEn: "e.g. Replace the injured player, one transfer only."
+  },
+  {
+    key: "principles", ko: "선수 관리 원칙", en: "Player management principles",
+    helpKo: "시즌 내내 지킬 기준을 적습니다.", helpEn: "Rules you want to keep all season.",
+    exKo: "예) 이적 감점은 한 주 4점 이하로 제한한다.", exEn: "e.g. Keep transfer hits to 4 points a week."
+  }
 ];
 
 const inputClass = "mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] p-2 text-body";
@@ -73,7 +95,7 @@ export function JournalPage() {
   }, [load]);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col px-6 py-12">
+    <main className="mx-auto flex min-h-screen max-w-4xl flex-col px-4 py-10 sm:px-6 sm:py-12">
       <div className="flex items-center justify-between gap-3">
         <Link href="/" className="text-body font-semibold text-[var(--muted)] hover:text-[var(--accent)]">← FPL Live</Link>
         <LocaleToggle />
@@ -489,8 +511,15 @@ function Journal({ entries, focusGw, onLogout }: { entries: Entries; focusGw: nu
         </p>
       ) : (
         <ul className="mt-6 space-y-6">
-          {entries.snapshots.map(({ gw, snapshot }) => (
-            <WeekCard key={gw} snapshot={snapshot} notes={notesByGw.get(gw)} highlighted={gw === focusGw} />
+          {entries.snapshots.map(({ gw, snapshot }, index) => (
+            <WeekCard
+              key={gw}
+              snapshot={snapshot}
+              previous={entries.snapshots.find((item) => item.gw === gw - 1)?.snapshot ?? null}
+              notes={notesByGw.get(gw)}
+              highlighted={gw === focusGw}
+              defaultOpen={focusGw !== null && focusSaved ? gw === focusGw : index === 0}
+            />
           ))}
         </ul>
       )}
@@ -498,12 +527,24 @@ function Journal({ entries, focusGw, onLogout }: { entries: Entries; focusGw: nu
   );
 }
 
-function WeekCard({ snapshot, notes, highlighted = false }: { snapshot: WeeklySnapshot; notes?: JournalNotes; highlighted?: boolean }) {
+function WeekCard({
+  snapshot,
+  previous = null,
+  notes,
+  highlighted = false,
+  defaultOpen = true
+}: {
+  snapshot: WeeklySnapshot;
+  previous?: WeeklySnapshot | null;
+  notes?: JournalNotes;
+  highlighted?: boolean;
+  defaultOpen?: boolean;
+}) {
   const { tr } = useLocale();
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(FIELDS.map((field) => [field.key, notes?.[field.key] ?? ""]))
   );
-  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "dirty" | "saving" | "saved" | "error">("idle");
 
   async function save(event: FormEvent) {
     event.preventDefault();
@@ -516,47 +557,57 @@ function WeekCard({ snapshot, notes, highlighted = false }: { snapshot: WeeklySn
     setStatus(response.ok ? "saved" : "error");
   }
 
+  const filled = FIELDS.filter((field) => values[field.key].trim() !== "").length;
+
   return (
     <li
       id={`gw-${snapshot.gw}`}
-      className={`scroll-mt-4 rounded-xl border p-4 ${highlighted ? "border-[var(--accent)] ring-2 ring-[var(--accent)]" : "border-[var(--border)]"}`}
+      className={`scroll-mt-4 rounded-md border bg-[var(--surface)] p-3 md:p-4 ${highlighted ? "border-[var(--accent)] ring-2 ring-[var(--accent)]" : "border-[var(--border)]"}`}
     >
-      <h2 className="text-lg font-semibold">
-        GW{snapshot.gw} · {snapshot.points}
-        {tr("점", " pts")}
-        {snapshot.transferCost > 0 ? ` (-${snapshot.transferCost})` : ""}
+      <h2 className="flex flex-wrap items-baseline gap-x-2 text-title-lg font-semibold">
+        <span>GW{snapshot.gw}</span>
+        <span className="tabular-nums">
+          {snapshot.points}
+          {tr("점", " pts")}
+          {snapshot.transferCost > 0 ? ` (-${snapshot.transferCost})` : ""}
+        </span>
+        <span className="text-meta font-normal text-[var(--muted)]">
+          {tr("일지", "Journal")} {filled}/{FIELDS.length}
+        </span>
       </h2>
-      <p className="mt-1 text-body text-[var(--muted)]">
-        {tr("누적", "Total")} {snapshot.totalPoints} · {tr("순위", "Rank")} {snapshot.overallRank?.toLocaleString() ?? "-"} · {tr("이적", "Transfers")} {snapshot.transfers} · {tr("벤치", "Bench")} {snapshot.benchPoints}
-        {snapshot.chip ? ` · ${snapshot.chip}` : ""}
-      </p>
-      <details className="mt-3 rounded-lg border border-[var(--border)] px-3 py-2">
-        <summary className="cursor-pointer text-body font-semibold">{tr("선수·경기 결과 보기", "Squad and results")}</summary>
-        <JournalPitch snapshot={snapshot} />
+      <details open={defaultOpen} className="mt-2">
+        <summary className="cursor-pointer rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-body font-semibold">
+          {tr("선수·경기 결과 보기", "Squad and results")}
+        </summary>
+        <JournalPitch snapshot={snapshot} previous={previous} />
       </details>
-      <form onSubmit={save} className="mt-3 space-y-3">
+      <form onSubmit={save} className="mt-6 space-y-4 border-t border-[var(--border)] pt-5">
+        <StepHeading step={4} title={tr("이번 주 일지 쓰기", "Write this week's journal")} hint={tr("위 결과를 보면서 적으세요. 비워 둔 칸은 건너뛰어도 됩니다.", "Write with the results above in view. You may skip any box.")} />
         {FIELDS.map((field) => (
-          <label key={field.key} className="block text-body">
-            {tr(field.ko, field.en)}
+          <label key={field.key} className="block">
+            <span className="block text-body-lg font-semibold">{tr(field.ko, field.en)}</span>
+            <span className="block text-meta text-[var(--muted)]">{tr(field.helpKo, field.helpEn)}</span>
             <textarea
-              rows={2}
+              rows={3}
               maxLength={4000}
+              placeholder={tr(field.exKo, field.exEn)}
               value={values[field.key]}
               onChange={(event) => {
                 setValues({ ...values, [field.key]: event.target.value });
-                setStatus("idle");
+                setStatus("dirty");
               }}
-              className={inputClass}
+              className="mt-1.5 w-full rounded-md border border-[var(--border)] bg-[var(--bg)] p-2.5 text-body-lg placeholder:text-[var(--muted)]/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
             />
           </label>
         ))}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button type="submit" disabled={status === "saving"} className={buttonClass}>
-            {tr("저장", "Save")}
+            {status === "saving" ? tr("저장 중…", "Saving…") : tr("저장", "Save")}
           </button>
-          <span role="status" className="text-body text-[var(--muted)]">
-            {status === "saved" && tr("저장했습니다", "Saved")}
-            {status === "error" && tr("저장하지 못했습니다", "Could not save")}
+          <span role="status" className="text-body">
+            {status === "dirty" && <span className="text-[var(--muted)]">{tr("저장하지 않은 변경이 있습니다", "Unsaved changes")}</span>}
+            {status === "saved" && <span className="font-semibold text-[var(--accent)]">{tr("✓ 저장했습니다", "✓ Saved")}</span>}
+            {status === "error" && <span className="font-semibold text-[var(--danger)]">{tr("저장하지 못했습니다. 다시 시도해 주세요", "Could not save. Please try again")}</span>}
           </span>
         </div>
       </form>

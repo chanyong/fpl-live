@@ -58,9 +58,10 @@ describe("JournalPitch", () => {
     );
     expect(screen.getByText("(x3)")).toBeTruthy();
     expect(screen.getByText("27")).toBeTruthy();
-    expect(screen.getByText("FT")).toBeTruthy();
+    expect(screen.getByText("종료")).toBeTruthy();
     expect(screen.getByText("2 - 1")).toBeTruthy();
-    expect(screen.getByText(/내 선수/).textContent).toContain("Haaland");
+    expect(screen.getByText("내 선수 1명 보유")).toBeTruthy();
+    expect(screen.getByRole("list", { name: "내 선수" }).textContent).toContain("Haaland");
     fireEvent.click(screen.getByRole("button", { name: /Haaland/ }));
     expect(screen.getByText(/x3 = 27/)).toBeTruthy();
   });
