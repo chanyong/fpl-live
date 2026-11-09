@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CaretDown, CaretRight } from "@/components/icons";
+import { JournalGwLink } from "@/components/journal-gw-link";
 import { KpiCard, KpiGrid } from "@/components/kpi-card";
 import { SidePanelLayout } from "@/components/side-panel-layout";
 import { RemoteImage, crestUrl } from "@/components/remote-image";
@@ -328,6 +329,7 @@ export function FixturesPanel({
   }, []);
 
   const ownership = useMemo(() => buildOwnership(rows, fixtures), [rows, fixtures]);
+  const leagueEntryIds = useMemo(() => rows.map((row) => row.entryId), [rows]);
 
   const statusCounts = useMemo(() => {
     const counts = { all: fixtures.length, live: 0, upcoming: 0, ended: 0 };
@@ -402,8 +404,11 @@ export function FixturesPanel({
     >
     <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-1.5 md:p-2">
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-1.5 px-1.5">
-        <div className="text-caption font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-          {tr(`게임위크 ${currentGw} 경기`, `Gameweek ${currentGw} fixtures`)}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="text-caption font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+            {tr(`게임위크 ${currentGw} 경기`, `Gameweek ${currentGw} fixtures`)}
+          </div>
+          <JournalGwLink gw={currentGw} currentGw={currentGw} leagueEntryIds={leagueEntryIds} />
         </div>
         <div role="group" aria-label={tr("경기 상태 필터", "Fixture status filter")} className="flex flex-wrap gap-1.5">
           {STATUS_FILTERS.map((item) => (
