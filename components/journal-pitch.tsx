@@ -357,11 +357,11 @@ function Results({ snapshot, players }: { snapshot: WeeklySnapshot; players: Sna
                   </div>
                   {own.length > 0 && (
                     <ul className="mt-2 flex flex-wrap gap-1.5 border-t border-dashed border-[var(--border)] pt-2" aria-label={tr("내 선수", "My players")}>
-                      {own.map((player) => {
+                      {own.map((player, index) => {
                         const scored = player.goals > 0 || player.assists > 0;
                         return (
                           <li
-                            key={player.name}
+                            key={`${player.name}-${index}`}
                             className={`rounded-md px-2 py-0.5 text-caption ${scored ? "bg-[var(--accent-soft)] font-semibold text-[var(--accent-ink)]" : "bg-[var(--surface)] text-[var(--muted)]"}`}
                           >
                             {player.name}
