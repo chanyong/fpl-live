@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildWeeklySnapshot, groupFixturesByDay, hasSnapshotDetail, playerDisplayPoints } from "@/lib/journal-snapshot";
+import { buildWeeklySnapshot, mergeDetailIntoSnapshot, groupFixturesByDay, hasSnapshotDetail, playerDisplayPoints } from "@/lib/journal-snapshot";
 import { runSnapshotBackfill, runSnapshotJob, type FplSource } from "@/lib/journal/service";
 import type { JournalStore } from "@/lib/journal/types";
 
@@ -103,7 +103,7 @@ describe("detail capture and backfill (issue #27)", () => {
   });
 
   const oldRows = [
-    { gw: 1, snapshot: { gw: 1, points: 50, extra: "keep" } },
+    { gw: 1, snapshot: { gw: 1, points: 999, totalPoints: 1, extra: "keep", fixtures: [{ id: 7, teamH: 1, teamA: 2, scoreH: 0, scoreA: 0 }] } },
     { gw: 2, snapshot: { gw: 2, points: 50, players: [] } }
   ];
 
@@ -121,8 +121,31 @@ describe("detail capture and backfill (issue #27)", () => {
     expect(store.saveSnapshot).not.toHaveBeenCalled();
     expect(await runSnapshotBackfill(store, detailed(), { write: true, limit: 1 })).toMatchObject({ dryRun: false, written: 1, failed: 0 });
     const written = (store.saveSnapshot as ReturnType<typeof vi.fn>).mock.calls[0][2] as Record<string, unknown>;
-    expect(written).toMatchObject({ extra: "keep", gw: 1 });
+    // Old values stay exactly as saved (FPL now says 50 points; the journal keeps 999), only new keys are added.
+    expect(written).toMatchObject({ extra: "keep", gw: 1, points: 999, totalPoints: 1 });
+    expect((store.saveSnapshot as ReturnType<typeof vi.fn>).mock.calls[0][3]).toEqual({ keepSavedAt: true });
     expect(Array.isArray(written.players)).toBe(true);
     expect((await runSnapshotBackfill(store, detailed(), { gws: [2] })).targets).toBe(0);
+  });
+});
+
+describe("mergeDetailIntoSnapshot", () => {
+  const fresh = {
+    gw: 1, points: 1, totalPoints: 2, overallRank: 3, transfers: 4, transferCost: 4, benchPoints: 5, chip: "bboost", captain: 9, starters: [9], bench: [8],
+    fixtures: [{ id: 7, teamH: 1, teamA: 2, scoreH: 3, scoreA: 3, kickoff: "2026-09-05T14:00:00Z", finished: true }],
+    viceCaptain: 8, autoSubs: [], gwRank: 5, average: 50, highest: 99, teams: { "1": "ARS" }, players: []
+  };
+  it("never changes an existing value, only appends missing keys and fixture kickoff/finished", () => {
+    const old = { gw: 1, points: 40, chip: null, captain: 1, starters: [1], bench: [2], fixtures: [{ id: 7, teamH: 1, teamA: 2, scoreH: 0, scoreA: 0 }, { id: 8, teamH: 3, teamA: 4, scoreH: 1, scoreA: 1 }] };
+    const merged = mergeDetailIntoSnapshot(old, fresh as never);
+    expect(merged).toMatchObject({ points: 40, chip: null, captain: 1, starters: [1], bench: [2], gwRank: 5, average: 50, players: [], teams: { "1": "ARS" } });
+    expect(merged.fixtures).toEqual([
+      { id: 7, teamH: 1, teamA: 2, scoreH: 0, scoreA: 0, kickoff: "2026-09-05T14:00:00Z", finished: true },
+      { id: 8, teamH: 3, teamA: 4, scoreH: 1, scoreA: 1 }
+    ]);
+    expect(old.fixtures[0]).not.toHaveProperty("kickoff");
+  });
+  it("keeps detail that is already there", () => {
+    expect(mergeDetailIntoSnapshot({ average: 1 }, fresh as never)).toMatchObject({ average: 1, highest: 99 });
   });
 });

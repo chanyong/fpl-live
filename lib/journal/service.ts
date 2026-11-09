@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import { buildWeeklySnapshot, getDueSnapshotGws, hasSnapshotDetail, type SnapshotDetail, type SnapshotEvent, type WeeklySnapshot } from "@/lib/journal-snapshot";
+import { buildWeeklySnapshot, getDueSnapshotGws, hasSnapshotDetail, mergeDetailIntoSnapshot, type SnapshotDetail, type SnapshotEvent, type WeeklySnapshot } from "@/lib/journal-snapshot";
 import { journalReturnUrl } from "@/lib/journal/recovery";
 import type { JournalStore } from "@/lib/journal/types";
 
@@ -113,7 +113,7 @@ export type BackfillOptions = {
   write?: boolean;
   /** Only these gameweeks. */
   gws?: number[];
-  /** Stop after writing this many member-weeks (for staged runs). */
+  /** Attempt only the first N member-weeks of the plan (GW ascending); failures and skipped weeks count toward N. */
   limit?: number;
 };
 
@@ -130,8 +130,8 @@ export type BackfillResult = {
 /**
  * Re-fills snapshots saved before issue #27 with the player ledger and match results.
  * Dry run is the default: it only reads our own store and reports what it would touch, with no FPL calls.
- * A write MERGES onto the old snapshot ({...old, ...fresh}); no old field is dropped, so undoing it
- * is just removing the added keys (see the rollback SQL in issue #27).
+ * A write keeps every existing value as saved (and saved_at) and only appends the new keys (mergeDetailIntoSnapshot),
+ * so undoing it is just removing those keys (see the rollback SQL in issue #27).
  */
 export async function runSnapshotBackfill(store: JournalStore, fpl: FplSource, options: BackfillOptions = {}): Promise<BackfillResult> {
   const write = options.write === true;
@@ -171,7 +171,7 @@ export async function runSnapshotBackfill(store: JournalStore, fpl: FplSource, o
       const fresh = buildWeeklySnapshot({ gw: item.gw, history, picks, fixtures, detail });
       if (!fresh) continue;
       const old = typeof item.old === "object" && item.old !== null ? item.old : {};
-      await store.saveSnapshot(item.userId, item.gw, { ...old, ...fresh });
+      await store.saveSnapshot(item.userId, item.gw, mergeDetailIntoSnapshot(old as Record<string, unknown>, fresh), { keepSavedAt: true });
       result.written += 1;
     } catch (error) {
       result.failed += 1;

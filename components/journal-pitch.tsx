@@ -173,6 +173,11 @@ function PlayerLedger({ player, snapshot }: { player: SnapshotPlayer; snapshot: 
   );
 }
 
+function formatDay(format: Intl.DateTimeFormat, day: string) {
+  const date = new Date(`${day}T12:00:00Z`);
+  return Number.isNaN(date.getTime()) ? "-" : format.format(date);
+}
+
 function Results({ snapshot, players }: { snapshot: WeeklySnapshot; players: SnapshotPlayer[] }) {
   const { tr, locale } = useLocale();
   const clubs = snapshot.teams;
@@ -192,7 +197,7 @@ function Results({ snapshot, players }: { snapshot: WeeklySnapshot; players: Sna
       <h3 className="text-body font-semibold">{tr(`GW${snapshot.gw} 경기 결과`, `GW${snapshot.gw} results`)}</h3>
       {groupFixturesByDay(snapshot.fixtures).map(({ day, items }) => (
         <div key={day || "unknown"} className="mt-2">
-          {day && <p className="text-caption font-semibold text-[var(--muted)]">{dayFormat.format(new Date(`${day}T12:00:00Z`))}</p>}
+          {day && <p className="text-caption font-semibold text-[var(--muted)]">{formatDay(dayFormat, day)}</p>}
           <ul className="divide-y divide-[var(--border)] rounded-md border border-[var(--border)]">
             {items.map((fixture) => (
               <li key={fixture.id} className="px-2 py-1.5 text-meta">

@@ -184,6 +184,34 @@ export function buildWeeklySnapshot(input: {
   };
 }
 
+/** Keys the issue #27 backfill may add to an old snapshot. Nothing else is ever touched. */
+export const DETAIL_KEYS = ["players", "teams", "autoSubs", "viceCaptain", "gwRank", "average", "highest"] as const;
+
+/**
+ * Adds the #27 detail to an OLD snapshot without changing any value it already has:
+ * only missing DETAIL_KEYS are appended, and fixtures (matched by id) only gain kickoff/finished when absent.
+ * Points, ranks, squad, chip and scores stay exactly as saved, so removing the new keys restores the original.
+ */
+export function mergeDetailIntoSnapshot(old: Record<string, unknown>, fresh: WeeklySnapshot): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...old };
+  for (const key of DETAIL_KEYS) {
+    if (!(key in merged) && fresh[key] !== undefined) merged[key] = fresh[key];
+  }
+  if (Array.isArray(old.fixtures)) {
+    const latest = new Map(fresh.fixtures.map((fixture) => [fixture.id, fixture]));
+    merged.fixtures = old.fixtures.map((fixture) => {
+      const known = typeof fixture === "object" && fixture !== null ? (fixture as Record<string, unknown>) : null;
+      const match = known ? latest.get(known.id as number) : undefined;
+      if (!known || !match) return fixture;
+      const extra: Record<string, unknown> = {};
+      if (!("kickoff" in known) && match.kickoff !== undefined) extra.kickoff = match.kickoff;
+      if (!("finished" in known) && match.finished !== undefined) extra.finished = match.finished;
+      return { ...known, ...extra };
+    });
+  }
+  return merged;
+}
+
 /** True when this saved snapshot already carries the issue #27 detail. */
 export function hasSnapshotDetail(snapshot: unknown) {
   return typeof snapshot === "object" && snapshot !== null && Array.isArray((snapshot as { players?: unknown }).players);
