@@ -38,7 +38,9 @@ export const bootstrapStaticSchema = z.object({
       is_current: z.boolean(),
       is_next: z.boolean().optional().default(false),
       finished: z.boolean(),
-      deadline_time: z.string().nullable().optional().default(null)
+      deadline_time: z.string().nullable().optional().default(null),
+      average_entry_score: z.number().nullable().optional().default(null),
+      highest_score: z.number().nullable().optional().default(null)
     })
   ),
   teams: z.array(
@@ -112,6 +114,7 @@ export const entryHistorySchema = z.object({
       points: z.number(),
       total_points: z.number(),
       overall_rank: z.number().nullable().optional().default(null),
+      rank: z.number().nullable().optional().default(null),
       bank: z.number().optional().default(0),
       value: z.number().optional().default(0),
       event_transfers: z.number().optional().default(0),

@@ -132,12 +132,18 @@ export function createSupabaseStore(env: { url: string; anonKey: string; service
       if (!response.ok) throw new Error(`snapshots read failed (${response.status})`);
       return ((await response.json()) as Array<{ gw: number }>).map((row) => row.gw);
     },
-    async saveSnapshot(userId, gw, snapshot) {
+    async snapshotsOf(userId) {
+      const response = await call(`/rest/v1/journal_snapshots?select=gw,snapshot&user_id=eq.${encodeURIComponent(userId)}&order=gw.asc`, { key: env.serviceKey });
+      if (!response.ok) throw new Error(`snapshots read failed (${response.status})`);
+      return (await response.json()) as Array<{ gw: number; snapshot: unknown }>;
+    },
+    async saveSnapshot(userId, gw, snapshot, options) {
       const response = await call("/rest/v1/journal_snapshots", {
         method: "POST",
         key: env.serviceKey,
         prefer: "resolution=merge-duplicates",
-        body: { user_id: userId, gw, snapshot, saved_at: new Date().toISOString() }
+        // merge-duplicates only updates the columns sent, so leaving saved_at out keeps the original save time.
+        body: options?.keepSavedAt ? { user_id: userId, gw, snapshot } : { user_id: userId, gw, snapshot, saved_at: new Date().toISOString() }
       });
       if (!response.ok) throw new Error(`snapshot save failed (${response.status})`);
     },

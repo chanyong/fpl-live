@@ -57,7 +57,10 @@ export interface JournalStore {
   listProfiles(): Promise<Array<{ userId: string; teamId: number }>>;
   listSnapshots(userId: string, accessToken: string): Promise<Array<{ gw: number; snapshot: unknown }>>;
   savedGws(userId: string): Promise<number[]>;
-  saveSnapshot(userId: string, gw: number, snapshot: unknown): Promise<void>;
+  /** Server-side read of a member's saved snapshots (service key). Used only by the detail backfill. */
+  snapshotsOf(userId: string): Promise<Array<{ gw: number; snapshot: unknown }>>;
+  /** keepSavedAt: leave the row's saved_at as it was (backfill only; a normal save stamps the time). */
+  saveSnapshot(userId: string, gw: number, snapshot: unknown, options?: { keepSavedAt?: boolean }): Promise<void>;
   listNotes(userId: string, accessToken: string): Promise<JournalNotes[]>;
   saveNotes(userId: string, accessToken: string, notes: JournalNotes): Promise<void>;
 }

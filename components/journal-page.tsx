@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { JournalPitch } from "@/components/journal-pitch";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
 import { CONTACT_EMAIL } from "@/lib/site";
 import type { WeeklySnapshot } from "@/lib/journal-snapshot";
@@ -497,6 +498,10 @@ function WeekCard({ snapshot, notes }: { snapshot: WeeklySnapshot; notes?: Journ
         {tr("누적", "Total")} {snapshot.totalPoints} · {tr("순위", "Rank")} {snapshot.overallRank?.toLocaleString() ?? "-"} · {tr("이적", "Transfers")} {snapshot.transfers} · {tr("벤치", "Bench")} {snapshot.benchPoints}
         {snapshot.chip ? ` · ${snapshot.chip}` : ""}
       </p>
+      <details className="mt-3 rounded-lg border border-[var(--border)] px-3 py-2">
+        <summary className="cursor-pointer text-body font-semibold">{tr("선수·경기 결과 보기", "Squad and results")}</summary>
+        <JournalPitch snapshot={snapshot} />
+      </details>
       <form onSubmit={save} className="mt-3 space-y-3">
         {FIELDS.map((field) => (
           <label key={field.key} className="block text-body">

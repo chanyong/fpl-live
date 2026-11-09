@@ -22,6 +22,7 @@ function fakeStore(overrides: Partial<JournalStore> = {}) {
     ]),
     listSnapshots: vi.fn(async () => []),
     savedGws: vi.fn(async (id: string) => [...(snapshots.get(id) ?? [])]),
+    snapshotsOf: vi.fn(async () => []),
     saveSnapshot: vi.fn(async (id: string, gw: number) => {
       snapshots.set(id, (snapshots.get(id) ?? new Set()).add(gw));
     }),
@@ -117,7 +118,7 @@ describe("runSnapshotJob", () => {
       { id: 3, finished: false }
     ],
     history: async () => history,
-    picks: async () => [{ element: 1, position: 1, multiplier: 2, isCaptain: true }],
+    picks: async () => ({ picks: [{ element: 1, position: 1, multiplier: 2, isCaptain: true }], autoSubs: [] }),
     fixtures: async () => [],
     ...overrides
   });
@@ -142,7 +143,7 @@ describe("runSnapshotJob", () => {
 
   it("skips weeks FPL has no history row for without counting a failure or fetching picks", async () => {
     const store = fakeStore();
-    const picks = vi.fn(async () => [{ element: 1, position: 1, multiplier: 2, isCaptain: true }]);
+    const picks = vi.fn(async () => ({ picks: [{ element: 1, position: 1, multiplier: 2, isCaptain: true }], autoSubs: [] }));
     const lateJoiner = fpl({ history: async () => ({ current: [history.current[1]], chips: [] }), picks });
     expect(await runSnapshotJob(store, lateJoiner)).toEqual({ users: 2, saved: 2, failed: 0 });
     expect(picks).toHaveBeenCalledTimes(2);
