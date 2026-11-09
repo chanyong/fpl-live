@@ -6,6 +6,7 @@ import { CaretDown, CaretRight } from "@/components/icons";
 import { KpiCard, KpiGrid } from "@/components/kpi-card";
 import { SidePanelLayout } from "@/components/side-panel-layout";
 import { ChipStatusPanel } from "@/components/chip-status-panel";
+import { JournalGwLink } from "@/components/journal-gw-link";
 import { RankDelta } from "@/components/rank-delta";
 import { formatMoney } from "@/lib/season-summary";
 import type { RankChangeManager, RankChangePoint, RankChangeResponse } from "@/lib/types";
@@ -294,11 +295,14 @@ function TrendChart({
   managers,
   gameweeks,
   totalManagers,
+  leagueEntryIds,
   headerRight
 }: {
   managers: TrendManager[];
   gameweeks: number[];
   totalManagers: number;
+  /** Every team in the league (not only the selected lines), to tell whether the member owns one. */
+  leagueEntryIds: number[];
   headerRight?: ReactNode;
 }) {
   const { tr } = useLocale();
@@ -464,7 +468,10 @@ function TrendChart({
       </ChartScroll>
 
       <div className="mt-3 border-t border-[var(--border)] pt-3">
-        <div className="mb-2 text-meta font-semibold">{tr(`GW${activeGw} 순위`, `GW${activeGw} ranks`)}</div>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="text-meta font-semibold">{tr(`GW${activeGw} 순위`, `GW${activeGw} ranks`)}</div>
+          <JournalGwLink gw={activeGw} currentGw={gameweeks[gameweeks.length - 1]} leagueEntryIds={leagueEntryIds} />
+        </div>
         <ol className="grid grid-cols-2 gap-1.5 md:grid-cols-3 xl:grid-cols-4">
           {activeRows.map(({ manager, point }) => (
             <li
@@ -794,6 +801,7 @@ export function RankChangePanel({ data }: { data: RankChangeResponse }) {
           managers={selectedManagers}
           gameweeks={visibleGameweeks}
           totalManagers={trendManagers.length}
+          leagueEntryIds={trendManagers.map((manager) => manager.entry)}
           headerRight={
             data.trend.gameweeks.length > PERIODS[0].size ? (
               <PeriodTabs value={period} onChange={setPeriod} />

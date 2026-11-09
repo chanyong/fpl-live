@@ -6,6 +6,7 @@ import { JournalPitch } from "@/components/journal-pitch";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
 import { CONTACT_EMAIL } from "@/lib/site";
 import type { WeeklySnapshot } from "@/lib/journal-snapshot";
+import { parseJournalGw } from "@/lib/journal/gw-link";
 import { passwordTooLong } from "@/lib/journal/password";
 import { consumeAuthHash } from "@/lib/journal/recovery";
 import type { JournalNotes } from "@/lib/journal/types";
@@ -34,6 +35,8 @@ export function JournalPage() {
   const [state, setState] = useState<"loading" | "guest" | "ready" | "unavailable" | "failed" | "recovery">("loading");
   const [recoveryToken, setRecoveryToken] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  // /journal?gw=12 (from the league page) opens that week; it is read after mount so the server render stays the same.
+  const [focusGw, setFocusGw] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -46,6 +49,10 @@ export function JournalPage() {
     } catch {
       setState("unavailable");
     }
+  }, []);
+
+  useEffect(() => {
+    setFocusGw(parseJournalGw(window.location.search));
   }, []);
 
   useEffect(() => {
@@ -88,6 +95,11 @@ export function JournalPage() {
           {tr("일지를 불러오지 못했습니다. 기존 기록을 지키려고 저장을 막았습니다. 잠시 뒤 새로고침해 주세요.", "Could not load your journal. Saving is disabled to protect existing notes. Please refresh in a moment.")}
         </p>
       )}
+      {state === "guest" && focusGw !== null && (
+        <p className="mt-6 text-body text-[var(--muted)]">
+          {tr(`로그인하면 GW${focusGw} 일지로 이동합니다.`, `Log in to open your GW${focusGw} journal.`)}
+        </p>
+      )}
       {state === "guest" && <AuthForms key={notice ?? "plain"} onDone={load} initialMessage={notice} />}
       {state === "recovery" && (
         <ResetPasswordForm
@@ -107,6 +119,7 @@ export function JournalPage() {
       {state === "ready" && entries && (
         <Journal
           entries={entries}
+          focusGw={focusGw}
           onLogout={() => {
             setEntries(null);
             setState("guest");
@@ -435,9 +448,17 @@ export function ResetPasswordForm({ token, onDone, onExpired }: { token: string;
   );
 }
 
-function Journal({ entries, onLogout }: { entries: Entries; onLogout: () => void }) {
+function Journal({ entries, focusGw, onLogout }: { entries: Entries; focusGw: number | null; onLogout: () => void }) {
   const { tr } = useLocale();
   const notesByGw = new Map(entries.notes.map((note) => [note.gw, note]));
+  const focusSaved = focusGw !== null && entries.snapshots.some((item) => item.gw === focusGw);
+
+  useEffect(() => {
+    if (!focusSaved) return;
+    const card = document.getElementById(`gw-${focusGw}`);
+    card?.scrollIntoView?.({ block: "start" });
+    card?.querySelector("textarea")?.focus({ preventScroll: true });
+  }, [focusGw, focusSaved]);
 
   async function logout() {
     await fetch("/api/journal/logout", { method: "POST" });
@@ -454,6 +475,14 @@ function Journal({ entries, onLogout }: { entries: Entries; onLogout: () => void
           {tr("로그아웃", "Log out")}
         </button>
       </div>
+      {focusGw !== null && !focusSaved && (
+        <p role="status" className="mt-4 text-body">
+          {tr(
+            `GW${focusGw} 일지는 게임위크가 끝나고 자동 저장된 뒤에 쓸 수 있습니다.`,
+            `The GW${focusGw} journal opens after the gameweek finishes and is saved automatically.`
+          )}
+        </p>
+      )}
       {entries.snapshots.length === 0 ? (
         <p className="mt-6 text-body text-[var(--muted)]">
           {tr("아직 저장된 주가 없습니다. 게임위크가 끝나면 하루 두 번 도는 자동 저장이 채웁니다.", "No weeks saved yet. The twice-daily job fills in each gameweek once it finishes.")}
@@ -461,7 +490,7 @@ function Journal({ entries, onLogout }: { entries: Entries; onLogout: () => void
       ) : (
         <ul className="mt-6 space-y-6">
           {entries.snapshots.map(({ gw, snapshot }) => (
-            <WeekCard key={gw} snapshot={snapshot} notes={notesByGw.get(gw)} />
+            <WeekCard key={gw} snapshot={snapshot} notes={notesByGw.get(gw)} highlighted={gw === focusGw} />
           ))}
         </ul>
       )}
@@ -469,7 +498,7 @@ function Journal({ entries, onLogout }: { entries: Entries; onLogout: () => void
   );
 }
 
-function WeekCard({ snapshot, notes }: { snapshot: WeeklySnapshot; notes?: JournalNotes }) {
+function WeekCard({ snapshot, notes, highlighted = false }: { snapshot: WeeklySnapshot; notes?: JournalNotes; highlighted?: boolean }) {
   const { tr } = useLocale();
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(FIELDS.map((field) => [field.key, notes?.[field.key] ?? ""]))
@@ -488,7 +517,10 @@ function WeekCard({ snapshot, notes }: { snapshot: WeeklySnapshot; notes?: Journ
   }
 
   return (
-    <li className="rounded-xl border border-[var(--border)] p-4">
+    <li
+      id={`gw-${snapshot.gw}`}
+      className={`scroll-mt-4 rounded-xl border p-4 ${highlighted ? "border-[var(--accent)] ring-2 ring-[var(--accent)]" : "border-[var(--border)]"}`}
+    >
       <h2 className="text-lg font-semibold">
         GW{snapshot.gw} · {snapshot.points}
         {tr("점", " pts")}
