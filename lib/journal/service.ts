@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { buildWeeklySnapshot, getDueSnapshotGws, type SnapshotEvent, type WeeklySnapshot } from "@/lib/journal-snapshot";
+import { journalReturnUrl } from "@/lib/journal/recovery";
 import type { JournalStore } from "@/lib/journal/types";
 
 export type SignupResult =
@@ -19,7 +20,7 @@ export async function signUpMember(
   if (team === "unavailable") return { ok: false, code: "fpl_unavailable" };
   if (await store.teamTaken(input.teamId)) return { ok: false, code: "team_taken" };
 
-  const created = await store.signUp(input.email, input.password);
+  const created = await store.signUp(input.email, input.password, journalReturnUrl());
   if ("error" in created) return { ok: false, code: "signup_failed", message: created.error };
 
   // Existing email: answer exactly like a new sign-up so the form cannot be used to probe for accounts,

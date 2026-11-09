@@ -13,6 +13,11 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: "invalid_input" }, { status: 400 });
 
   const session = await store.signIn(parsed.data.email, parsed.data.password);
+  // GoTrue checks the password before the confirmation state, so email_not_confirmed is only seen with the right
+  // password; unknown accounts and wrong passwords stay indistinguishable (login_failed).
+  if ("error" in session && session.code === "email_not_confirmed") {
+    return NextResponse.json({ error: "email_not_confirmed" }, { status: 401 });
+  }
   if ("error" in session) return NextResponse.json({ error: "login_failed" }, { status: 401 });
 
   const response = NextResponse.json({ ok: true });

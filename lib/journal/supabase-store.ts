@@ -29,14 +29,18 @@ export function createSupabaseStore(env: { url: string; anonKey: string; service
   const asUser = (raw: { id?: unknown; email?: unknown } | null): JournalUser | null =>
     raw && typeof raw.id === "string" ? { id: raw.id, email: typeof raw.email === "string" ? raw.email : "" } : null;
 
+  const errorBody = async (response: Response) =>
+    (await response.json().catch(() => null)) as { msg?: string; error_description?: string; message?: string; error_code?: string; code?: string | number } | null;
+
   const errorText = async (response: Response) => {
     const body = (await response.json().catch(() => null)) as { msg?: string; error_description?: string; message?: string } | null;
     return body?.msg ?? body?.error_description ?? body?.message ?? `status ${response.status}`;
   };
 
   return {
-    async signUp(email, password) {
-      const response = await call("/auth/v1/signup", { method: "POST", key: env.anonKey, body: { email, password } });
+    async signUp(email, password, redirectTo) {
+      const query = redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : "";
+      const response = await call(`/auth/v1/signup${query}`, { method: "POST", key: env.anonKey, body: { email, password } });
       if (!response.ok) return { error: await errorText(response) };
       const body = (await response.json()) as {
         user?: { id?: unknown; email?: unknown; identities?: unknown[] };
@@ -52,10 +56,32 @@ export function createSupabaseStore(env: { url: string; anonKey: string; service
     },
     async signIn(email, password) {
       const response = await call("/auth/v1/token?grant_type=password", { method: "POST", key: env.anonKey, body: { email, password } });
-      if (!response.ok) return { error: await errorText(response) };
+      if (!response.ok) {
+        const body = await errorBody(response);
+        const code = body?.error_code ?? (typeof body?.code === "string" ? body.code : undefined);
+        return { error: body?.msg ?? body?.error_description ?? body?.message ?? `status ${response.status}`, code };
+      }
       const body = (await response.json()) as { access_token?: string; user?: { id?: unknown; email?: unknown } };
       const user = asUser(body.user ?? null);
       return user && body.access_token ? { accessToken: body.access_token, user } : { error: "login failed" };
+    },
+    async requestPasswordReset(email, redirectTo) {
+      const response = await call(`/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`, { method: "POST", key: env.anonKey, body: { email } });
+      if (!response.ok) console.error(`journal: recover request failed (${response.status})`);
+    },
+    async resendConfirmation(email, redirectTo) {
+      const response = await call(`/auth/v1/resend?redirect_to=${encodeURIComponent(redirectTo)}`, { method: "POST", key: env.anonKey, body: { type: "signup", email } });
+      if (!response.ok) console.error(`journal: resend request failed (${response.status})`);
+    },
+    async updatePassword(accessToken, password) {
+      const response = await call("/auth/v1/user", { method: "PUT", key: env.anonKey, token: accessToken, body: { password } });
+      if (response.ok) {
+        // Drop the recovery session so the mail token is not left usable; a failure here does not undo the change.
+        await call("/auth/v1/logout?scope=global", { method: "POST", key: env.anonKey, token: accessToken }).catch(() => undefined);
+        return "ok";
+      }
+      console.error(`journal: password update failed (${response.status})`);
+      return response.status === 401 || response.status === 403 ? "invalid_token" : "error";
     },
     async signOut(accessToken) {
       await call("/auth/v1/logout", { method: "POST", key: env.anonKey, token: accessToken }).catch(() => undefined);

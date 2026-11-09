@@ -1,14 +1,24 @@
 import { z } from "zod";
+import { passwordTooLong } from "@/lib/journal/password";
+
+const newPassword = z.string().min(8).refine((value) => !passwordTooLong(value));
 
 export const signupSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
-  password: z.string().min(8).max(72),
+  password: newPassword,
   teamId: z.coerce.number().int().positive().max(100_000_000)
 });
 
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   password: z.string().min(1).max(72)
+});
+
+export const emailSchema = z.object({ email: z.string().trim().toLowerCase().email().max(254) });
+
+export const resetPasswordSchema = z.object({
+  accessToken: z.string().min(20).max(4000),
+  password: newPassword
 });
 
 const text = z.string().max(4000);
@@ -27,9 +37,17 @@ export type JournalUser = { id: string; email: string };
 /** Storage seam. The Supabase implementation and the test fake both satisfy it. */
 export interface JournalStore {
   /** existing=true when the email already has an account (Supabase returns a fake user with no identities). */
-  signUp(email: string, password: string): Promise<{ user: JournalUser; existing: boolean } | { error: string }>;
+  /** redirectTo is where the confirmation mail link returns to (Supabase redirect allow list). */
+  signUp(email: string, password: string, redirectTo?: string): Promise<{ user: JournalUser; existing: boolean } | { error: string }>;
   signOut(accessToken: string): Promise<void>;
-  signIn(email: string, password: string): Promise<{ accessToken: string; user: JournalUser } | { error: string }>;
+  /** code is GoTrue's error_code (e.g. email_not_confirmed); GoTrue only reports it after the password was right. */
+  signIn(email: string, password: string): Promise<{ accessToken: string; user: JournalUser } | { error: string; code?: string }>;
+  /** Sends a recovery mail. Resolves the same way for unknown emails; callers must not expose the outcome. */
+  requestPasswordReset(email: string, redirectTo: string): Promise<void>;
+  /** Re-sends the signup confirmation mail. Same silent behaviour as requestPasswordReset. */
+  resendConfirmation(email: string, redirectTo: string): Promise<void>;
+  /** Sets a new password using the recovery access token from the mail link. */
+  updatePassword(accessToken: string, password: string): Promise<"ok" | "invalid_token" | "error">;
   deleteUser(userId: string): Promise<void>;
   teamTaken(teamId: number): Promise<boolean>;
   getUser(accessToken: string): Promise<JournalUser | null>;

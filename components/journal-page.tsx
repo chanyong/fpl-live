@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
 import { CONTACT_EMAIL } from "@/lib/site";
 import type { WeeklySnapshot } from "@/lib/journal-snapshot";
+import { passwordTooLong } from "@/lib/journal/password";
+import { consumeAuthHash } from "@/lib/journal/recovery";
 import type { JournalNotes } from "@/lib/journal/types";
 
 type Entries = {
@@ -28,7 +30,9 @@ const buttonClass = "rounded-lg bg-[var(--accent)] px-4 py-2 text-body font-semi
 export function JournalPage() {
   const { tr } = useLocale();
   const [entries, setEntries] = useState<Entries | null>(null);
-  const [state, setState] = useState<"loading" | "guest" | "ready" | "unavailable" | "failed">("loading");
+  const [state, setState] = useState<"loading" | "guest" | "ready" | "unavailable" | "failed" | "recovery">("loading");
+  const [recoveryToken, setRecoveryToken] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -44,6 +48,19 @@ export function JournalPage() {
   }, []);
 
   useEffect(() => {
+    // A password-reset mail link comes back as /journal#access_token=...&type=recovery. Read it once, then clear it from the URL.
+    const fromMail = consumeAuthHash(window.location, window.history);
+    if (fromMail?.kind === "recovery") {
+      setRecoveryToken(fromMail.accessToken);
+      setState("recovery");
+      return;
+    }
+    if (fromMail?.kind === "confirmed") {
+      setNotice(tr("이메일 확인이 끝났습니다. 로그인해 주세요.", "Email confirmed. Please log in."));
+    }
+    if (fromMail?.kind === "error") {
+      setNotice(tr("메일의 링크가 만료됐거나 이미 사용됐습니다. 아래에서 다시 요청해 주세요.", "The email link has expired or was already used. Please request a new one below."));
+    }
     void load();
   }, [load]);
 
@@ -70,7 +87,22 @@ export function JournalPage() {
           {tr("일지를 불러오지 못했습니다. 기존 기록을 지키려고 저장을 막았습니다. 잠시 뒤 새로고침해 주세요.", "Could not load your journal. Saving is disabled to protect existing notes. Please refresh in a moment.")}
         </p>
       )}
-      {state === "guest" && <AuthForms onDone={load} />}
+      {state === "guest" && <AuthForms key={notice ?? "plain"} onDone={load} initialMessage={notice} />}
+      {state === "recovery" && (
+        <ResetPasswordForm
+          token={recoveryToken}
+          onDone={() => {
+            setRecoveryToken("");
+            setNotice(tr("비밀번호를 바꿨습니다. 새 비밀번호로 로그인해 주세요.", "Your password was changed. Please log in with the new password."));
+            setState("guest");
+          }}
+          onExpired={() => {
+            setRecoveryToken("");
+            setNotice(tr("메일의 링크가 만료됐거나 이미 사용됐습니다. 아래에서 다시 요청해 주세요.", "The email link has expired or was already used. Please request a new one below."));
+            setState("guest");
+          }}
+        />
+      )}
       {state === "ready" && entries && (
         <Journal
           entries={entries}
@@ -84,14 +116,19 @@ export function JournalPage() {
   );
 }
 
-export function AuthForms({ onDone }: { onDone: () => void }) {
+const COOLDOWN_MS = 60_000;
+
+export function AuthForms({ onDone, initialMessage = null }: { onDone: () => void; initialMessage?: string | null }) {
   const { tr } = useLocale();
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [message, setMessage] = useState<string | null>(null);
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
+  const [message, setMessage] = useState<string | null>(initialMessage);
+  const [unconfirmed, setUnconfirmed] = useState<string | null>(null);
+  const [cooling, setCooling] = useState(false);
   const [busy, setBusy] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const mismatch = mode === "signup" && confirm !== "" && password !== confirm;
+  const tooLong = mode === "signup" && passwordTooLong(password);
 
   const messages: Record<string, [string, string]> = {
     team_not_found: ["FPL에서 이 팀 번호를 찾지 못했습니다.", "FPL has no team with this ID."],
@@ -101,21 +138,76 @@ export function AuthForms({ onDone }: { onDone: () => void }) {
       `This team ID already has an account. If it is your team, contact ${CONTACT_EMAIL}.`
     ],
     invalid_input: ["입력을 확인해 주세요. 비밀번호는 8자 이상입니다.", "Check your input. Passwords need 8+ characters."],
+    email_not_confirmed: [
+      "이메일 확인이 아직 안 됐습니다. 메일의 확인 링크를 눌러 주세요.",
+      "Your email is not confirmed yet. Please click the confirmation link in the email."
+    ],
     login_failed: [
       "이메일 또는 비밀번호가 맞지 않습니다. 가입 직후라면 확인 메일의 링크를 먼저 눌러 주세요.",
       "Wrong email or password. If you just signed up, confirm via the email link first."
     ]
   };
 
+  const coolTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (coolTimer.current) clearTimeout(coolTimer.current);
+    },
+    []
+  );
+
+  function startCooldown() {
+    setCooling(true);
+    if (coolTimer.current) clearTimeout(coolTimer.current);
+    coolTimer.current = setTimeout(() => setCooling(false), COOLDOWN_MS);
+  }
+
+  async function resend() {
+    if (!unconfirmed || cooling) return;
+    setBusy(true);
+    try {
+      await fetch("/api/journal/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: unconfirmed })
+      });
+      startCooldown();
+      setMessage(tr("확인 메일을 다시 보냈습니다. 도착하지 않으면 스팸함을 확인하고, 1분 뒤 다시 요청해 주세요.", "We sent the confirmation email again. If it does not arrive, check spam and try again in a minute."));
+    } catch {
+      setMessage(tr("처리하지 못했습니다. 잠시 뒤 다시 시도해 주세요.", "Something went wrong. Please try again."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (mode === "signup" && password !== confirm) return;
+    if (mode === "signup" && (password !== confirm || tooLong)) return;
     const form = new FormData(event.currentTarget);
     form.delete("passwordConfirm");
     setBusy(true);
     setMessage(null);
+    setUnconfirmed(null);
     try {
       const body = Object.fromEntries(form.entries());
+      if (mode === "forgot") {
+        // The answer is the same whether or not the email has an account.
+        const reset = await fetch("/api/journal/recover", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: body.email })
+        });
+        if (reset.ok) {
+          startCooldown();
+          return setMessage(
+            tr(
+              "입력하신 주소로 가입된 계정이 있으면 비밀번호 재설정 메일을 보냈습니다. 메일이 안 보이면 스팸함을 확인하고, 1분 뒤 다시 요청해 주세요.",
+              "If an account exists for that address, we sent a password reset email. If you do not see it, check spam and try again in a minute."
+            )
+          );
+        }
+        return setMessage(tr(messages.invalid_input[0], messages.invalid_input[1]));
+      }
       const response = await fetch(`/api/journal/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -126,8 +218,16 @@ export function AuthForms({ onDone }: { onDone: () => void }) {
       if (response.ok) {
         setMode("login");
         setConfirm("");
-        return setMessage(tr("가입했습니다. 이메일로 간 확인 링크를 누른 뒤 로그인해 주세요.", "Signed up. Click the confirmation link in your email, then log in."));
+        setUnconfirmed(String(body.email ?? ""));
+        startCooldown();
+        return setMessage(
+          tr(
+            "확인 메일을 보냈습니다. 메일함(스팸함 포함)의 링크를 눌러야 로그인할 수 있습니다. 안 오면 1분 뒤 아래 버튼으로 다시 받을 수 있습니다.",
+            "We sent a confirmation email. Click the link in it (check spam too) before logging in. If it does not arrive, you can resend it below after a minute."
+          )
+        );
       }
+      if (data.error === "email_not_confirmed") setUnconfirmed(String(body.email ?? ""));
       const known = data.error ? messages[data.error] : undefined;
       setMessage(known ? tr(known[0], known[1]) : tr("처리하지 못했습니다. 잠시 뒤 다시 시도해 주세요.", "Something went wrong. Please try again."));
     } finally {
@@ -153,6 +253,7 @@ export function AuthForms({ onDone }: { onDone: () => void }) {
             onClick={() => {
               setMode(value);
               setMessage(null);
+              setUnconfirmed(null);
             }}
             onKeyDown={(event) => {
               if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
@@ -177,6 +278,12 @@ export function AuthForms({ onDone }: { onDone: () => void }) {
         {tr("이메일", "Email")}
         <input name="email" type="email" required autoComplete="email" className={inputClass} />
       </label>
+      {mode === "forgot" && (
+        <p className="text-body text-[var(--muted)]">
+          {tr("가입한 이메일을 입력하면 비밀번호를 다시 정하는 링크를 보내 드립니다.", "Enter your email and we will send you a link to choose a new password.")}
+        </p>
+      )}
+      {mode !== "forgot" && (
       <label className="block text-body">
         {tr("비밀번호", "Password")}
         <input
@@ -184,13 +291,14 @@ export function AuthForms({ onDone }: { onDone: () => void }) {
           type="password"
           required
           minLength={mode === "signup" ? 8 : 1}
-          maxLength={72}
+          maxLength={mode === "signup" ? undefined : 72}
           autoComplete={mode === "signup" ? "new-password" : "current-password"}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           className={inputClass}
         />
       </label>
+      )}
       {mode === "signup" && (
         <label className="block text-body">
           {tr("비밀번호 확인", "Confirm password")}
@@ -198,7 +306,6 @@ export function AuthForms({ onDone }: { onDone: () => void }) {
             name="passwordConfirm"
             type="password"
             required
-            maxLength={72}
             autoComplete="new-password"
             value={confirm}
             onChange={(event) => setConfirm(event.target.value)}
@@ -213,6 +320,7 @@ export function AuthForms({ onDone }: { onDone: () => void }) {
           {tr("비밀번호가 서로 다릅니다. 다시 확인해 주세요.", "Passwords do not match. Please check again.")}
         </p>
       )}
+      {tooLong && <p role="alert" className="text-sm text-red-700">{tr("비밀번호가 너무 깁니다. 72바이트 이하(영문 72자, 한글 약 24자)여야 합니다.", "Password is too long: 72 bytes max (72 letters; about 24 Korean characters).")}</p>}
       {mode === "signup" && (
         <label className="block text-body">
           {tr("FPL 팀 번호", "FPL team ID")}
@@ -232,8 +340,94 @@ export function AuthForms({ onDone }: { onDone: () => void }) {
           </span>
         </label>
       )}
-      <button type="submit" disabled={busy || mismatch} className={buttonClass}>
-        {mode === "login" ? tr("로그인", "Log in") : tr("가입하기", "Sign up")}
+      <button type="submit" disabled={busy || mismatch || tooLong || (mode === "forgot" && cooling)} className={buttonClass}>
+        {mode === "login" ? tr("로그인", "Log in") : mode === "signup" ? tr("가입하기", "Sign up") : tr("재설정 메일 보내기", "Send reset email")}
+      </button>
+      {mode !== "signup" && (
+        <button
+          type="button"
+          onClick={() => {
+            setMode(mode === "login" ? "forgot" : "login");
+            setMessage(null);
+            setUnconfirmed(null);
+          }}
+          className="block text-body font-semibold text-[var(--accent)] underline"
+        >
+          {mode === "login" ? tr("비밀번호를 잊으셨나요?", "Forgot your password?") : tr("← 로그인으로 돌아가기", "← Back to log in")}
+        </button>
+      )}
+      {message && <p role="status" className="text-body">{message}</p>}
+      {unconfirmed && mode === "login" && (
+        <button type="button" onClick={resend} disabled={busy || cooling} className={buttonClass}>
+          {tr("확인 메일 다시 보내기", "Resend confirmation email")}
+        </button>
+      )}
+    </form>
+  );
+}
+
+export function ResetPasswordForm({ token, onDone, onExpired }: { token: string; onDone: () => void; onExpired: () => void }) {
+  const { tr } = useLocale();
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const mismatch = confirm !== "" && password !== confirm;
+  const tooLong = passwordTooLong(password);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (password !== confirm || tooLong) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/journal/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessToken: token, password })
+      });
+      if (response.ok) return onDone();
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      if (data.error === "link_expired") return onExpired();
+      setMessage(
+        data.error === "invalid_input"
+          ? tr("비밀번호는 8자 이상이어야 합니다.", "Passwords need 8+ characters.")
+          : tr("비밀번호를 바꾸지 못했습니다. 이전과 다른 비밀번호로 다시 시도해 주세요.", "Could not change the password. Please try a different one.")
+      );
+    } catch {
+      setMessage(tr("처리하지 못했습니다. 잠시 뒤 다시 시도해 주세요.", "Something went wrong. Please try again."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="mt-8 space-y-4" aria-label="reset-password">
+      <h2 className="text-lg font-semibold">{tr("새 비밀번호 정하기", "Choose a new password")}</h2>
+      <label className="block text-body">
+        {tr("새 비밀번호", "New password")}
+        <input type="password" required minLength={8} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} className={inputClass} />
+      </label>
+      <label className="block text-body">
+        {tr("새 비밀번호 확인", "Confirm new password")}
+        <input
+          type="password"
+          required
+          autoComplete="new-password"
+          value={confirm}
+          onChange={(event) => setConfirm(event.target.value)}
+          aria-invalid={mismatch}
+          className={inputClass}
+        />
+      </label>
+      {mismatch && (
+        <p role="alert" className="text-sm text-red-700">
+          {tr("비밀번호가 서로 다릅니다. 다시 확인해 주세요.", "Passwords do not match. Please check again.")}
+        </p>
+      )}
+      {tooLong && <p role="alert" className="text-sm text-red-700">{tr("비밀번호가 너무 깁니다. 72바이트 이하(영문 72자, 한글 약 24자)여야 합니다.", "Password is too long: 72 bytes max (72 letters; about 24 Korean characters).")}</p>}
+      <button type="submit" disabled={busy || mismatch || tooLong} className={buttonClass}>
+        {tr("비밀번호 바꾸기", "Change password")}
       </button>
       {message && <p role="status" className="text-body">{message}</p>}
     </form>
