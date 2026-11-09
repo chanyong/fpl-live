@@ -77,7 +77,7 @@ export function createSupabaseStore(env: { url: string; anonKey: string; service
       const response = await call("/auth/v1/user", { method: "PUT", key: env.anonKey, token: accessToken, body: { password } });
       if (response.ok) {
         // Drop the recovery session so the mail token is not left usable; a failure here does not undo the change.
-        await call("/auth/v1/logout?scope=local", { method: "POST", key: env.anonKey, token: accessToken }).catch(() => undefined);
+        await call("/auth/v1/logout?scope=global", { method: "POST", key: env.anonKey, token: accessToken }).catch(() => undefined);
         return "ok";
       }
       console.error(`journal: password update failed (${response.status})`);

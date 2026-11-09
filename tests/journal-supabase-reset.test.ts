@@ -44,7 +44,7 @@ describe("password reset and sign-in codes", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
     expect(await store.updatePassword("tok", "newpassword1")).toBe("ok");
-    expect(String(fetchMock.mock.calls[1][0])).toBe("https://example.supabase.test/auth/v1/logout?scope=local");
+    expect(String(fetchMock.mock.calls[1][0])).toBe("https://example.supabase.test/auth/v1/logout?scope=global");
   });
 
   it("updatePassword maps token problems", async () => {

@@ -13,7 +13,7 @@ describe("after sign-up", () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, needsConfirmation: true }) });
     vi.stubGlobal("fetch", fetchMock);
     render(<AuthForms onDone={() => {}} />);
-    fireEvent.click(screen.getByRole("button", { name: "가입", pressed: false }));
+    fireEvent.click(screen.getByRole("tab", { name: "가입", selected: false }));
     fireEvent.change(screen.getByLabelText("이메일"), { target: { value: "new@b.co" } });
     fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: "password1" } });
     fireEvent.change(screen.getByLabelText("비밀번호 확인"), { target: { value: "password1" } });

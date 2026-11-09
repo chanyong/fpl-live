@@ -18,10 +18,10 @@ export async function POST(request: NextRequest) {
   // Over the limit: skip the mail but answer exactly the same.
   if (!allowMailRequest("resend", parsed.data.email, clientIp(request.headers))) return NextResponse.json({ ok: true });
 
-  try {
-    await store.resendConfirmation(parsed.data.email, journalReturnUrl());
-  } catch {
-    console.error("journal: resend request errored");
-  }
+  // Not awaited: the response time must not reveal whether the account exists (Railway runs a long-lived server,
+  // so the call finishes after the response). Failures are only logged.
+  void Promise.resolve()
+    .then(() => store.resendConfirmation(parsed.data.email, journalReturnUrl()))
+    .catch(() => console.error("journal: resend request errored"));
   return NextResponse.json({ ok: true });
 }

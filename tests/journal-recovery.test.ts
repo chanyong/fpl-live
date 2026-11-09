@@ -49,6 +49,15 @@ describe("recover", () => {
   });
 });
 
+describe("mail calls are not awaited", () => {
+  it("answers immediately even when the mail call never settles", async () => {
+    store.requestPasswordReset.mockImplementationOnce(() => new Promise<void>(() => {}));
+    const response = await recover(post("/api/journal/recover", { email: "slow@b.co" }));
+    expect(await response.json()).toEqual({ ok: true });
+    expect(store.requestPasswordReset).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("resend", () => {
   it("is same-origin only and always answers ok", async () => {
     expect((await resend(post("/api/journal/resend", { email: "a@b.co" }, { origin: "http://evil.example" }))).status).toBe(403);
