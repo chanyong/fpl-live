@@ -132,6 +132,11 @@ export function createSupabaseStore(env: { url: string; anonKey: string; service
       if (!response.ok) throw new Error(`snapshots read failed (${response.status})`);
       return ((await response.json()) as Array<{ gw: number }>).map((row) => row.gw);
     },
+    async snapshotsOf(userId) {
+      const response = await call(`/rest/v1/journal_snapshots?select=gw,snapshot&user_id=eq.${encodeURIComponent(userId)}&order=gw.asc`, { key: env.serviceKey });
+      if (!response.ok) throw new Error(`snapshots read failed (${response.status})`);
+      return (await response.json()) as Array<{ gw: number; snapshot: unknown }>;
+    },
     async saveSnapshot(userId, gw, snapshot) {
       const response = await call("/rest/v1/journal_snapshots", {
         method: "POST",
