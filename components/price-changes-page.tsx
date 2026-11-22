@@ -1,27 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
 import { PriceChangesSection } from "@/components/price-changes-section";
-import { SiteNav } from "@/components/site-nav";
+import { SiteHeader } from "@/components/site-header";
 
 export function PriceChangesPage() {
   const { tr } = useLocale();
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-3 px-2 py-3 md:px-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <SiteNav />
-        <div className="flex items-center gap-2">
-          <Link
-            href="/"
-            className="inline-flex shrink-0 items-center rounded-md border border-[var(--border)] bg-[var(--bg)] px-3.5 py-1.5 text-caption font-semibold text-[var(--text)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
-          >
-            {tr("내 리그 보기", "Open my league")}
-          </Link>
-          <LocaleToggle />
-        </div>
-      </div>
+      <SiteHeader>
+        <LocaleToggle />
+      </SiteHeader>
       <header>
         <h1 className="text-2xl font-semibold leading-tight md:text-3xl">
           {tr("FPL 가격 변동 예측", "FPL price change predictions")}
