@@ -20,6 +20,23 @@ export function trackEvent(name: AnalyticsEvent, params: AnalyticsParams = {}): 
   }
 }
 
+/**
+ * Page view for an in-app navigation (a tab or page change without a reload). The first view of a visit is
+ * sent by gtag('config') in app/layout.tsx; that call also pins page_location, so later views name their own
+ * address here. Query is kept, the hash is dropped (same as the first view). The title is read by gtag when sent.
+ */
+export function trackPageView(location: Pick<Location, "origin" | "pathname" | "search">): void {
+  if (typeof window === "undefined" || typeof window.gtag !== "function") return;
+  try {
+    window.gtag("event", "page_view", {
+      page_location: `${location.origin}${location.pathname}${location.search}`,
+      page_path: location.pathname
+    });
+  } catch {
+    // Analytics must never break the page.
+  }
+}
+
 const MAX_TERM_LENGTH = 50;
 
 /**
