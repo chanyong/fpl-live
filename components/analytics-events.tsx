@@ -1,13 +1,30 @@
 "use client";
 
-import { useEffect } from "react";
-import { isFeedbackOpenClick, outboundLinkParams, trackEvent, trackSearch } from "@/lib/analytics";
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
+import { isFeedbackOpenClick, outboundLinkParams, trackEvent, trackPageView, trackSearch } from "@/lib/analytics";
+
+const PAGE_VIEW_SETTLE_MS = 300;
 
 /**
  * One document-level click listener for GA4 events (#19): outbound_click for links that leave the site
- * and feedback_open for the shared feedback button. Renders nothing.
+ * and feedback_open for the shared feedback button, plus a page_view for each in-app navigation (#33).
+ * Renders nothing.
  */
 export function AnalyticsEvents() {
+  const pathname = usePathname();
+  const firstPath = useRef(true);
+
+  useEffect(() => {
+    // The first view is sent by gtag('config'). Later ones wait a moment so the new tab title is in place.
+    if (firstPath.current) {
+      firstPath.current = false;
+      return;
+    }
+    const timer = window.setTimeout(() => trackPageView(window.location), PAGE_VIEW_SETTLE_MS);
+    return () => window.clearTimeout(timer);
+  }, [pathname]);
+
   useEffect(() => {
     function onClick(event: MouseEvent) {
       const path = event.composedPath();

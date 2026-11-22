@@ -1,9 +1,13 @@
 import { act, render, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AnalyticsEvents, useSearchTracking } from "@/components/analytics-events";
+import { nav } from "./helpers/mock-navigation";
 import { isFeedbackOpenClick, outboundLinkParams, safeSearchTerm, trackEvent, trackSearch } from "@/lib/analytics";
 
 // GA4 전환 이벤트(#19): search · outbound_click · feedback_open
+// AnalyticsEvents reads the address to send a page view per in-app navigation (#33).
+vi.mock("next/navigation", () => import("./helpers/mock-navigation"));
+
 describe("GA4 events", () => {
   let gtag: ReturnType<typeof vi.fn>;
 
@@ -101,5 +105,34 @@ describe("GA4 events", () => {
     });
     expect(gtag).toHaveBeenCalledTimes(1);
     expect(gtag).toHaveBeenCalledWith("event", "search", { search_area: "players", search_term: "salah" });
+  });
+});
+
+describe("GA4 page views for in-app navigation (#33)", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    nav.set("/league/1");
+    delete window.gtag;
+  });
+
+  it("sends nothing for the first view and one page_view with the new address per tab change", () => {
+    vi.useFakeTimers();
+    const gtag = vi.fn();
+    window.gtag = gtag;
+    nav.set("/league/1");
+    render(<AnalyticsEvents />);
+    act(() => vi.advanceTimersByTime(1000));
+    expect(gtag).not.toHaveBeenCalled();
+
+    window.history.replaceState(null, "", "/league/1/teams?ref=share#x");
+    act(() => nav.set("/league/1/teams"));
+    act(() => vi.advanceTimersByTime(1000));
+
+    expect(gtag).toHaveBeenCalledTimes(1);
+    expect(gtag).toHaveBeenCalledWith("event", "page_view", {
+      page_location: `${window.location.origin}/league/1/teams?ref=share`,
+      page_path: "/league/1/teams"
+    });
+    window.history.replaceState(null, "", "/");
   });
 });
