@@ -37,9 +37,9 @@ describe("constants", () => {
 
 describe("cost per call", () => {
   it("is the input ceiling at $8 plus a full max_tokens of output at $40 per million", () => {
-    expect(INPUT_TOKEN_CEILING).toBe(40_000);
-    expect(maxCostPerCallUsd()).toBe(0.96);
-    expect(maxCostPerCallUsd()).toBeCloseTo((40_000 * 8 + 16_000 * 40) / 1_000_000, 9);
+    expect(INPUT_TOKEN_CEILING).toBe(28_000);
+    expect(maxCostPerCallUsd()).toBe(0.864);
+    expect(maxCostPerCallUsd()).toBeCloseTo((28_000 * 8 + 16_000 * 40) / 1_000_000, 9);
   });
 
   it("the reservation is no smaller than any call the guards let through", () => {
@@ -56,16 +56,16 @@ describe("cost per call", () => {
 
   it("how many calls fit: the daily cap is reached by the dollar limit before the monthly one", () => {
     expect(Math.floor(DAILY_CAP_USD / maxCostPerCallUsd())).toBe(5);
-    expect(Math.floor(MONTHLY_CAP_USD / maxCostPerCallUsd())).toBe(41);
+    expect(Math.floor(MONTHLY_CAP_USD / maxCostPerCallUsd())).toBe(46);
   });
 });
 
 describe("input ceiling", () => {
   it("counts a token per character (a token is never shorter) and refuses text beyond the ceiling", () => {
     expect(estimateInputTokens("abcd")).toBe(4);
-    expect(withinInputCeiling("x".repeat(40_000))).toBe(true);
-    expect(withinInputCeiling("x".repeat(40_001))).toBe(false);
-    expect(withinInputCeiling("x".repeat(20_000), "y".repeat(20_000))).toBe(true);
+    expect(withinInputCeiling("x".repeat(28_000))).toBe(true);
+    expect(withinInputCeiling("x".repeat(28_001))).toBe(false);
+    expect(withinInputCeiling("x".repeat(14_000), "y".repeat(14_000))).toBe(true);
     expect(withinInputCeiling("x".repeat(20_000), "y".repeat(20_001))).toBe(false);
   });
 

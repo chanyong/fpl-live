@@ -24,7 +24,7 @@ export function costUsd(usage: TokenUsage) {
 
 /**
  * Largest cost of one call: the input ceiling at the input price plus a full max_tokens of output at the output
- * price (40,000 x $8 + 16,000 x $40 per million = $0.32 + $0.64 = $0.96). This is the amount reserved in the
+ * price (28,000 x $8 + 16,000 x $40 per million = $0.224 + $0.64 = $0.864). This is the amount reserved in the
  * database before every call, a retry included; the settled cost replaces it once the real usage is known.
  */
 export function maxCostPerCallUsd() {
