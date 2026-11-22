@@ -277,6 +277,17 @@ export class FakeStore implements AiStore {
     }
   }
 
+  /** Set to make monthUsageUsd return this instead of the rows' sum (boundary tests). */
+  monthUsageOverride: number | null = null;
+
+  async monthUsageUsd() {
+    this.guard("month-usage");
+    if (this.monthUsageOverride !== null) return this.monthUsageOverride;
+    const now = new Date(this.clock());
+    const start = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1);
+    return this.usage.filter((row) => row.created >= start).reduce((sum, row) => sum + row.cost, 0);
+  }
+
   async failJob(jobId: string, code: string) {
     this.guard("fail-job");
     const job = this.jobs.find((item) => item.id === jobId)!;

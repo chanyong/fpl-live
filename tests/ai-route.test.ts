@@ -132,7 +132,7 @@ describe("a running and a finished analysis", () => {
     const client = new FakeClient([]);
     const store = new FakeStore();
     use({ input, client, store });
-    expect(await (await GET(get(`?entryId=${TEAM}&locale=en`))).json()).toEqual({ status: "none" });
+    expect(await (await GET(get(`?entryId=${TEAM}&locale=en`))).json()).toEqual({ status: "none", budgetNotice: null });
     expect(store.startCalls).toBe(0);
     expect(client.calls).toBe(0);
   });
@@ -155,7 +155,7 @@ describe("a running and a finished analysis", () => {
     const { jobs } = use({ input, client });
     await POST(post({ entryId: TEAM, locale: "ko" }));
     await Promise.all(jobs);
-    expect(await (await GET(get(`?entryId=${TEAM}&locale=ko`))).json()).toEqual({ status: "failed", code: "refusal" });
+    expect(await (await GET(get(`?entryId=${TEAM}&locale=ko`))).json()).toEqual({ status: "failed", code: "refusal", budgetNotice: null });
   });
 });
 

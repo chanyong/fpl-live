@@ -1,6 +1,6 @@
 import { AiCallError, type AiClient } from "@/lib/ai/anthropic-client";
 import { costUsd, maxCostPerCallUsd, withinInputCeiling } from "@/lib/ai/budget";
-import { AI_MODEL_ID, MAX_RETRIES, STALE_RUNNING_MS, isAllowedEntry, type AiConfig } from "@/lib/ai/config";
+import { AI_MODEL_ID, MAX_RETRIES, MONTHLY_CAP_USD, STALE_RUNNING_MS, isAllowedEntry, type AiConfig } from "@/lib/ai/config";
 import type { AiInput } from "@/lib/ai/input-bundle";
 import { AI_OUTPUT_JSON_SCHEMA, validateAiOutput, type AiResult } from "@/lib/ai/schema";
 import { AiStoreError, type AiStore, type JobKey, type StoredJob } from "@/lib/ai/store";
@@ -84,6 +84,42 @@ const withPrevious = (previous: DonePayload | null) => (previous ? { previous } 
 function logCode(where: string, code: string) {
   // Codes only: never the request, a header, the key or an SDK message.
   console.error(`[entry-ai] ${where}: ${code}`);
+}
+
+export type BudgetNotice = "near_limit" | null;
+
+/** The notice appears once this share of the month's cap is counted: 80%. Compared in integers' terms (usage x 5 >= cap x 4) so 79.9% and 80% never swap through rounding. */
+const NOTICE_SHARE = { numerator: 4, denominator: 5 } as const;
+
+let lastBudgetLogDay: string | null = null;
+
+/** For tests. */
+export function resetBudgetNoticeLog() {
+  lastBudgetLogDay = null;
+}
+
+/**
+ * "near_limit" once this month's counted usage (reserved + settled) is at 80% of the monthly cap, else null. It
+ * carries no amount and no token count. A failed read is null: the notice is a courtesy, never an error. The
+ * server log gets one code line (`[entry-ai] budget_80`, no amount) at most once a day per process.
+ */
+export async function readBudgetNotice(deps: AiDeps): Promise<BudgetNotice> {
+  if (!deps.store) return null;
+  try {
+    const used = await deps.store.monthUsageUsd();
+    if (!Number.isFinite(used) || used * NOTICE_SHARE.denominator < MONTHLY_CAP_USD * NOTICE_SHARE.numerator) {
+      return null;
+    }
+    const today = new Date(deps.now()).toISOString().slice(0, 10);
+    if (lastBudgetLogDay !== today) {
+      lastBudgetLogDay = today;
+      // A code only: no amount, no key.
+      console.error("[entry-ai] budget_80");
+    }
+    return "near_limit";
+  } catch {
+    return null;
+  }
 }
 
 /** State of one key for a status poll: reads only, never starts anything. */

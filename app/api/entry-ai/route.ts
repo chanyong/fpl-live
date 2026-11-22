@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkEntryRequest } from "@/lib/entry-request-limit";
 import { clientIp } from "@/lib/journal/rate-limit";
-import { aiGate, readEntryAi, requestEntryAi, type AiOutcome } from "@/lib/ai/recommend";
+import { aiGate, readBudgetNotice, readEntryAi, requestEntryAi, type AiOutcome, type BudgetNotice } from "@/lib/ai/recommend";
 import { getAiDeps } from "@/lib/ai/runtime";
 import type { Locale } from "@/lib/locale";
 import { parseEntryId } from "@/lib/request-params";
@@ -25,18 +25,18 @@ function parseLocale(raw: unknown): Locale | null {
  * answer 200 with a status, so the screen shows the rules-based result and a one-line note. Only a running job
  * answers 202. The body never carries a prompt, a token count, a cost or an SDK message.
  */
-function outcomeResponse(outcome: AiOutcome) {
+function outcomeResponse(outcome: AiOutcome, extra: { budgetNotice?: BudgetNotice } = {}) {
   switch (outcome.status) {
     case "done":
-      return NextResponse.json({ status: "done", ...outcome.value }, { headers: NO_STORE });
+      return NextResponse.json({ status: "done", ...outcome.value, ...extra }, { headers: NO_STORE });
     case "pending":
-      return NextResponse.json({ status: "pending", previous: outcome.previous ?? null }, { status: 202, headers: { ...NO_STORE, "Retry-After": "5" } });
+      return NextResponse.json({ status: "pending", previous: outcome.previous ?? null, ...extra }, { status: 202, headers: { ...NO_STORE, "Retry-After": "5" } });
     case "limit":
-      return NextResponse.json({ status: "limit", reason: outcome.reason, previous: outcome.previous ?? null }, { headers: NO_STORE });
+      return NextResponse.json({ status: "limit", reason: outcome.reason, previous: outcome.previous ?? null, ...extra }, { headers: NO_STORE });
     case "failed":
-      return NextResponse.json({ status: "failed", code: outcome.code }, { headers: NO_STORE });
+      return NextResponse.json({ status: "failed", code: outcome.code, ...extra }, { headers: NO_STORE });
     default:
-      return NextResponse.json({ status: outcome.status }, { headers: NO_STORE });
+      return NextResponse.json({ status: outcome.status, ...extra }, { headers: NO_STORE });
   }
 }
 
@@ -57,7 +57,11 @@ function errorResponse(error: unknown, tag: string) {
   return NextResponse.json({ error: "Failed to build the analysis" }, { status: 500, headers: NO_STORE });
 }
 
-/** Status of one team's AI analysis. Reads only; it cannot start a paid call. `?entryId=&locale=ko|en` */
+/**
+ * Status of one team's AI analysis. Reads only; it cannot start a paid call. `?entryId=&locale=ko|en`
+ * When the layer is on and the team is allowed, the answer also carries `budgetNotice`: "near_limit" once this
+ * month's counted usage is at 80% of the cap, else null (no amount, no token count).
+ */
 export async function GET(request: NextRequest) {
   const parsed = parseEntryId(request.nextUrl.searchParams.get("entryId"));
   if ("error" in parsed) {
@@ -69,7 +73,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    return outcomeResponse(await readEntryAi(parsed.entryId, locale, getAiDeps()));
+    const deps = getAiDeps();
+    const outcome = await readEntryAi(parsed.entryId, locale, deps);
+    if (outcome.status === "disabled" || outcome.status === "not_allowed") {
+      return outcomeResponse(outcome);
+    }
+    return outcomeResponse(outcome, { budgetNotice: await readBudgetNotice(deps) });
   } catch (error) {
     return errorResponse(error, "entry-ai");
   }
