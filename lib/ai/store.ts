@@ -74,6 +74,8 @@ export interface AiStore {
   failUsage(usageId: string): Promise<void>;
   completeJob(jobId: string, result: unknown): Promise<void>;
   failJob(jobId: string, code: string): Promise<void>;
+  /** Everything counted against this month's cap so far (UTC month): reserved and settled amounts together. */
+  monthUsageUsd(): Promise<number>;
 }
 
 type Row = {
@@ -246,6 +248,17 @@ export function createSupabaseAiStore(env: { url: string; serviceKey: string }, 
         method: "PATCH",
         body: { status: "done", result, completed_at: new Date().toISOString() }
       });
+    },
+
+    async monthUsageUsd() {
+      const now = new Date();
+      const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+      const response = await call("month-usage", `/rest/v1/ai_usage?select=cost_usd&created_at=gte.${encodeURIComponent(monthStart)}&limit=5000`);
+      const rows = (await response.json()) as Array<{ cost_usd: number | string }>;
+      if (!Array.isArray(rows)) {
+        throw new AiStoreError("month-usage", 200);
+      }
+      return rows.reduce((sum, row) => sum + Number(row.cost_usd), 0);
     },
 
     async failJob(jobId, code) {

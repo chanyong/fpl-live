@@ -23,12 +23,16 @@ import type { TransferScenario } from "@/lib/xp/transfer-search";
 export const POLL_INTERVAL_MS = 5_000;
 export const POLL_GIVE_UP_MS = 20 * 60_000;
 
-type AiBody =
+type AiBody = (
   | { status: "none" | "disabled" | "not_allowed" }
   | ({ status: "done" } & DonePayload)
   | { status: "pending"; previous?: DonePayload | null }
   | { status: "limit"; reason: LimitReason; previous?: DonePayload | null }
-  | { status: "failed"; code?: string };
+  | { status: "failed"; code?: string }
+) & {
+  /** Only on a status read (GET): "near_limit" once this month's usage is at 80% of the cap. */
+  budgetNotice?: "near_limit" | null;
+};
 
 type View =
   | { phase: "loading" }
@@ -348,6 +352,8 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
   const [view, setView] = useState<View>({ phase: "loading" });
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  // The server's "80% of this month's limit" flag; only status reads carry it, and the latest read wins.
+  const [nearLimit, setNearLimit] = useState(false);
 
   // Opening the screen reads the status only. It never starts a paid call.
   useEffect(() => {
@@ -355,7 +361,9 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
     setView({ phase: "loading" });
     setNotice(null);
     void readStatus(entryId, locale).then((body) => {
-      if (!cancelled) setView(body ? toView(body, null) : { phase: "hidden" });
+      if (cancelled) return;
+      setNearLimit(body?.budgetNotice === "near_limit");
+      setView(body ? toView(body, null) : { phase: "hidden" });
     });
     return () => {
       cancelled = true;
@@ -387,6 +395,7 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
       const body = await readStatus(entryId, locale);
       inFlight = false;
       if (stopped) return;
+      if (body) setNearLimit(body.budgetNotice === "near_limit");
       if (body && body.status === "pending") {
         setView((current) => (current.phase === "pending" ? { phase: "pending", shown: body.previous ?? current.shown } : current));
         schedule();
@@ -438,6 +447,12 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
   return (
     <section aria-label={tr("AI 의견", "AI opinion")} className="flex flex-col gap-2 border-t border-[var(--border)] pt-3">
       <h2 className="text-title font-semibold">{tr("AI 의견 (참고용)", "AI opinion (for reference)")}</h2>
+
+      {nearLimit ? (
+        <p role="note" className="rounded-md border border-[var(--border)] px-3 py-2 text-meta text-[var(--warning)]">
+          {tr("이번 달 AI 분석 한도의 80%를 넘었습니다.", "Over 80% of this month's AI analysis limit has been used.")}
+        </p>
+      ) : null}
 
       {view.phase === "none" ? (
         <div className="flex flex-col items-start gap-1.5">
