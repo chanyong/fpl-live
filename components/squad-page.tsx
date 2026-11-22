@@ -305,10 +305,15 @@ export function SquadPage({ entryId }: { entryId: number }) {
               {tr("개인정보처리방침", "Privacy policy")}
             </Link>
             {" · "}
-            {tr(
-              "FPL이 공개한 팀 정보를 그때그때 불러와 보여 줄 뿐 저장하지 않습니다.",
-              "Team data is FPL's public data, fetched on demand and not stored."
-            )}
+            {isAllowedEntry(entryId)
+              ? tr(
+                  "데이터 출처: Fantasy Premier League 공개 데이터. FPL Live는 비공식 서비스이며 Premier League·FPL과 제휴 관계가 없습니다. 이 팀은 추천 결과와 GW별 추천 기록만 서버에 저장합니다.",
+                  "Source: Fantasy Premier League public data. FPL Live is unofficial and not affiliated with the Premier League or FPL. For this team only the recommendations and the per-gameweek recommendation log are stored."
+                )
+              : tr(
+                  "데이터 출처: Fantasy Premier League 공개 데이터. FPL Live는 비공식 서비스이며 Premier League·FPL과 제휴 관계가 없습니다. 팀 정보는 그때그때 불러와 보여 줄 뿐 저장하지 않습니다.",
+                  "Source: Fantasy Premier League public data. FPL Live is unofficial and not affiliated with the Premier League or FPL. Team data is fetched on demand and not stored."
+                )}
           </p>
         </>
       ) : null}
