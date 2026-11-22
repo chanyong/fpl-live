@@ -1,0 +1,141 @@
+import { EntryNotFoundError, EntryBusyError, FplUnavailableError, getEntrySquad } from "@/lib/entry-squad";
+import type { EntrySquadPayload } from "@/lib/squad-types";
+import { buildCaptainCandidates, type CaptainCandidate } from "@/lib/xp/captain";
+import { buildLineups, type LineupCandidate } from "@/lib/xp/lineup";
+import { XP_MODEL_VERSION, type XpPlayer, type XpTable } from "@/lib/xp/model";
+import { getXpTable } from "@/lib/xp/xp-table";
+
+export { EntryNotFoundError, EntryBusyError, FplUnavailableError };
+
+export type RecommendPlayer = {
+  elementId: number;
+  webName: string;
+  teamShortName: string;
+  position: string;
+  status: string;
+  isStarter: boolean;
+  /** xP of the target gameweek, the next 3 / 5 gameweeks (discounted), and the availability factor. */
+  xpNext: number;
+  xp3: number;
+  xp5: number;
+  availability: number;
+  /** Fixtures of the target gameweek: none = blank, two = double. */
+  nextFixtures: Array<{ opponent: string; home: boolean; difficulty: number }>;
+};
+
+export type RecommendAssumption = { code: string; text: string };
+
+export type EntryRecommendPayload = {
+  entryId: number;
+  modelVersion: typeof XP_MODEL_VERSION;
+  /** Gameweek the xP and the candidates are for: the first whose deadline has not passed. */
+  targetGw: number;
+  /** Gameweek the squad was read from (the last deadline that passed); null when the team has no history. */
+  squadGw: number | null;
+  /** When the squad was loaded and when the xP table was built (ms since epoch). */
+  squadFetchedAt: number;
+  xpBuiltAt: number;
+  /** The 15 in FPL pick order. */
+  players: RecommendPlayer[];
+  /** L1 (recommended) to L3, best first. */
+  lineups: LineupCandidate[];
+  /** Top five of L1 by xP, with a recommendation weight (not a probability). */
+  captains: CaptainCandidate[];
+  assumptions: RecommendAssumption[];
+};
+
+export const ASSUMPTIONS: RecommendAssumption[] = [
+  {
+    code: "squad_last_deadline",
+    text: "The squad is the one at the last passed deadline; transfers, lineup and captain changes made since are not seen."
+  },
+  {
+    code: "xp1_rules",
+    text: "Expected points use form, points per game, start ratio, fixture difficulty and home/away only; they are estimates, not forecasts."
+  },
+  {
+    code: "chance_next_gw_only",
+    text: "FPL's chance of playing applies to the next gameweek only; later weeks use the start ratio."
+  },
+  {
+    code: "weight_not_probability",
+    text: "The captain weight is a relative recommendation among five players, not the probability of the top score."
+  }
+];
+
+function toRecommendPlayer(player: EntrySquadPayload["squad"][number], xp: XpPlayer | undefined): RecommendPlayer {
+  return {
+    elementId: player.elementId,
+    webName: player.webName,
+    teamShortName: player.teamShortName,
+    position: player.position,
+    status: player.status,
+    isStarter: player.isStarter,
+    xpNext: xp?.next ?? 0,
+    xp3: xp?.sum3 ?? 0,
+    xp5: xp?.sum5 ?? 0,
+    availability: xp?.availability ?? 0,
+    nextFixtures: (xp?.weeks[0]?.games ?? []).map((game) => ({
+      opponent: game.opponent,
+      home: game.home,
+      difficulty: game.difficulty
+    }))
+  };
+}
+
+/** Pure assembly of the recommendation from one team's squad and the shared xP table. */
+export function buildEntryRecommend(squad: EntrySquadPayload, table: XpTable): EntryRecommendPayload {
+  const squadPlayers = squad.squad;
+  const players = squadPlayers.map((player) => toRecommendPlayer(player, table.players.get(player.elementId)));
+
+  const lineups = buildLineups(
+    squadPlayers.map((player) => ({
+      id: player.elementId,
+      elementType: { GKP: 1, DEF: 2, MID: 3, FWD: 4 }[player.position],
+      xp: table.players.get(player.elementId)?.next ?? 0,
+      isStarter: player.isStarter
+    }))
+  );
+
+  const byId = new Map(players.map((player) => [player.elementId, player]));
+  const best = lineups[0];
+  const captains = best
+    ? buildCaptainCandidates(
+        best.starters.map((id) => {
+          const player = byId.get(id)!;
+          return {
+            id,
+            xp: player.xpNext,
+            fixtures: player.nextFixtures.map((fixture) => ({ opponent: fixture.opponent, home: fixture.home })),
+            selectedByPercent: table.players.get(id)?.selectedByPercent ?? 0
+          };
+        })
+      )
+    : [];
+
+  return {
+    entryId: squad.entryId,
+    modelVersion: table.modelVersion,
+    targetGw: table.targetGw,
+    squadGw: squad.gw,
+    squadFetchedAt: squad.fetchedAt,
+    xpBuiltAt: table.builtAt,
+    players,
+    lineups,
+    captains,
+    assumptions: ASSUMPTIONS
+  };
+}
+
+/**
+ * One team's recommendation: getEntrySquad (memoised 5 minutes, FPL calls capped for the whole process) plus
+ * the shared xP table (memoised 10 minutes). No FPL call of its own.
+ */
+export async function getEntryRecommend(entryId: number, forceRefresh = false): Promise<EntryRecommendPayload> {
+  const [squad, table] = await Promise.all([getEntrySquad(entryId, forceRefresh), getXpTable()]);
+  if (!table) {
+    // FPL did not answer and nothing is cached, or the season is over (no deadline ahead).
+    throw new FplUnavailableError();
+  }
+  return buildEntryRecommend(squad, table);
+}
