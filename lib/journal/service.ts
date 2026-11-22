@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { buildWeeklySnapshot, getDueSnapshotGws, hasSnapshotDetail, mergeDetailIntoSnapshot, type SnapshotDetail, type SnapshotEvent, type WeeklySnapshot } from "@/lib/journal-snapshot";
 import { journalReturnUrl } from "@/lib/journal/recovery";
-import type { JournalStore } from "@/lib/journal/types";
+import { TEAM_CHANGE_COOLDOWN_DAYS, type JournalStore } from "@/lib/journal/types";
 
 export type SignupResult =
   | { ok: true; needsConfirmation: boolean }
@@ -193,4 +193,53 @@ export function isValidCronSecret(provided: string | null, expected: string | un
 function logFailure(teamId: number, gw: number | null, error: unknown) {
   const reason = error instanceof Error ? error.message.slice(0, 120) : "unknown";
   console.error(`journal snapshot failed: team ${teamId}${gw === null ? "" : ` gw ${gw}`}: ${reason}`);
+}
+
+export type ChangeTeamOutcome =
+  | { ok: true }
+  | { ok: false; code: "same_team" | "team_taken" | "team_not_found" | "fpl_unavailable" | "change_failed" }
+  | { ok: false; code: "too_soon"; nextChangeAt: string };
+
+/** When the registered team may be changed again, or null when it may be changed now. */
+export function nextTeamChangeAt(teamChangedAt: string | null, cooldownDays = TEAM_CHANGE_COOLDOWN_DAYS, now = Date.now()): string | null {
+  if (!teamChangedAt) return null;
+  const changed = Date.parse(teamChangedAt);
+  if (!Number.isFinite(changed)) return null;
+  const next = changed + cooldownDays * 24 * 60 * 60 * 1000;
+  return next > now ? new Date(next).toISOString() : null;
+}
+
+/**
+ * A member changes the FPL team on the account (issue #47). The cheap checks run first so a blocked request makes no
+ * FPL call: same team, then the cooldown. The database function repeats both under a row lock, so two quick requests
+ * cannot both pass; it also removes the old team's auto-saved snapshots.
+ */
+export async function changeMemberTeam(
+  store: JournalStore,
+  userId: string,
+  teamId: number,
+  checkTeam: (teamId: number) => Promise<TeamCheck>,
+  now = Date.now()
+): Promise<ChangeTeamOutcome> {
+  const profile = await store.getProfile(userId);
+  if (profile?.teamId === teamId) return { ok: false, code: "same_team" };
+  const wait = profile ? nextTeamChangeAt(profile.teamChangedAt, TEAM_CHANGE_COOLDOWN_DAYS, now) : null;
+  if (wait) return { ok: false, code: "too_soon", nextChangeAt: wait };
+
+  const team = await checkTeam(teamId);
+  if (team === "missing") return { ok: false, code: "team_not_found" };
+  if (team === "unavailable") return { ok: false, code: "fpl_unavailable" };
+
+  const result = await store.changeTeam(userId, teamId, TEAM_CHANGE_COOLDOWN_DAYS);
+  switch (result.code) {
+    case "ok":
+      return { ok: true };
+    case "too_soon":
+      return { ok: false, code: "too_soon", nextChangeAt: result.nextChangeAt };
+    case "same_team":
+    case "team_taken":
+      return { ok: false, code: result.code };
+    default:
+      return { ok: false, code: "change_failed" };
+  }
 }
