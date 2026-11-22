@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkEntryRequest } from "@/lib/entry-request-limit";
+import { checkOwnTeam, ownTeamRefusal } from "@/lib/journal/own-team";
 import { clientIp } from "@/lib/journal/rate-limit";
+import { isSameOrigin } from "@/lib/journal/session";
 import { aiGate, readBudgetNotice, readEntryAi, requestEntryAi, type AiOutcome, type BudgetNotice } from "@/lib/ai/recommend";
 import { getAiDeps } from "@/lib/ai/runtime";
 import type { Locale } from "@/lib/locale";
@@ -59,6 +61,7 @@ function errorResponse(error: unknown, tag: string) {
 
 /**
  * Status of one team's AI analysis. Reads only; it cannot start a paid call. `?entryId=&locale=ko|en`
+ * Members only, for the member's own registered team (issue #47), checked after the free "off" and "not allowed" answers.
  * When the layer is on and the team is allowed, the answer also carries `budgetNotice`: "near_limit" once this
  * month's counted usage is at 80% of the cap, else null (no amount, no token count).
  */
@@ -74,6 +77,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const deps = getAiDeps();
+    // Off and not-allowed answer first: they cost nothing. Then the own-team check, then the database read.
+    const gate = aiGate(parsed.entryId, deps);
+    if (gate) return outcomeResponse(gate);
+    const refusal = ownTeamRefusal(await checkOwnTeam(request, parsed.entryId));
+    if (refusal) return refusal;
     const outcome = await readEntryAi(parsed.entryId, locale, deps);
     if (outcome.status === "disabled" || outcome.status === "not_allowed") {
       return outcomeResponse(outcome);
@@ -86,6 +94,10 @@ export async function GET(request: NextRequest) {
 
 /** Asks for the analysis: `{ entryId, locale, regenerate? }`. A stored copy is returned for free; otherwise a job starts and this answers 202. */
 export async function POST(request: NextRequest) {
+  // The login cookie authenticates this request, so a cross-site post must not get through (issue #47).
+  if (!isSameOrigin(request)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403, headers: NO_STORE });
+  }
   type Body = { entryId?: unknown; locale?: unknown; regenerate?: unknown };
   let body: Body | null = null;
   try {
@@ -116,6 +128,9 @@ export async function POST(request: NextRequest) {
   if (gate) {
     return outcomeResponse(gate);
   }
+
+  const refusal = ownTeamRefusal(await checkOwnTeam(request, parsed.entryId));
+  if (refusal) return refusal;
 
   // The existing per-IP brake stays in front of every paid path (the real defences are the global caps and the allow list).
   const verdict = checkEntryRequest(limitKey(request.headers), parsed.entryId, body.regenerate === true);

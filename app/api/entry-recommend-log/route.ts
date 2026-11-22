@@ -3,6 +3,7 @@ import { isAllowedEntry } from "@/lib/ai/allowed-entry";
 import { loadRecommendationLog } from "@/lib/ai/log-runtime";
 import type { RecommendLogResponse } from "@/lib/ai/rec-log";
 import { checkEntryRequest } from "@/lib/entry-request-limit";
+import { checkOwnTeam, ownTeamRefusal } from "@/lib/journal/own-team";
 import { clientIp } from "@/lib/journal/rate-limit";
 import { parseEntryId } from "@/lib/request-params";
 
@@ -18,7 +19,8 @@ function limitKey(headers: Headers) {
 /**
  * The recommendation log of one team (issue #43, stage 5): the last 10 recorded gameweeks, newest first, each
  * with the real result once the gameweek is finished. Only the allowed team has a log; every other team ID gets
- * an empty list (200) and no database access. A log that cannot be read is also an empty list: this is a
+ * an empty list (200) and no database access. Members only, for the member's own registered team (issue #47): no session
+ * answers 401 login_required, another team's ID 403 not_your_team; both come before the allowed-team check. A log that cannot be read is also an empty list: this is a
  * reference record, never an error screen.
  */
 export async function GET(request: NextRequest) {
@@ -26,6 +28,9 @@ export async function GET(request: NextRequest) {
   if ("error" in parsed) {
     return NextResponse.json({ error: parsed.error }, { status: 400, headers: NO_STORE });
   }
+
+  const refusal = ownTeamRefusal(await checkOwnTeam(request, parsed.entryId));
+  if (refusal) return refusal;
 
   const empty: RecommendLogResponse = { entries: [] };
   if (!isAllowedEntry(parsed.entryId)) {

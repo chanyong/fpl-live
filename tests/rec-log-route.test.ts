@@ -15,6 +15,12 @@ vi.mock("@/lib/ai/log-runtime", () => ({
   },
   loadRecommendationLog: (entryId: number) => readRecommendationLog(entryId, state.deps)
 }));
+// Issue #47: these tests are about what the route computes, not who may ask. The own-team guard has its own tests
+// (tests/own-team-guard.test.ts), so here it lets the request through.
+vi.mock("@/lib/journal/own-team", async (importActual) => ({
+  ...(await importActual<typeof import("@/lib/journal/own-team")>()),
+  checkOwnTeam: async () => "ok"
+}));
 vi.mock("@/lib/xp/recommend", async (importActual) => ({
   ...(await importActual<typeof import("@/lib/xp/recommend")>()),
   getEntryRecommend: vi.fn(async (entryId: number) => ({ ...state.payload, entryId }))

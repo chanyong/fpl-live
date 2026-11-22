@@ -8,6 +8,12 @@ import { DISABLED, FakeStore, NOW, TEAM, makeAiInput, makeDeps } from "./helpers
 
 const state = vi.hoisted(() => ({ deps: null as unknown as AiDeps }));
 vi.mock("@/lib/ai/runtime", () => ({ getAiDeps: () => state.deps }));
+// Issue #47: these tests are about what the route computes, not who may ask. The own-team guard has its own tests
+// (tests/own-team-guard.test.ts), so here it lets the request through.
+vi.mock("@/lib/journal/own-team", async (importActual) => ({
+  ...(await importActual<typeof import("@/lib/journal/own-team")>()),
+  checkOwnTeam: async () => "ok"
+}));
 
 import { GET } from "@/app/api/entry-ai/route";
 

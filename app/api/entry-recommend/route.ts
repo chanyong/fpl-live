@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAllowedEntry } from "@/lib/ai/allowed-entry";
 import { recordInBackground } from "@/lib/ai/log-runtime";
 import { checkEntryRequest } from "@/lib/entry-request-limit";
+import { checkOwnTeam, ownTeamRefusal } from "@/lib/journal/own-team";
 import { clientIp } from "@/lib/journal/rate-limit";
 import { parseEntryId } from "@/lib/request-params";
 import { EntryBusyError, EntryNotFoundError, FplUnavailableError, getEntryRecommend } from "@/lib/xp/recommend";
@@ -18,7 +19,9 @@ function limitKey(headers: Headers) {
 
 /**
  * Rule-based lineup, captain and transfer-scenario candidates for one team (issue #43, stages 1-A and 1-B):
- * expected points from the public FPL data, no login, no AI. Nothing is stored except, for the allowed team only, the best-effort recommendation log (lib/ai/rec-log). `horizon=3|5` is the number of
+ * expected points from the public FPL data, no AI. Members only, and only for the team registered on the member's own
+ * account (issue #47): no session answers 401 login_required, another team's ID 403 not_your_team. Nothing is stored except,
+ * for the allowed team only, the best-effort recommendation log (lib/ai/rec-log). `horizon=3|5` is the number of
  * gameweeks the transfer scenarios add up (default 3). It reads what /api/entry-squad reads (getEntrySquad) plus
  * the shared xP table, so it adds no FPL call.
  */
@@ -33,6 +36,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "horizon must be 3 or 5" }, { status: 400, headers: NO_STORE });
   }
   const horizon = horizonParam === "5" ? 5 : 3;
+
+  // The own-team check comes before the per-IP brake and before any FPL work.
+  const refusal = ownTeamRefusal(await checkOwnTeam(request, parsed.entryId));
+  if (refusal) return refusal;
 
   const forceRefresh = request.nextUrl.searchParams.get("refresh") === "1";
   const verdict = checkEntryRequest(limitKey(request.headers), parsed.entryId, forceRefresh);
