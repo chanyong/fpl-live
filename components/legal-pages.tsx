@@ -8,7 +8,8 @@ import { CONTACT_EMAIL } from "@/lib/site";
 
 // Each page carries its own date. Both changed on 2026-11-03 when the contact address moved (#12);
 // the privacy page also lists the GA4 feature-use events added the same day (#19).
-const PRIVACY_UPDATED = "2026-11-08";
+// 2026-11-22: the privacy page gained the personal squad screen /team (#39).
+const PRIVACY_UPDATED = "2026-11-22";
 const TERMS_UPDATED = "2026-11-08";
 const EMAIL = CONTACT_EMAIL;
 
@@ -86,13 +87,28 @@ export function PrivacyContent() {
                 </td>
               </tr>
               <tr>
+                <td>{tr("내 스쿼드 보기 (/team, 가입 없이)", "My squad screen (/team, no account)")}</td>
+                <td>
+                  {tr(
+                    "이용자가 입력하거나 리그 순위표에서 연 FPL 팀 번호(화면 주소에 포함). 그 번호로 FPL 이 공개한 팀 이름·매니저 이름·선수단·이적·칩 사용 기록을 불러와 보여 줍니다. 다른 사람의 팀 번호로도 볼 수 있는 공개 정보이며, FPL 로그인·비밀번호는 받지 않습니다.",
+                    "The FPL team ID you type or open from a league table (part of the page address). With it the Service loads the team name, manager name, squad, transfers and chip history that FPL publishes and shows them. It is public information anyone can look up by team ID; no FPL login or password is taken."
+                  )}
+                </td>
+                <td>
+                  {tr(
+                    "개인 팀 화면 제공. 서버는 저장하지 않고 최대 5분 메모리 캐시만 씁니다. 요청 횟수 제한(팀 번호를 차례로 조회하는 것 방지)을 위해 IP 주소를 메모리에서 잠시 세며 저장하지 않습니다. 개인 팀 화면은 검색엔진에 노출하지 않도록 설정했습니다(noindex, 사이트맵 제외).",
+                    "Showing the team screen. Not stored by the server, only an in-memory cache of up to 5 minutes. IP addresses are counted briefly in memory to limit request rates (to stop walking through team IDs) and are not stored. Team screens are kept out of search engines (noindex, not in the sitemap)."
+                  )}
+                </td>
+              </tr>
+              <tr>
                 <td>{tr("접속 기록", "Server logs")}</td>
                 <td>{tr("요청 주소, 시각, 오류 내용 (호스팅 업체 Railway 가 기록)", "Request path, time, errors (recorded by the host, Railway)")}</td>
                 <td>{tr("장애 대응·보안. 호스팅 업체 보관 정책에 따름", "Operations and security, per the host's retention")}</td>
               </tr>
               <tr>
                 <td>{tr("브라우저 저장소 (서버로 보내지 않음)", "Browser storage (never sent to us)")}</td>
-                <td>{tr("언어 설정, 최근 본 리그 목록", "Language, recent leagues list")}</td>
+                <td>{tr("언어 설정, 최근 본 리그 목록, ‘내 팀’으로 기억한 FPL 팀 번호와 팀 이름, 스쿼드 보기 방식(피치·리스트)", "Language, recent leagues list, the FPL team ID and team name you chose to remember as “my team”, squad view choice (pitch or list)")}</td>
                 <td>{tr("편의 기능. 브라우저에서 사이트 데이터를 지우면 삭제", "Convenience. Removed when you clear site data")}</td>
               </tr>
             </tbody>

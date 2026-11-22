@@ -193,3 +193,11 @@ npm run build
 - `search`: 첫 화면 리그 ID 제출(`search_area=league_id`), 선수 표(`players`)·가격 변동(`price_changes`) 검색어, 리그 순위표 매니저·팀 이름 검색(`league_managers`)은 검색어 없이 횟수만. 이메일·9자리 이상 숫자는 검색어에서 뺀다.
 - `outbound_click`: 다른 도메인 http(s) 링크, `link_url`(쿼리·# 제외)·`link_domain`. `feedback_open`: 공통 의견 버튼(`#site-feedback` Shadow DOM의 `.open-btn`) — feedback.js 구조가 바뀌면 `isFeedbackOpenClick` 확인.
 - 제휴 링크·알림 신청 기능이 없어 `affiliate_click`·`alert_signup`은 없음. GA4 '핵심 이벤트' 지정은 관제 창 몫. 개인정보처리방침 GA 행에 '기능 이용 기록' 문구 추가. 테스트 `tests/analytics.test.tsx`.
+
+## 2026-11-22 내 스쿼드 보기 (#39 2단계)
+- 화면: `/team`(기억한 팀으로 이동 또는 팀 ID 입력), `/team/[entryId]`(`components/squad-page.tsx`). 상단 메뉴 5번째 '내 팀', 리그 순위표 행을 펼치면 '이 팀의 스쿼드' 링크, 홈에 팀 ID 링크. 로그인 없음, '내 팀' 기억은 브라우저 저장소(`lib/my-team.ts`)만.
+- API: `GET /api/entry-squad?entryId=&refresh=1`(`lib/entry-squad.ts`). FPL 호출: `entry`·`history`·`transfers`(새 엔드포인트)·`picks`(마지막 마감 GW) + 공용 bootstrap/fixtures(60초 메모, `lib/public-data.ts#getBase`). 팀별 5분 메모리 캐시(최대 200팀), 같은 팀 동시 요청은 한 번만 호출. 프리 힛 주면 그 전 주 팀, 시즌 중 가입 팀은 `element-summary`로 첫 스쿼드 가격 조회.
+- 요청 제한(`lib/entry-request-limit.ts`): IP당 분당 20회, 10분에 서로 다른 팀 12개, 같은 팀 새로고침 30초 1회. 초과는 429 + `Retry-After`. 메모리 방식이라 재시작하면 초기화.
+- 추정값: 판매가(`lib/selling-price.ts`: 구매가 + 오른 폭의 절반 내림, 구매가는 가장 최근 `element_in_cost`, 보유 중이던 선수는 시작가 = `now_cost - cost_change_start`, 프리 힛 주 이적 제외), 무료 이적 수(`lib/free-transfers.ts`: 공식 규칙문 기준, 칩 주는 적립 없음, 최대 5, 기록과 안 맞으면 경고). 두 값은 화면에 '추정' 표기. 공식 화면 값과의 대조는 로그인이 필요해 대표 본인 팀으로 한 번 확인해야 한다.
+- 검색 제외: 두 화면 `noindex`, `robots.ts`의 `/team/` 차단, 사이트맵 미포함. 개인정보처리방침에 행 추가(2026-11-22).
+- 못 보는 것: 마감 전에 바꾼 선발·주장·칩(공개 API는 지난 마감 시점만). 마감 전 이적은 공개 목록에 보이면 건수만 안내.
