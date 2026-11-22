@@ -67,6 +67,7 @@ npm run build
 | `player-stats` | 선수 표·리그 보유율·유효 소유율·FDR·EPL 순위표 | `player-stats.ts`, `player-metrics.ts`, `pl-table.ts` |
 | `player-points` | 선수 1명의 GW 점수 항목별 내역 (`explain` 기반) | `player-points.ts` |
 | `player-history` | 선수 1명의 GW 이력 (`element-summary`) — 열 때만 호출 | |
+| `entry-ai` | AI 추천(기본 꺼짐, 허용 팀만): 상태 조회(GET)·분석 요청(POST) | `lib/ai/*` |
 | `price-changes` | 가격 변동 예측 + 실제 변동 이력 + 다음 갱신 시각 | `player-stats.ts#getPriceChangeData`, `price-changes.ts` |
 
 입력 검증은 `lib/request-params.ts` (리그/선수 ID는 양의 정수만 upstream 으로).
@@ -201,3 +202,11 @@ npm run build
 - 추정값: 판매가(`lib/selling-price.ts`: 구매가 + 오른 폭의 절반 내림, 구매가는 가장 최근 `element_in_cost`, 보유 중이던 선수는 시작가 = `now_cost - cost_change_start`, 프리 힛 주 이적 제외), 무료 이적 수(`lib/free-transfers.ts`: 공식 규칙문 기준, 칩 주는 적립 없음, 최대 5, 기록과 안 맞으면 경고). 두 값은 화면에 '추정' 표기. 공식 화면 값과의 대조는 로그인이 필요해 대표 본인 팀으로 한 번 확인해야 한다.
 - 검색 제외: 두 화면 `noindex`, `robots.ts`의 `/team/` 차단, 사이트맵 미포함. 개인정보처리방침에 행 추가(2026-11-22).
 - 못 보는 것: 마감 전에 바꾼 선발·주장·칩(공개 API는 지난 마감 시점만). 마감 전 이적은 공개 목록에 보이면 건수만 안내.
+
+## 2026-11-22 AI 추천 층 (#43 2·3단계, 화면은 다음 PR)
+- 기본 **꺼짐**. 켜지려면 `AI_RECOMMEND_ENABLED=true`(정확히 이 값) + `ANTHROPIC_API_KEY` + `SUPABASE_URL`·`SUPABASE_SERVICE_ROLE_KEY`가 모두 있어야 한다. 하나라도 없으면 규칙 기반 결과만(`/api/entry-ai`는 `{status:"disabled"}`). 값은 코드·이슈·로그에 남기지 않는다.
+- **끄는 법**: Railway에서 `AI_RECOMMEND_ENABLED`를 지우거나 `false`로 바꾼다(재시작 필요). 급하면 Anthropic 콘솔에서 키를 폐기한다(호출은 `api_auth`로 실패하고 예약 금액만 남는다).
+- **상수 위치**: `lib/ai/config.ts` 한 파일. 허용 팀 `ALLOWED_ENTRY_IDS`(지금 4300767만), 월 상한 `MONTHLY_CAP_USD`(40), 일 상한 `DAILY_CAP_USD`(5)·`DAILY_CALL_CAP`(10), 모델 ID·단가·`AI_MAX_TOKENS`·`AI_EFFORT`, 키당 세대 수 `MAX_GENERATIONS_PER_KEY`(3). 상한을 올리면 건당 예약액(`lib/ai/budget.ts#maxCostPerCallUsd`, 지금 $0.96 = 입력 40,000자를 1자 1토큰으로 본 $0.32 + 출력 16,000토큰 $0.64)과 DB 함수 인자는 코드에서 넘기므로 함수 수정은 필요 없다.
+- **DB**: `db/migrations/0002_ai_recommendations.sql`(롤백 `.rollback.sql`). 표 3개(`ai_recommendations` 작업·결과, `ai_usage` 사용량, `ai_recommendation_log` 추천 기록 — 쓰는 코드는 다음 PR)와 상한 집행 함수(`ai_start_job`, `ai_reserve_usage`). **운영 DB에 먼저 적용(관제 창, L2)한 뒤 PR 병합.** 표가 없으면 호출 전에 읽기가 실패해 호출하지 않는다(fail closed).
+- 흐름: `POST /api/entry-ai`(저장본 있으면 그대로, 없으면 작업 생성 + 호출 전 DB 예약 후 202) → 서버가 같은 프로세스에서 스트리밍으로 받아 검증된 완성본만 저장 → `GET /api/entry-ai?entryId=&locale=`로 상태(`none|pending|done|failed|disabled|not_allowed|limit`). 백그라운드 자동 실행·cron 없음. 15분 넘게 running인 작업은(호출 1건 기한 6분 × 최대 2건 + 여유 3분) 조회 때 failed로 정리되고 그 예약 금액은 누적에 남는다.
+- 사용량 확인(콘솔 대신 DB): `select date_trunc('month', created_at), sum(cost_usd) from ai_usage group by 1;`
