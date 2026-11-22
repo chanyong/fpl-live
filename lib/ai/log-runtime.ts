@@ -30,7 +30,12 @@ export function getLogDeps(): LogDeps {
     },
     async finishedGws() {
       const base = await getBase();
-      return base ? new Set(base.bootstrap.events.filter((event) => event.finished).map((event) => event.id)) : null;
+      if (!base) return null;
+      // `finished` can precede the final bonus and score checks; wait for FPL's own "data checked" flag when it
+      // is sent, because a filled result is never rewritten.
+      return new Set(
+        base.bootstrap.events.filter((event) => event.finished && event.data_checked !== false).map((event) => event.id)
+      );
     },
     async fetchActual(entryId, gw): Promise<ActualInputs> {
       const [live, picks] = await Promise.all([getEventLive(gw), getEntryPicks(entryId, gw).catch(() => null)]);
