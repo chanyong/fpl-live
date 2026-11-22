@@ -83,3 +83,13 @@ export function aiConfigFromEnv(env: Record<string, string | undefined> = proces
     supabase: enabled ? { url: url as string, serviceKey: serviceKey as string } : null
   };
 }
+
+/**
+ * Supabase settings alone, without the AI switch: the recommendation log (issue #43 stage 5) writes nothing
+ * paid, so it works whenever the database is configured, whether or not AI_RECOMMEND_ENABLED is on.
+ */
+export function supabaseFromEnv(env: Record<string, string | undefined> = process.env): { url: string; serviceKey: string } | null {
+  const url = env.SUPABASE_URL?.trim();
+  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  return url && serviceKey ? { url, serviceKey } : null;
+}

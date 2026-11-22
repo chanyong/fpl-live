@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAllowedEntry } from "@/lib/ai/allowed-entry";
+import { recordInBackground } from "@/lib/ai/log-runtime";
 import { checkEntryRequest } from "@/lib/entry-request-limit";
 import { clientIp } from "@/lib/journal/rate-limit";
 import { parseEntryId } from "@/lib/request-params";
@@ -16,7 +18,7 @@ function limitKey(headers: Headers) {
 
 /**
  * Rule-based lineup, captain and transfer-scenario candidates for one team (issue #43, stages 1-A and 1-B):
- * expected points from the public FPL data, no login, no AI, nothing stored. `horizon=3|5` is the number of
+ * expected points from the public FPL data, no login, no AI. Nothing is stored except, for the allowed team only, the best-effort recommendation log (lib/ai/rec-log). `horizon=3|5` is the number of
  * gameweeks the transfer scenarios add up (default 3). It reads what /api/entry-squad reads (getEntrySquad) plus
  * the shared xP table, so it adds no FPL call.
  */
@@ -43,6 +45,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const payload = await getEntryRecommend(parsed.entryId, forceRefresh, horizon);
+    // Issue #43 stage 5: the allowed team's rules-based recommendation is written to the log (best effort, not
+    // awaited). Only the default 3-week horizon is logged, so the stored net gains are always on the same basis.
+    if (horizon === 3 && isAllowedEntry(parsed.entryId)) {
+      recordInBackground(payload);
+    }
     return NextResponse.json(payload, { headers: NO_STORE });
   } catch (error) {
     if (error instanceof EntryNotFoundError) {

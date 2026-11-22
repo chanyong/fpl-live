@@ -38,6 +38,8 @@ export const bootstrapStaticSchema = z.object({
       is_current: z.boolean(),
       is_next: z.boolean().optional().default(false),
       finished: z.boolean(),
+      // True once FPL has finished its final score checks for the gameweek; absent in older fixtures.
+      data_checked: z.boolean().optional(),
       deadline_time: z.string().nullable().optional().default(null),
       average_entry_score: z.number().nullable().optional().default(null),
       highest_score: z.number().nullable().optional().default(null)
