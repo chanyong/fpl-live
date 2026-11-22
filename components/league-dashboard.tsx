@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { useRouter, useSelectedLayoutSegments } from "next/navigation";
 import type { LeagueLiveResponse, PlayerStatsResponse, RankChangeResponse } from "@/lib/types";
 import { CaptainStats } from "@/components/captain-stats";
 import { DeadlineBanner } from "@/components/deadline-banner";
@@ -14,13 +15,22 @@ import { PlayerTrendsPanel } from "@/components/player-trends-panel";
 import { PremierLeagueTable } from "@/components/premier-league-table";
 import { RankChangePanel } from "@/components/rank-change-panel";
 import { SidePanelLayout } from "@/components/side-panel-layout";
-import { SubTabs } from "@/components/sub-tabs";
+import { SubTabs, TabLink } from "@/components/sub-tabs";
 import { TeamFixtureTable } from "@/components/team-fixture-table";
 import { ShareButton } from "@/components/share-button";
 import { RefreshIndicator } from "@/components/refresh-indicator";
 import { RivalCard, useRivalPick } from "@/components/rival-card";
 import { RankMovementCard } from "@/components/rank-movement-card";
 import { rememberLeague } from "@/lib/recent-leagues";
+import {
+  isStandingsView,
+  leagueViewPath,
+  tabOfView,
+  viewFromSegments,
+  type LeagueTab,
+  type LeagueView,
+  type StandingsView
+} from "@/lib/league-views";
 
 async function fetchLeagueLive(leagueId: string, fallbackError: string, refresh = false) {
   const response = await fetch(
@@ -57,13 +67,28 @@ async function fetchPlayerStats(leagueId: string, fallbackError: string) {
   return (await response.json()) as PlayerStatsResponse;
 }
 
-type Tab = "standings" | "team" | "player";
-type StandingsView = "table" | "rank-change" | "fixtures";
-
 export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; buildId: string }) {
   const { tr } = useLocale();
-  const [tab, setTab] = useState<Tab>("standings");
-  const [standingsView, setStandingsView] = useState<StandingsView>("fixtures");
+  const router = useRouter();
+  // The screen is whatever address we are at (/league/ID, /league/ID/teams, ...). A tab click shows the new
+  // screen at once and the address catches up when the navigation finishes (issue #33).
+  const urlView = viewFromSegments(useSelectedLayoutSegments());
+  const [view, setView] = useOptimistic<LeagueView, LeagueView>(urlView, (_current, next) => next);
+  const [, startTransition] = useTransition();
+  const tab: LeagueTab = tabOfView(view);
+  // Remembered so the 주간 순위 tab returns to the sub-tab last used, as before addresses existed.
+  const [lastStandingsView, setLastStandingsView] = useState<StandingsView>("fixtures");
+  if (isStandingsView(urlView) && urlView !== lastStandingsView) {
+    setLastStandingsView(urlView);
+  }
+  const standingsView: StandingsView = isStandingsView(view) ? view : lastStandingsView;
+
+  function goTo(next: LeagueView) {
+    startTransition(() => {
+      setView(next);
+      router.push(leagueViewPath(leagueId, next), { scroll: false });
+    });
+  }
   // Held here, not in RivalCard: the card unmounts on the 팀·선수 tabs. Not saved, so a new visit starts empty.
   const [rivalPick, setRivalPick] = useRivalPick(leagueId);
   const queryClient = useQueryClient();
@@ -105,12 +130,13 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
   });
 
   const tabs = useMemo(
-    () => [
-      { id: "standings", label: tr("주간 순위", "Standings") },
-      { id: "team", label: tr("팀", "Teams") },
-      { id: "player", label: tr("선수", "Players") }
-    ] as const,
-    [tr]
+    () =>
+      [
+        { id: "standings", label: tr("주간 순위", "Standings"), view: lastStandingsView },
+        { id: "team", label: tr("팀", "Teams"), view: "teams" },
+        { id: "player", label: tr("선수", "Players"), view: "players" }
+      ] as const,
+    [tr, lastStandingsView]
   );
 
   const isRankChangeTab = tab === "standings" && standingsView === "rank-change";
@@ -242,18 +268,17 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
               const active = tab === item.id;
 
               return (
-                <button
+                <TabLink
                   key={item.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setTab(item.id)}
-                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-1.5 text-body font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none md:px-4 ${
+                  href={leagueViewPath(leagueId, item.view)}
+                  active={active}
+                  onSelect={() => goTo(item.view)}
+                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-1.5 text-center text-body font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] md:flex-none md:px-4 ${
                     active ? "bg-[var(--accent)] text-white" : "text-[var(--muted)] hover:text-[var(--text)]"
                   }`}
                 >
                   {item.label}
-                </button>
+                </TabLink>
               );
             })}
           </div>
@@ -268,7 +293,8 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
                   { id: "rank-change", label: tr("순위 추이", "Rank trend") }
                 ]}
                 value={standingsView}
-                onChange={setStandingsView}
+                hrefFor={(id) => leagueViewPath(leagueId, id)}
+                onChange={goTo}
               />
             </div>
           ) : null}
