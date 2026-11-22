@@ -174,7 +174,7 @@ describe("limits", () => {
     expect(client.calls).toBe(0);
   });
 
-  it("stops after five reservations in a day ($5 daily cap over $0.88 each)", async () => {
+  it("stops after five reservations in a day ($5 daily cap over $0.96 each)", async () => {
     const store = new FakeStore();
     const client = new FakeClient([]);
     const { deps } = makeDeps({ input, client, store });
@@ -424,6 +424,16 @@ describe("reading the state", () => {
     expect(await readEntryAi(TEAM, "ko", deps)).toMatchObject({ status: "done", value: { generation: 2 } });
   });
 
+  it.each(["api_bad_request", "api_auth", "api_rate_limit"])("a request the API rejected outright (%s) is not billed: its reservation is freed", async (code) => {
+    const client = new FakeClient([new AiCallError(code)]);
+    const store = new FakeStore();
+    const { deps, jobs } = makeDeps({ input, client, store });
+    await ask(deps);
+    await settle(jobs);
+    expect(store.jobs[0]).toMatchObject({ status: "failed", failureCode: code });
+    expect(store.usage[0]).toMatchObject({ status: "settled", cost: 0 });
+  });
+
   it("shows the older copy when a newer regeneration failed", async () => {
     const client = new FakeClient([good(), new AiCallError("api_500")]);
     const store = new FakeStore();
@@ -435,8 +445,8 @@ describe("reading the state", () => {
     expect(await readEntryAi(TEAM, "ko", deps)).toMatchObject({ status: "done", value: { generation: 1 } });
   });
 
-  it("closes a job that has been running for more than ten minutes as failed", async () => {
-    const store = new FakeStore(() => NOW - 11 * 60_000);
+  it("closes a job as failed only once it has outlived both calls it can make (15 minutes)", async () => {
+    const store = new FakeStore(() => NOW - 16 * 60_000);
     const client = new FakeClient([deferred().promise]);
     const { deps } = makeDeps({ input, client, store });
     expect(await ask(deps)).toEqual({ status: "pending" });
@@ -445,8 +455,8 @@ describe("reading the state", () => {
     expect(store.usage[0]).toMatchObject({ status: "reserved", cost: RESERVATION });
   });
 
-  it("does not close a job that has run for less than ten minutes", async () => {
-    const store = new FakeStore(() => NOW - 9 * 60_000);
+  it("does not close a job that may still be on its retry call (14 minutes)", async () => {
+    const store = new FakeStore(() => NOW - 14 * 60_000);
     const { deps } = makeDeps({ input, store, client: new FakeClient([deferred().promise]) });
     await ask(deps);
     expect(await readEntryAi(TEAM, "ko", deps)).toEqual({ status: "pending" });

@@ -2,7 +2,7 @@ import { AiCallError, type AiClient } from "@/lib/ai/anthropic-client";
 import { costUsd, maxCostPerCallUsd, withinInputCeiling } from "@/lib/ai/budget";
 import { AI_MODEL_ID, MAX_RETRIES, STALE_RUNNING_MS, isAllowedEntry, type AiConfig } from "@/lib/ai/config";
 import type { AiInput } from "@/lib/ai/input-bundle";
-import { validateAiOutput, type AiResult } from "@/lib/ai/schema";
+import { AI_OUTPUT_JSON_SCHEMA, validateAiOutput, type AiResult } from "@/lib/ai/schema";
 import { AiStoreError, type AiStore, type JobKey, type StoredJob } from "@/lib/ai/store";
 import type { Locale } from "@/lib/locale";
 
@@ -149,7 +149,8 @@ export async function requestEntryAi(
     if (latest.running) return { status: "pending", ...withPrevious(done) };
     if (done && !regenerate) return { status: "done", value: done };
 
-    if (!withinInputCeiling(input.system, input.user)) {
+    // The output schema is billed as input too.
+    if (!withinInputCeiling(input.system, input.user, JSON.stringify(AI_OUTPUT_JSON_SCHEMA))) {
       logCode("input", "input_too_large");
       return { status: "failed", code: "input_too_large" };
     }
@@ -193,6 +194,9 @@ export async function requestEntryAi(
   }
 }
 
+/** Call failures where the API refused the request before doing any work (HTTP 400, 401/403, 429). */
+const UNBILLED_CODES = new Set(["api_bad_request", "api_auth", "api_rate_limit"]);
+
 async function quietly(step: () => Promise<void>, where: string) {
   try {
     await step();
@@ -225,7 +229,15 @@ export async function runJob(args: { store: AiStore; client: AiClient; input: Ai
         response = await client.generate({ system: input.system, user: input.user });
       } catch (error) {
         const code = error instanceof AiCallError ? error.code : "api_unknown";
-        await quietly(() => store.failUsage(usageId), "fail-usage");
+        // A request the API rejected outright is not billed: free its reservation. Anything else (timeout,
+        // connection loss, 5xx) may have been billed, so the reserved amount stays counted.
+        await quietly(
+          () =>
+            UNBILLED_CODES.has(code)
+              ? store.settleUsage(usageId, { costUsd: 0, inputTokens: 0, outputTokens: 0 })
+              : store.failUsage(usageId),
+          "fail-usage"
+        );
         logCode("call", code);
         await store.failJob(jobId, code);
         return;

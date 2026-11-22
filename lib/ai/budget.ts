@@ -24,7 +24,7 @@ export function costUsd(usage: TokenUsage) {
 
 /**
  * Largest cost of one call: the input ceiling at the input price plus a full max_tokens of output at the output
- * price (30,000 x $8 + 16,000 x $40 per million = $0.24 + $0.64 = $0.88). This is the amount reserved in the
+ * price (40,000 x $8 + 16,000 x $40 per million = $0.32 + $0.64 = $0.96). This is the amount reserved in the
  * database before every call, a retry included; the settled cost replaces it once the real usage is known.
  */
 export function maxCostPerCallUsd() {
@@ -32,12 +32,12 @@ export function maxCostPerCallUsd() {
 }
 
 /**
- * Upper-ish bound of the input tokens from the text length: one token per two characters. JSON of digits and
- * punctuation runs near 2-3 characters per token, so this leans high. It only gates the request: the real cost
- * is settled from the reported usage, and a request that would exceed the ceiling is not sent.
+ * Upper bound of the input tokens from the text length: one token per character (UTF-16 code unit). A token is
+ * never shorter than one character, so the reservation holds whatever the tokenizer does with digits and
+ * punctuation. Callers pass everything that is billed as input: system text, user text and the output schema.
  */
 export function estimateInputTokens(text: string) {
-  return Math.ceil(text.length / 2);
+  return text.length;
 }
 
 export function withinInputCeiling(...texts: string[]) {

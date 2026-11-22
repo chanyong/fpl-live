@@ -138,7 +138,7 @@ export type ValidationResult = { ok: true; value: AiResult } | { ok: false; code
 const PLACEHOLDER = /\{p(\d{1,9})\}/g;
 const FORBIDDEN_MARKUP = /[<>]|&[#a-z0-9]+;|https?:|:\/\/|www\.|javascript:|\]\(|`/i;
 const CONTROL_CHARS = /[\x00-\x1f\x7f]|\p{Zl}|\p{Zp}/u;
-const ANY_DIGIT = /\p{Nd}/u;
+const ANY_DIGIT = /\p{N}/u;
 
 type Fail = { fail: string };
 const failed = (value: unknown): value is Fail => typeof value === "object" && value !== null && "fail" in value;

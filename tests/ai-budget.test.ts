@@ -7,7 +7,10 @@ import {
   ALLOWED_ENTRY_IDS,
   DAILY_CALL_CAP,
   DAILY_CAP_USD,
+  AI_CALL_DEADLINE_MS,
   INPUT_TOKEN_CEILING,
+  MAX_RETRIES,
+  STALE_RUNNING_MS,
   MONTHLY_CAP_USD,
   aiConfigFromEnv,
   isAllowedEntry
@@ -34,9 +37,9 @@ describe("constants", () => {
 
 describe("cost per call", () => {
   it("is the input ceiling at $8 plus a full max_tokens of output at $40 per million", () => {
-    expect(INPUT_TOKEN_CEILING).toBe(30_000);
-    expect(maxCostPerCallUsd()).toBe(0.88);
-    expect(maxCostPerCallUsd()).toBeCloseTo((30_000 * 8 + 16_000 * 40) / 1_000_000, 9);
+    expect(INPUT_TOKEN_CEILING).toBe(40_000);
+    expect(maxCostPerCallUsd()).toBe(0.96);
+    expect(maxCostPerCallUsd()).toBeCloseTo((40_000 * 8 + 16_000 * 40) / 1_000_000, 9);
   });
 
   it("the reservation is no smaller than any call the guards let through", () => {
@@ -53,17 +56,21 @@ describe("cost per call", () => {
 
   it("how many calls fit: the daily cap is reached by the dollar limit before the monthly one", () => {
     expect(Math.floor(DAILY_CAP_USD / maxCostPerCallUsd())).toBe(5);
-    expect(Math.floor(MONTHLY_CAP_USD / maxCostPerCallUsd())).toBe(45);
+    expect(Math.floor(MONTHLY_CAP_USD / maxCostPerCallUsd())).toBe(41);
   });
 });
 
 describe("input ceiling", () => {
-  it("counts a token per two characters and refuses text beyond the ceiling", () => {
-    expect(estimateInputTokens("abcd")).toBe(2);
-    expect(withinInputCeiling("x".repeat(60_000))).toBe(true);
-    expect(withinInputCeiling("x".repeat(60_001))).toBe(false);
-    expect(withinInputCeiling("x".repeat(30_000), "y".repeat(30_000))).toBe(true);
-    expect(withinInputCeiling("x".repeat(30_000), "y".repeat(30_002))).toBe(false);
+  it("counts a token per character (a token is never shorter) and refuses text beyond the ceiling", () => {
+    expect(estimateInputTokens("abcd")).toBe(4);
+    expect(withinInputCeiling("x".repeat(40_000))).toBe(true);
+    expect(withinInputCeiling("x".repeat(40_001))).toBe(false);
+    expect(withinInputCeiling("x".repeat(20_000), "y".repeat(20_000))).toBe(true);
+    expect(withinInputCeiling("x".repeat(20_000), "y".repeat(20_001))).toBe(false);
+  });
+
+  it("a stale job is swept only after every call it can make has hit its deadline", () => {
+    expect(STALE_RUNNING_MS).toBeGreaterThan((MAX_RETRIES + 1) * AI_CALL_DEADLINE_MS);
   });
 });
 

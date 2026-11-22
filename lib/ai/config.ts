@@ -31,10 +31,12 @@ export const AI_MAX_TOKENS = 16_000;
 export const AI_EFFORT = "medium" as const;
 
 /**
- * Input size guard. The input cannot be counted without a paid count_tokens call, so it is bounded by characters
- * (see `estimateInputTokens`); a request above the ceiling is not sent at all.
+ * Input size guard. The input has not been measured with the API yet, so it is bounded by characters, one token
+ * per character (see `estimateInputTokens`): the input is mostly short numbers and punctuation, where a token can
+ * be a single character. A request above the ceiling is not sent at all. Loosen the ratio only after the first
+ * trial call reports the real `usage.input_tokens`.
  */
-export const INPUT_TOKEN_CEILING = 30_000;
+export const INPUT_TOKEN_CEILING = 40_000;
 
 /** Caps, enforced inside the database (db/migrations/0002). Every call counts: trials, failures, truncations, retries. */
 export const MONTHLY_CAP_USD = 40;
@@ -45,14 +47,21 @@ export const DAILY_CALL_CAP = 10;
 export const MAX_GENERATIONS_PER_KEY = 3;
 export const MANUAL_REGENERATIONS_PER_DAY = 1;
 
-/** A job still "running" after this long is closed as failed when someone looks at it. */
-export const STALE_RUNNING_MS = 10 * 60_000;
-
-/** One call may take minutes; kept below STALE_RUNNING_MS so a live call is never swept. */
-export const AI_REQUEST_TIMEOUT_MS = 8 * 60_000;
-
 /** At most one retry after an output that failed validation (the retry is reserved and counted like any call). */
 export const MAX_RETRIES = 1;
+
+/**
+ * Hard deadline of one call, headers and streamed body together: the stream is aborted when it passes. (The SDK's
+ * own `timeout` stops counting once the response headers arrive, so it cannot bound a long stream.)
+ */
+export const AI_CALL_DEADLINE_MS = 6 * 60_000;
+
+/**
+ * A job still "running" after this long is closed as failed when someone looks at it. It must outlast every call
+ * the job can make (the first one and the retry), or a live job would be swept and a second paid job could start
+ * for the same key.
+ */
+export const STALE_RUNNING_MS = (MAX_RETRIES + 1) * AI_CALL_DEADLINE_MS + 3 * 60_000;
 
 export type AiConfig = {
   enabled: boolean;

@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { AI_EFFORT, AI_MAX_TOKENS, AI_MODEL_ID, AI_REQUEST_TIMEOUT_MS } from "@/lib/ai/config";
+import { AI_CALL_DEADLINE_MS, AI_EFFORT, AI_MAX_TOKENS, AI_MODEL_ID } from "@/lib/ai/config";
 import type { TokenUsage } from "@/lib/ai/budget";
 import { AI_OUTPUT_JSON_SCHEMA } from "@/lib/ai/schema";
 
@@ -50,11 +50,13 @@ function codeOf(error: unknown) {
   return "api_unknown";
 }
 
-export function createAnthropicClient(apiKey: string): AiClient {
-  const client = new Anthropic({ apiKey, maxRetries: 0, timeout: AI_REQUEST_TIMEOUT_MS });
+export function createAnthropicClient(apiKey: string, deadlineMs: number = AI_CALL_DEADLINE_MS): AiClient {
+  const client = new Anthropic({ apiKey, maxRetries: 0, timeout: deadlineMs });
 
   return {
     async generate(request) {
+      let timedOut = false;
+      let timer: ReturnType<typeof setTimeout> | undefined;
       try {
         const stream = client.messages.stream({
           model: AI_MODEL_ID,
@@ -63,6 +65,11 @@ export function createAnthropicClient(apiKey: string): AiClient {
           messages: [{ role: "user", content: request.user }],
           output_config: { effort: AI_EFFORT, format: { type: "json_schema", schema: { ...AI_OUTPUT_JSON_SCHEMA } } }
         });
+        // The SDK timeout only covers the wait for headers; this bounds the whole streamed answer.
+        timer = setTimeout(() => {
+          timedOut = true;
+          stream.abort();
+        }, deadlineMs);
         const message = await stream.finalMessage();
         const usage = message.usage;
         return {
@@ -76,7 +83,9 @@ export function createAnthropicClient(apiKey: string): AiClient {
           }
         };
       } catch (error) {
-        throw new AiCallError(codeOf(error));
+        throw new AiCallError(timedOut ? "api_timeout" : codeOf(error));
+      } finally {
+        if (timer) clearTimeout(timer);
       }
     }
   };
