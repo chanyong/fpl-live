@@ -56,6 +56,10 @@ export type XpElement = {
   /** FPL's % chance of playing the next gameweek; null when it gives none. */
   chance_of_playing_next_round: number | null;
   selected_by_percent: number;
+  /** Current price in tenths of a million; absent in older fixtures (then 0). */
+  now_cost?: number;
+  /** FPL's price projections; `offset` 0 is tonight's. Only the likelihood is read (transfer candidate pool). */
+  price_change_projections?: Array<{ offset: number; likelihood?: number }>;
 };
 
 export type XpFixtureRow = {
@@ -85,6 +89,12 @@ export type XpPlayer = {
   status: string;
   /** Overall ownership, percent. */
   selectedByPercent: number;
+  /** Current price, tenths of a million. */
+  nowCost: number;
+  /** FPL's form figure as sent. */
+  form: number;
+  /** FPL's likelihood of tonight's price change: +5/+4 rise, -4/-5 drop, 0 none. */
+  priceLikelihood: number;
   /** 0.5 x form + 0.5 x points_per_game. */
   base: number;
   /** Share of the team's finished matches the player started, 0..1. */
@@ -226,6 +236,9 @@ export function buildXpTable(bootstrap: XpBootstrap, fixtures: XpFixtureRow[], n
       elementType: element.element_type,
       status: element.status,
       selectedByPercent: element.selected_by_percent,
+      nowCost: element.now_cost ?? 0,
+      form: element.form,
+      priceLikelihood: element.price_change_projections?.find((projection) => projection.offset === 0)?.likelihood ?? 0,
       base,
       startRatio: ratio,
       playChance: gone ? 0 : chance,

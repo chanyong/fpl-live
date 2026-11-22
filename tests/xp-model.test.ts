@@ -192,6 +192,14 @@ describe("buildXpTable", () => {
     expect(player.sum5).toBeCloseTo(each * (1 + 0.9 + 0.8 + 0.7 + 0.6));
   });
 
+  it("carries price, form and tonight's price-change likelihood for the transfer search (0 when FPL sent none)", () => {
+    const priced = element({ now_cost: 85, form: 7.5, price_change_projections: [{ offset: 1, likelihood: -5 }, { offset: 0, likelihood: 4 }] });
+    const plain = element({ id: 2 });
+    const table = buildXpTable(bootstrap([priced, plain]), [game(12, 1, 2)], NOW)!;
+    expect(table.players.get(1)).toMatchObject({ nowCost: 85, form: 7.5, priceLikelihood: 4 });
+    expect(table.players.get(2)).toMatchObject({ nowCost: 0, priceLikelihood: 0 });
+  });
+
   it("ignores fixtures without a gameweek or outside the horizon", () => {
     const player = buildXpTable(bootstrap([element()]), [game(null, 1, 2), game(30, 1, 2)], NOW)!.players.get(1)!;
     expect(player.weeks.every((week) => week.games.length === 0)).toBe(true);
