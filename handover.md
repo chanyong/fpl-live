@@ -207,7 +207,7 @@ npm run build
 - 기본 **꺼짐**. 켜지려면 `AI_RECOMMEND_ENABLED=true`(정확히 이 값) + `ANTHROPIC_API_KEY` + `SUPABASE_URL`·`SUPABASE_SERVICE_ROLE_KEY`가 모두 있어야 한다. 하나라도 없으면 규칙 기반 결과만(`/api/entry-ai`는 `{status:"disabled"}`). 값은 코드·이슈·로그에 남기지 않는다.
 - **끄는 법**: Railway에서 `AI_RECOMMEND_ENABLED`를 지우거나 `false`로 바꾼다(재시작 필요). 급하면 Anthropic 콘솔에서 키를 폐기한다(호출은 `api_auth`로 실패하고 예약 금액만 남는다).
 - **상수 위치**: `lib/ai/config.ts` 한 파일. 허용 팀 `ALLOWED_ENTRY_IDS`(지금 4300767만), 월 상한 `MONTHLY_CAP_USD`(40), 일 상한 `DAILY_CAP_USD`(5)·`DAILY_CALL_CAP`(10), 모델 ID·단가·`AI_MAX_TOKENS`·`AI_EFFORT`, 키당 세대 수 `MAX_GENERATIONS_PER_KEY`(3). 상한을 올리면 건당 예약액(`lib/ai/budget.ts#maxCostPerCallUsd`, 지금 $0.96 = 입력 40,000자를 1자 1토큰으로 본 $0.32 + 출력 16,000토큰 $0.64)과 DB 함수 인자는 코드에서 넘기므로 함수 수정은 필요 없다.
-- **DB**: `db/migrations/0002_ai_recommendations.sql`(롤백 `.rollback.sql`). 표 3개(`ai_recommendations` 작업·결과, `ai_usage` 사용량, `ai_recommendation_log` 추천 기록 — 쓰는 코드는 다음 PR)와 상한 집행 함수(`ai_start_job`, `ai_reserve_usage`). **운영 DB에 먼저 적용(관제 창, L2)한 뒤 PR 병합.** 표가 없으면 호출 전에 읽기가 실패해 호출하지 않는다(fail closed).
+- **DB**: `db/migrations/0002_ai_recommendations.sql`(롤백 `.rollback.sql`). 표 3개(`ai_recommendations` 작업·결과, `ai_usage` 사용량, `ai_recommendation_log` 추천 기록 — 5단계에서 쓴다)와 상한 집행 함수(`ai_start_job`, `ai_reserve_usage`). **운영 DB에 먼저 적용(관제 창, L2)한 뒤 PR 병합.** 표가 없으면 호출 전에 읽기가 실패해 호출하지 않는다(fail closed).
 - 흐름: `POST /api/entry-ai`(저장본 있으면 그대로, 없으면 작업 생성 + 호출 전 DB 예약 후 202) → 서버가 같은 프로세스에서 스트리밍으로 받아 검증된 완성본만 저장 → `GET /api/entry-ai?entryId=&locale=`로 상태(`none|pending|done|failed|disabled|not_allowed|limit`). 백그라운드 자동 실행·cron 없음. 15분 넘게 running인 작업은(호출 1건 기한 6분 × 최대 2건 + 여유 3분) 조회 때 failed로 정리되고 그 예약 금액은 누적에 남는다.
 - 사용량 확인(콘솔 대신 DB): `select date_trunc('month', created_at), sum(cost_usd) from ai_usage group by 1;`
 
@@ -215,3 +215,10 @@ npm run build
 - `/team/4300767`에만 추천 패널(선발·캡틴·이적 시나리오, 그 아래 AI 의견)이 보인다. 다른 팀 ID는 이전 화면 그대로이고 추가 요청도 없다. 허용 팀 상수는 `lib/ai/allowed-entry.ts`(import 없는 작은 파일, 브라우저 번들용)로 옮겼고 `lib/ai/config.ts`가 다시 내보낸다. 넓히는 것은 #47(회원 전용) 뒤.
 - 규칙 기반 패널은 AI 설정과 무관하게 항상 보인다(`/api/entry-recommend`, 응답에 `playerInfo`로 시나리오 선수의 이름·팀·포지션·현재가를 붙임). AI 패널은 화면이 열릴 때 `GET /api/entry-ai`로 상태만 읽고, 사람이 버튼을 누를 때만 POST한다. `disabled`·`not_allowed`면 AI 패널을 그리지 않는다.
 - 파일: `components/recommend-panel.tsx`(규칙 기반), `recommend-transfers.tsx`, `ai-opinion-panel.tsx`(상태별 화면·5초 폴링·20분 포기·탭 숨김 시 중지), `recommend-parts.tsx`, 문구 `lib/recommend-text.ts`. AI 문장은 일반 텍스트로만 그린다.
+
+## 2026-11-22 추천 기록과 80% 알림 (#43 5단계)
+- **새 마이그레이션 없음**: 0002의 `ai_recommendation_log` 표만 쓴다(구조가 모자라는 값은 jsonb 안에: `rules_summary`, `actual_result`). 0002가 운영에 적용돼 있어야 기록이 쌓인다. 표가 없거나 설정(`SUPABASE_URL`·`SUPABASE_SERVICE_ROLE_KEY`)이 없으면 조용히 건너뛴다(추천 응답은 그대로). `AI_RECOMMEND_ENABLED`와는 무관(유료 호출이 아님).
+- **쓰기**: 허용 팀의 `/api/entry-recommend`(기본 3주 horizon만)가 응답을 준 뒤 기다리지 않고 요약을 upsert(`lib/ai/rec-log.ts#recordRecommendation`). 같은 (팀, GW)는 프로세스 안에서 10분에 한 번, 대상 GW 마감 전까지만 마지막 방문 값으로 덮어쓴다(마감 시각은 xP 표의 `targetDeadline`). 그 GW·ko 또는 en의 완료된 AI 저장본이 있으면 `rules_summary.ai`에 캡틴·선발 선택(L1~L3)·이적 1순위를 같이 담는다(다음 방문 때 반영; AI 저장 시점에는 쓰지 않는다).
+- **채우기**: `GET /api/entry-recommend-log?entryId=`(허용 팀만, 아니면 `{entries:[]}` 200, 기존 IP 제한). 끝난 GW(`bootstrap.events[].finished`)인데 `actual_result`가 null인 행을 요청당 최대 2개 GW까지 채운다(GW당 `getEventLive` 1회 + `getEntryPicks` 1회, 채운 뒤에는 다시 부르지 않음). 점수는 선수 점수 기준(주장 2배·자동 교체 제외). 최적 선발은 `lib/xp/lineup.ts#buildLineups`를 실제 점수로 재사용. 칩 시나리오의 실제 순이익은 계산하지 않는다.
+- **화면**: 추천 패널 맨 아래 접힌 "지난 추천 기록(참고)"(`components/recommend-log-panel.tsx`). 열 때만 요청한다. 표본이 작아 통계적 결론은 약하다는 문구가 맨 위에 항상 있다(계획서 6-2).
+- **80% 알림**: `GET /api/entry-ai` 응답에 `budgetNotice: "near_limit" | null`(이번 UTC 달 `ai_usage` 합 ÷ `MONTHLY_CAP_USD` ≥ 0.8). 금액·토큰은 싣지 않는다. 합은 `ai_usage`를 읽는 쿼리로 구한다(새 SQL 함수 없음). 읽기 실패는 null. 서버 로그에 `[entry-ai] budget_80` 한 줄(프로세스당 하루 1회). 100%는 기존대로 DB 함수가 막는다.

@@ -4,6 +4,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { AiOpinionPanel } from "@/components/ai-opinion-panel";
 import { useLocale } from "@/components/locale-provider";
+import { RecommendLogPanel } from "@/components/recommend-log-panel";
 import { Badge, fmtSigned, fmtTime, fmtXp, FixtureText, playerLookup, PlayerTag, SubHeading, type PlayerShown } from "@/components/recommend-parts";
 import { TransferScenarios } from "@/components/recommend-transfers";
 import { assumptionText } from "@/lib/recommend-text";
@@ -236,6 +237,7 @@ export function RecommendPanel({ entryId }: { entryId: number }) {
       ) : null}
 
       <AiOpinionPanel entryId={entryId} />
+      <RecommendLogPanel entryId={entryId} />
     </section>
   );
 }
