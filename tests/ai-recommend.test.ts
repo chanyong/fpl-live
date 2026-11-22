@@ -174,7 +174,7 @@ describe("limits", () => {
     expect(client.calls).toBe(0);
   });
 
-  it("stops after five reservations in a day ($5 daily cap over $0.96 each)", async () => {
+  it("stops after five reservations in a day ($5 daily cap over $0.864 each)", async () => {
     const store = new FakeStore();
     const client = new FakeClient([]);
     const { deps } = makeDeps({ input, client, store });
