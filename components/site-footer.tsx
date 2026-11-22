@@ -48,6 +48,15 @@ export function SiteFooter() {
           )}
         </p>
         <p className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+          <Link href="/premier-league" className="font-semibold hover:text-[var(--accent)]">
+            {tr("EPL 순위표", "EPL table")}
+          </Link>
+          <Link href="/fixtures" className="font-semibold hover:text-[var(--accent)]">
+            {tr("경기 일정", "Fixtures")}
+          </Link>
+          <Link href="/players" className="font-semibold hover:text-[var(--accent)]">
+            {tr("선수 통계", "Players")}
+          </Link>
           <Link href="/price-changes" className="font-semibold hover:text-[var(--accent)]">
             {tr("가격 변동 예측", "Price changes")}
           </Link>

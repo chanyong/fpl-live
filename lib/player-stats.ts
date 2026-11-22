@@ -60,7 +60,7 @@ function photoUrl(photo: string) {
 type BootstrapElement = Awaited<ReturnType<typeof getBootstrapStatic>>["elements"][number];
 type BootstrapTeam = Awaited<ReturnType<typeof getBootstrapStatic>>["teams"][number];
 
-function buildPlayerStat(
+export function buildPlayerStat(
   element: BootstrapElement,
   teamsById: Map<number, BootstrapTeam>,
   eventPoints: number
@@ -97,6 +97,51 @@ function buildPlayerStat(
     news: element.news,
     photoUrl: photoUrl(element.photo)
   };
+}
+
+type OutlookTeam = { id: number; short_name: string };
+
+type OutlookFixture = {
+  event: number | null;
+  team_h: number;
+  team_a: number;
+  team_h_difficulty: number;
+  team_a_difficulty: number;
+};
+
+/**
+ * Upcoming fixtures per team, keyed by short name: `fdr` is the next few for the difficulty strip, `outlook`
+ * every fixture in the next seven gameweeks (blanks and doubles intact) for the team fixture table. Needs no
+ * league, so the public pages (lib/public-football) use it too.
+ */
+export function buildTeamOutlook(teams: OutlookTeam[], fixtures: OutlookFixture[], currentGw: number) {
+  const teamsById = new Map(teams.map((team) => [team.id, team]));
+  const fdr: Record<string, TeamFixtureOutlook[]> = {};
+  const outlook: Record<string, TeamFixtureOutlook[]> = {};
+  const upcoming = fixtures
+    .filter((fixture) => fixture.event !== null && fixture.event > currentGw)
+    .sort((left, right) => (left.event ?? 0) - (right.event ?? 0));
+
+  for (const team of teams) {
+    const fixturesOfTeam = upcoming
+      .filter((fixture) => fixture.team_h === team.id || fixture.team_a === team.id)
+      .map((fixture) => {
+        const home = fixture.team_h === team.id;
+        const opponentId = home ? fixture.team_a : fixture.team_h;
+
+        return {
+          gw: fixture.event ?? 0,
+          opponent: teamsById.get(opponentId)?.short_name ?? "-",
+          home,
+          difficulty: home ? fixture.team_h_difficulty : fixture.team_a_difficulty
+        };
+      });
+
+    fdr[team.short_name] = fixturesOfTeam.slice(0, FDR_WINDOW);
+    outlook[team.short_name] = fixturesOfTeam.filter((fixture) => fixture.gw <= currentGw + OUTLOOK_GAMEWEEKS);
+  }
+
+  return { fdr, outlook };
 }
 
 export async function getPlayerStatsPayload({
@@ -218,30 +263,7 @@ export async function getPlayerStatsPayload({
     })
     .sort((left, right) => right.ownedBy - left.ownedBy || right.seasonPoints - left.seasonPoints);
 
-  const fdr: Record<string, TeamFixtureOutlook[]> = {};
-  const outlook: Record<string, TeamFixtureOutlook[]> = {};
-  const upcoming = fixtures
-    .filter((fixture) => fixture.event !== null && fixture.event > currentGw)
-    .sort((left, right) => (left.event ?? 0) - (right.event ?? 0));
-
-  for (const team of bootstrap.teams) {
-    const fixturesOfTeam = upcoming
-      .filter((fixture) => fixture.team_h === team.id || fixture.team_a === team.id)
-      .map((fixture) => {
-        const home = fixture.team_h === team.id;
-        const opponentId = home ? fixture.team_a : fixture.team_h;
-
-        return {
-          gw: fixture.event ?? 0,
-          opponent: teamsById.get(opponentId)?.short_name ?? "-",
-          home,
-          difficulty: home ? fixture.team_h_difficulty : fixture.team_a_difficulty
-        };
-      });
-
-    fdr[team.short_name] = fixturesOfTeam.slice(0, FDR_WINDOW);
-    outlook[team.short_name] = fixturesOfTeam.filter((fixture) => fixture.gw <= currentGw + OUTLOOK_GAMEWEEKS);
-  }
+  const { fdr, outlook } = buildTeamOutlook(bootstrap.teams, fixtures, currentGw);
 
   const result: PlayerStatsResponse = {
     league: {

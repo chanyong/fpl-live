@@ -137,17 +137,20 @@ export function PlayerTable({
               </button>
             ))}
           </div>
-          <label className="flex items-center gap-1.5 whitespace-nowrap text-caption text-[var(--muted)]">
-            <input
-              type="checkbox"
-              checked={leagueOnly}
-              onChange={(event) => {
-                setLeagueOnly(event.target.checked);
-                setLimit(PAGE_SIZE);
-              }}
-            />
-            {tr("리그 보유만", "League-owned only")}
-          </label>
+          {/* No league behind the public players page, so there is nothing to filter on. */}
+          {ownedIds.size > 0 ? (
+            <label className="flex items-center gap-1.5 whitespace-nowrap text-caption text-[var(--muted)]">
+              <input
+                type="checkbox"
+                checked={leagueOnly}
+                onChange={(event) => {
+                  setLeagueOnly(event.target.checked);
+                  setLimit(PAGE_SIZE);
+                }}
+              />
+              {tr("리그 보유만", "League-owned only")}
+            </label>
+          ) : null}
         </div>
       </div>
 

@@ -5,7 +5,7 @@ import { difficultyStyle } from "@/components/fdr-strip";
 import { useLocale } from "@/components/locale-provider";
 import { RemoteImage, crestUrl } from "@/components/remote-image";
 import { averageDifficulty } from "@/lib/player-metrics";
-import type { PlayerStatsResponse, TeamFixtureOutlook } from "@/lib/types";
+import type { TeamFixtureOutlook, TeamOutlookData } from "@/lib/types";
 
 /** Gameweeks shown after the current one. */
 const WINDOW = 7;
@@ -61,7 +61,7 @@ function FixtureCell({ fixtures }: { fixtures: TeamFixtureOutlook[] | undefined 
  * low average reads as an easy run. Blank gameweeks show a dash and double gameweeks stack two
  * cells; the average only counts fixtures actually inside the window.
  */
-export function TeamFixtureTable({ data }: { data: PlayerStatsResponse }) {
+export function TeamFixtureTable({ data }: { data: TeamOutlookData }) {
   const { tr } = useLocale();
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: "average", dir: "asc" });
 

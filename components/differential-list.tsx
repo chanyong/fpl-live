@@ -85,7 +85,9 @@ export function DifferentialList({
   return (
     <div className="flex flex-col gap-2">
       <p className="text-caption text-[var(--muted)]">
-        {tr(`${rows.length}명 · 리그 보유 ${ownedCount}명`, `${rows.length} players · ${ownedCount} owned in league`)}
+        {ownedIds.size > 0
+          ? tr(`${rows.length}명 · 리그 보유 ${ownedCount}명`, `${rows.length} players · ${ownedCount} owned in league`)
+          : tr(`${rows.length}명`, `${rows.length} players`)}
       </p>
 
       <div className="overflow-x-auto">

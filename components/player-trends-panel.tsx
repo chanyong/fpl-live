@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { KpiCard, KpiGrid } from "@/components/kpi-card";
 import { SidePanelLayout } from "@/components/side-panel-layout";
@@ -11,7 +12,7 @@ import { PlayerDetail } from "@/components/player-detail";
 import { PlayerTable } from "@/components/player-table";
 import { PriceChangesSection } from "@/components/price-changes-section";
 import { DIFFERENTIAL_MIN_MINUTES, selectDifferentials } from "@/lib/player-metrics";
-import type { FplPosition, PlayerStatsResponse } from "@/lib/types";
+import type { FplPosition, PlayerTrendsData } from "@/lib/types";
 import { useLocale } from "@/components/locale-provider";
 
 /** A differential is a player this much of the world owns, or less. */
@@ -63,8 +64,14 @@ function Section({
   );
 }
 
-export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
+/**
+ * `scope="public"` is the league-free players page (/players): no league data, so the league view and the
+ * league-ownership figures are left out, and the views below are stacked on one page instead of tabbed so the
+ * whole content is in the server-rendered HTML.
+ */
+export function PlayerTrendsPanel({ data, scope = "league" }: { data: PlayerTrendsData; scope?: "league" | "public" }) {
   const { tr } = useLocale();
+  const isPublic = scope === "public";
   const [view, setView] = useState<View>("transfers");
   const [selected, setSelected] = useState<number | null>(null);
   const [position, setPosition] = useState<PositionFilter>("ALL");
@@ -133,6 +140,14 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
     ),
     [leaguePlayers]
   );
+  const topNetIn = useMemo(
+    () =>
+      players.reduce<(typeof players)[number] | null>(
+        (best, player) => (best === null || player.netTransfers > best.netTransfers ? player : best),
+        null
+      ),
+    [players]
+  );
   const priceSoon = useMemo(
     () => players.filter((player) => Math.abs(player.priceChangePercent) >= PRICE_SOON_CUT).length,
     [players]
@@ -143,20 +158,37 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
     : tr(`GW${data.league.currentGw} 기준`, `As of GW${data.league.currentGw}`);
 
   const selectedPlayer = selected !== null ? playersById.get(selected) : undefined;
+  const showTransfers = isPublic || view === "transfers";
+  const showPerformance = isPublic || view === "performance";
 
   return (
     <SidePanelLayout
       side={
       <KpiGrid label={tr("선수 요약", "Player summary")} columns={3}>
-        <KpiCard
-          label={tr("리그 최다 보유", "Most owned in league")}
-          value={topHeld?.webName ?? "-"}
-          sub={
-            topHeld
-              ? tr(`${topHeld.ownedBy}명 보유 · ${topHeld.leaguePercent}%`, `${topHeld.ownedBy} own · ${topHeld.leaguePercent}%`)
-              : tr("보유 선수 없음", "No owned players")
-          }
-        />
+        {isPublic ? (
+          <KpiCard
+            label={tr("이번 주 최다 영입", "Most transferred in")}
+            value={topNetIn?.webName ?? "-"}
+            sub={
+              topNetIn
+                ? tr(
+                    `순영입 ${full.format(topNetIn.netTransfers)}명 · ${topNetIn.teamShortName}`,
+                    `net ${full.format(topNetIn.netTransfers)} · ${topNetIn.teamShortName}`
+                  )
+                : tr("집계 없음", "No data")
+            }
+          />
+        ) : (
+          <KpiCard
+            label={tr("리그 최다 보유", "Most owned in league")}
+            value={topHeld?.webName ?? "-"}
+            sub={
+              topHeld
+                ? tr(`${topHeld.ownedBy}명 보유 · ${topHeld.leaguePercent}%`, `${topHeld.ownedBy} own · ${topHeld.leaguePercent}%`)
+                : tr("보유 선수 없음", "No owned players")
+            }
+          />
+        )}
         <KpiCard
           label={tr("가격 변동 임박", "Price change due")}
           value={tr(`${priceSoon}명`, String(priceSoon))}
@@ -171,6 +203,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
       }
     >
     <div className="flex flex-col gap-2">
+      {isPublic ? null : (
       <div
         role="tablist"
         aria-label={tr("선수 데이터 보기", "Player data views")}
@@ -195,6 +228,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
           );
         })}
       </div>
+      )}
 
       <div role="group" aria-label={tr("포지션 필터", "Position filter")} className="flex flex-wrap gap-1.5">
         {POSITION_FILTERS.map((item) => (
@@ -214,7 +248,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
         ))}
       </div>
 
-      {view === "transfers" ? (
+      {showTransfers ? (
         <>
           <Section
             title={tr("영입과 방출", "Transfers in and out")}
@@ -240,15 +274,33 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
             </div>
           </Section>
 
-          <PriceChangesSection onSelect={setSelected} />
+          {isPublic ? (
+            <Section
+              title={tr("가격 변동 예측", "Price change predictions")}
+              hint={tr("다음 갱신에 오를·내릴 선수는 전용 페이지에서 확인하세요.", "Who rises or falls at the next update is on its own page.")}
+            >
+              <Link
+                href="/price-changes"
+                className="inline-flex min-h-9 items-center rounded-md border border-[var(--border)] bg-[var(--bg)] px-3.5 text-meta font-semibold text-[var(--accent)] transition hover:border-[var(--accent)]"
+              >
+                {tr("가격 변동 예측 보기", "View price change predictions")}
+              </Link>
+            </Section>
+          ) : (
+            <PriceChangesSection onSelect={setSelected} />
+          )}
         </>
       ) : null}
 
-      {view === "performance" ? (
+      {showPerformance ? (
         <>
           <Section
             title={tr("폼 × 소유율", "Form × ownership")}
-            hint={tr(`소유율 ${OWNERSHIP_CUT}% 이하 · 폼 ${FORM_CUT}+ 강조 · 진한 테두리는 우리 리그 보유`, `≤${OWNERSHIP_CUT}% owned · form ${FORM_CUT}+ highlighted · dark outline = owned in league`)}
+            hint={
+              isPublic
+                ? tr(`소유율 ${OWNERSHIP_CUT}% 이하 · 폼 ${FORM_CUT}+ 강조`, `≤${OWNERSHIP_CUT}% owned · form ${FORM_CUT}+ highlighted`)
+                : tr(`소유율 ${OWNERSHIP_CUT}% 이하 · 폼 ${FORM_CUT}+ 강조 · 진한 테두리는 우리 리그 보유`, `≤${OWNERSHIP_CUT}% owned · form ${FORM_CUT}+ highlighted · dark outline = owned in league`)
+            }
           >
             <div className="overflow-x-auto">
               <div className="min-w-[720px]">
@@ -279,7 +331,7 @@ export function PlayerTrendsPanel({ data }: { data: PlayerStatsResponse }) {
         </>
       ) : null}
 
-      {view === "league" ? (
+      {!isPublic && view === "league" ? (
         <LeaguePlayersPanel
           leaguePlayers={leaguePlayers}
           managerNames={managerNames}

@@ -4,6 +4,7 @@ import { LeagueSearchForm } from "@/components/league-search-form";
 import { LeagueIdLinks } from "@/components/league-id-links";
 import Link from "next/link";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
+import { SiteNav } from "@/components/site-nav";
 
 /**
  * Home, set as a matchday ticket (taste pilot). Main panel: what it is + the league ID field.
@@ -18,6 +19,7 @@ export function HomeHero() {
         <p className="whitespace-nowrap text-body-lg font-extrabold tracking-tight text-[var(--paper)]">
           {tr("FPL 라이브", "FPL Live")}
         </p>
+        <SiteNav tone="home" className="order-last w-full md:order-none md:ml-4 md:w-auto" />
         <div className="ml-auto flex items-center gap-2">
           <Link
             href="/faq"
