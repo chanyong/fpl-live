@@ -15,8 +15,9 @@ function limitKey(headers: Headers) {
 }
 
 /**
- * Rule-based lineup and captain candidates for one team (issue #43, stage 1-A): expected points from the
- * public FPL data, no login, no AI, nothing stored. It reads what /api/entry-squad reads (getEntrySquad) plus
+ * Rule-based lineup, captain and transfer-scenario candidates for one team (issue #43, stages 1-A and 1-B):
+ * expected points from the public FPL data, no login, no AI, nothing stored. `horizon=3|5` is the number of
+ * gameweeks the transfer scenarios add up (default 3). It reads what /api/entry-squad reads (getEntrySquad) plus
  * the shared xP table, so it adds no FPL call.
  */
 export async function GET(request: NextRequest) {
@@ -24,6 +25,12 @@ export async function GET(request: NextRequest) {
   if ("error" in parsed) {
     return NextResponse.json({ error: parsed.error }, { status: 400, headers: NO_STORE });
   }
+
+  const horizonParam = request.nextUrl.searchParams.get("horizon");
+  if (horizonParam !== null && horizonParam !== "3" && horizonParam !== "5") {
+    return NextResponse.json({ error: "horizon must be 3 or 5" }, { status: 400, headers: NO_STORE });
+  }
+  const horizon = horizonParam === "5" ? 5 : 3;
 
   const forceRefresh = request.nextUrl.searchParams.get("refresh") === "1";
   const verdict = checkEntryRequest(limitKey(request.headers), parsed.entryId, forceRefresh);
@@ -35,7 +42,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const payload = await getEntryRecommend(parsed.entryId, forceRefresh);
+    const payload = await getEntryRecommend(parsed.entryId, forceRefresh, horizon);
     return NextResponse.json(payload, { headers: NO_STORE });
   } catch (error) {
     if (error instanceof EntryNotFoundError) {

@@ -3,6 +3,8 @@ import type { EntrySquadPayload } from "@/lib/squad-types";
 import { buildCaptainCandidates, type CaptainCandidate } from "@/lib/xp/captain";
 import { buildLineups, type LineupCandidate } from "@/lib/xp/lineup";
 import { XP_MODEL_VERSION, type XpPlayer, type XpTable } from "@/lib/xp/model";
+import { getTransfers } from "@/lib/xp/transfer-service";
+import type { TransferHorizon, TransferSearchResult } from "@/lib/xp/transfer-search";
 import { getXpTable } from "@/lib/xp/xp-table";
 
 export { EntryNotFoundError, EntryBusyError, FplUnavailableError };
@@ -25,7 +27,7 @@ export type RecommendPlayer = {
 
 export type RecommendAssumption = { code: string; text: string };
 
-export type EntryRecommendPayload = {
+export type EntryRecommendBase = {
   entryId: number;
   modelVersion: typeof XP_MODEL_VERSION;
   /** Gameweek the xP and the candidates are for: the first whose deadline has not passed. */
@@ -44,6 +46,9 @@ export type EntryRecommendPayload = {
   assumptions: RecommendAssumption[];
 };
 
+/** The route's answer: the base plus the transfer scenarios (null when the team has no full squad yet). */
+export type EntryRecommendPayload = EntryRecommendBase & { transfers: TransferSearchResult | null };
+
 export const ASSUMPTIONS: RecommendAssumption[] = [
   {
     code: "squad_last_deadline",
@@ -56,6 +61,14 @@ export const ASSUMPTIONS: RecommendAssumption[] = [
   {
     code: "chance_next_gw_only",
     text: "FPL's chance of playing applies to the next gameweek only; later weeks use the start ratio."
+  },
+  {
+    code: "transfer_prices_estimated",
+    text: "Selling prices and free transfers are estimates (FPL shows the real figures only to the logged-in manager); transfers made since the last deadline are not seen."
+  },
+  {
+    code: "transfer_pool_search",
+    text: "Transfer scenarios search a pool of about 30 candidates per position, not every player. Wildcard and Free Hit are a greedy search and not guaranteed best."
   },
   {
     code: "weight_not_probability",
@@ -84,7 +97,7 @@ function toRecommendPlayer(player: EntrySquadPayload["squad"][number], xp: XpPla
 }
 
 /** Pure assembly of the recommendation from one team's squad and the shared xP table. */
-export function buildEntryRecommend(squad: EntrySquadPayload, table: XpTable): EntryRecommendPayload {
+export function buildEntryRecommend(squad: EntrySquadPayload, table: XpTable): EntryRecommendBase {
   const squadPlayers = squad.squad;
   const players = squadPlayers.map((player) => toRecommendPlayer(player, table.players.get(player.elementId)));
 
@@ -131,11 +144,17 @@ export function buildEntryRecommend(squad: EntrySquadPayload, table: XpTable): E
  * One team's recommendation: getEntrySquad (memoised 5 minutes, FPL calls capped for the whole process) plus
  * the shared xP table (memoised 10 minutes). No FPL call of its own.
  */
-export async function getEntryRecommend(entryId: number, forceRefresh = false): Promise<EntryRecommendPayload> {
+export async function getEntryRecommend(
+  entryId: number,
+  forceRefresh = false,
+  horizon: TransferHorizon = 3
+): Promise<EntryRecommendPayload> {
   const [squad, table] = await Promise.all([getEntrySquad(entryId, forceRefresh), getXpTable()]);
   if (!table) {
     // FPL did not answer and nothing is cached, or the season is over (no deadline ahead).
     throw new FplUnavailableError();
   }
-  return buildEntryRecommend(squad, table);
+  const base = buildEntryRecommend(squad, table);
+  const transfers = await getTransfers(squad, table, horizon);
+  return { ...base, transfers };
 }
