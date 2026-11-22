@@ -325,6 +325,23 @@ export type PlayerStatsResponse = {
   leaguePlayers: LeaguePlayerStat[];
 };
 
+/** What the team fixture table needs: no league, so the public pages can feed it too. */
+export type TeamOutlookData = {
+  league: { currentGw: number };
+  /** One entry per team is enough: only the crest code is read. */
+  players: Array<{ teamShortName: string; teamCode: number }>;
+  outlook: PlayerStatsResponse["outlook"];
+};
+
+/** What the player panel needs; the league-only parts may be empty on the public players page. */
+export type PlayerTrendsData = {
+  players: PlayerStat[];
+  fdr: PlayerStatsResponse["fdr"];
+  managers: PlayerStatsResponse["managers"];
+  leaguePlayers: LeaguePlayerStat[];
+  league: { currentGw: number; nextGw: number | null };
+};
+
 export type PlayerHistoryPoint = {
   gw: number;
   points: number;
