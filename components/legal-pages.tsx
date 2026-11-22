@@ -96,8 +96,8 @@ export function PrivacyContent() {
                 </td>
                 <td>
                   {tr(
-                    "개인 팀 화면 제공. 서버는 저장하지 않고 최대 5분 메모리 캐시만 씁니다. 요청 횟수 제한(팀 번호를 차례로 조회하는 것 방지)을 위해 IP 주소를 메모리에서 잠시 세며 저장하지 않습니다. 개인 팀 화면은 검색엔진에 노출하지 않도록 설정했습니다(noindex, 사이트맵 제외).",
-                    "Showing the team screen. Not stored by the server, only an in-memory cache of up to 5 minutes. IP addresses are counted briefly in memory to limit request rates (to stop walking through team IDs) and are not stored. Team screens are kept out of search engines (noindex, not in the sitemap)."
+                    "개인 팀 화면 제공. 서버는 저장하지 않고 최대 5분 메모리 캐시만 씁니다. 요청 횟수 제한(팀 번호를 차례로 조회하는 것 방지)을 위해 IP 주소를 메모리에서만 세고 약 10분 뒤 지우며, 디스크에는 저장하지 않습니다. 개인 팀 화면은 검색엔진에 노출하지 않도록 설정했습니다(noindex, 사이트맵 제외).",
+                    "Showing the team screen. Not stored by the server, only an in-memory cache of up to 5 minutes. IP addresses are counted in memory only, to limit request rates (to stop walking through team IDs), dropped after about 10 minutes and never written to disk. Team screens are kept out of search engines (noindex, not in the sitemap)."
                   )}
                 </td>
               </tr>

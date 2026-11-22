@@ -16,7 +16,14 @@ vi.mock("@/lib/fpl-client", async (importActual) => ({ ...(await importActual<ty
 
 import { FplRequestError } from "@/lib/fpl-client";
 import { resetPublicDataCache } from "@/lib/public-data";
-import { buildEntrySquad, EntryNotFoundError, FplUnavailableError, getEntrySquad, resetEntrySquadCache } from "@/lib/entry-squad";
+import {
+  buildEntrySquad,
+  EntryBusyError,
+  EntryNotFoundError,
+  FplUnavailableError,
+  getEntrySquad,
+  resetEntrySquadCache
+} from "@/lib/entry-squad";
 
 // Issue #39 stage 2: the squad screen's data, assembled from FPL's public endpoints.
 const WEEKS_1_TO_11 = Array.from({ length: 11 }, (_, index) => ({ event: index + 1 }));
@@ -163,9 +170,41 @@ describe("getEntrySquad", () => {
     await expect(getEntrySquad(1)).rejects.toBeInstanceOf(EntryNotFoundError);
   });
 
-  it("passes other FPL failures on as they are", async () => {
+  it("reports other FPL failures (maintenance, rate limit) as an outage", async () => {
     fpl.getEntry.mockRejectedValue(new FplRequestError("FPL request failed (503)", 503, true, null));
-    await expect(getEntrySquad(2)).rejects.toBeInstanceOf(FplRequestError);
+    await expect(getEntrySquad(2)).rejects.toBeInstanceOf(FplUnavailableError);
+    fpl.getEntry.mockResolvedValue(squadEntry());
+    fpl.getEntryPicks.mockRejectedValue(new FplRequestError("FPL request failed (503)", 503, true, null));
+    await expect(getEntrySquad(2)).rejects.toBeInstanceOf(FplUnavailableError);
+  });
+
+  it("loads at most 5 teams from FPL at the same time, whoever asks", async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    fpl.getEntry.mockImplementation(async () => {
+      await gate;
+      return squadEntry();
+    });
+
+    const running = [101, 102, 103, 104, 105].map((id) => getEntrySquad(id));
+    await expect(getEntrySquad(106)).rejects.toBeInstanceOf(EntryBusyError);
+    // A team already being loaded still shares that load.
+    const shared = getEntrySquad(101);
+    release();
+    await Promise.all([...running, shared]);
+    await expect(getEntrySquad(106)).resolves.toMatchObject({ entryId: 106 });
+  });
+
+  it("starts at most 60 loads a minute and serves cached teams regardless", async () => {
+    for (let id = 1; id <= 60; id += 1) {
+      await getEntrySquad(1000 + id);
+    }
+    const busy = await getEntrySquad(2000).catch((error: unknown) => error);
+    expect(busy).toBeInstanceOf(EntryBusyError);
+    expect((busy as EntryBusyError).retryAfterSeconds).toBeGreaterThan(0);
+    await expect(getEntrySquad(1001)).resolves.toMatchObject({ entryId: 1001 });
   });
 
   it("reports FPL as unavailable when the shared data is missing and nothing is cached", async () => {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { checkEntryRequest, resetEntryRequestLimits } from "@/lib/entry-request-limit";
+import { checkEntryRequest, entryRequestLimitSize, resetEntryRequestLimits } from "@/lib/entry-request-limit";
 import { parseEntryId } from "@/lib/request-params";
 
 // Issue #39 stage 2: a brake on walking through team IDs, and strict ID parsing in front of the FPL URL.
@@ -37,6 +37,27 @@ describe("checkEntryRequest", () => {
     expect(checkEntryRequest("1.1.1.1", 7, true, t0 + 10_000).allowed).toBe(false);
     expect(checkEntryRequest("1.1.1.1", 7, false, t0 + 10_000).allowed).toBe(true);
     expect(checkEntryRequest("1.1.1.1", 7, true, t0 + 31_000).allowed).toBe(true);
+  });
+});
+
+describe("limiter memory", () => {
+  it("forgets visitors who do not come back, well below any size cap", () => {
+    const t0 = 1_000_000;
+    for (let i = 0; i < 50; i += 1) {
+      checkEntryRequest(`10.0.0.${i}`, i + 1, true, t0);
+    }
+    expect(entryRequestLimitSize()).toBe(150);
+    // One request 11 minutes later sweeps everything that expired.
+    checkEntryRequest("9.9.9.9", 1, false, t0 + 11 * 60_000);
+    expect(entryRequestLimitSize()).toBe(2);
+  });
+
+  it("keeps each map under a hard cap by dropping the oldest keys, even inside the window", () => {
+    const t0 = 1_000_000;
+    for (let i = 0; i < 2500; i += 1) {
+      checkEntryRequest(`ip-${i}`, 1, false, t0 + i);
+    }
+    expect(entryRequestLimitSize()).toBeLessThanOrEqual(2 * 2001);
   });
 });
 

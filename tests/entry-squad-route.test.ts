@@ -11,7 +11,7 @@ import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import { GET } from "@/app/api/entry-squad/route";
 import { resetEntryRequestLimits } from "@/lib/entry-request-limit";
-import { EntryNotFoundError, FplUnavailableError } from "@/lib/entry-squad";
+import { EntryBusyError, EntryNotFoundError, FplUnavailableError } from "@/lib/entry-squad";
 
 // Issue #39 stage 2: the personal-squad API validates, limits and maps errors; team screens stay out of search.
 const req = (query: string, ip = "9.9.9.9") =>
@@ -63,6 +63,25 @@ describe("GET /api/entry-squad", () => {
     expect(Number(blocked.headers.get("retry-after"))).toBeGreaterThan(0);
     // Another visitor is not affected.
     expect((await GET(req("?entryId=13", "8.8.8.8"))).status).toBe(200);
+  });
+
+  it("counts by the proxy's x-real-ip, so a changing x-forwarded-for does not reset the limit", async () => {
+    const forged = (id: number) =>
+      new NextRequest(`http://localhost/api/entry-squad?entryId=${id}`, {
+        headers: { "x-real-ip": "7.7.7.7", "x-forwarded-for": `10.0.0.${id}` }
+      });
+    for (let id = 1; id <= 12; id += 1) {
+      expect((await GET(forged(id))).status).toBe(200);
+    }
+    expect((await GET(forged(13))).status).toBe(429);
+  });
+
+  it("answers 503 with Retry-After when too many teams are being loaded at once", async () => {
+    getEntrySquad.mockRejectedValueOnce(new EntryBusyError(5));
+    const response = await GET(req("?entryId=9"));
+    expect(response.status).toBe(503);
+    expect(response.headers.get("retry-after")).toBe("5");
+    expect(await response.json()).toMatchObject({ retryAfterSeconds: 5 });
   });
 });
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkEntryRequest } from "@/lib/entry-request-limit";
-import { EntryNotFoundError, FplUnavailableError, getEntrySquad } from "@/lib/entry-squad";
+import { EntryBusyError, EntryNotFoundError, FplUnavailableError, getEntrySquad } from "@/lib/entry-squad";
 import { clientIp } from "@/lib/journal/rate-limit";
 import { parseEntryId } from "@/lib/request-params";
 
@@ -8,6 +8,14 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 const NO_STORE = { "Cache-Control": "no-store" };
+
+/**
+ * The visitor's IP for the per-IP limits: the proxy's own `x-real-ip` when it sets one, because the first
+ * `x-forwarded-for` value can be whatever the client sent. Either way getEntrySquad caps FPL loads globally.
+ */
+function limitKey(headers: Headers) {
+  return headers.get("x-real-ip")?.trim() || clientIp(headers);
+}
 
 /** One team's squad screen (issue #39 stage 2): FPL public data for that team ID, no login, nothing stored. */
 export async function GET(request: NextRequest) {
@@ -17,7 +25,7 @@ export async function GET(request: NextRequest) {
   }
 
   const forceRefresh = request.nextUrl.searchParams.get("refresh") === "1";
-  const verdict = checkEntryRequest(clientIp(request.headers), parsed.entryId, forceRefresh);
+  const verdict = checkEntryRequest(limitKey(request.headers), parsed.entryId, forceRefresh);
   if (!verdict.allowed) {
     return NextResponse.json(
       { error: "Too many requests. Please try again shortly.", retryAfterSeconds: verdict.retryAfterSeconds },
@@ -31,6 +39,12 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     if (error instanceof EntryNotFoundError) {
       return NextResponse.json({ error: "Team not found" }, { status: 404, headers: NO_STORE });
+    }
+    if (error instanceof EntryBusyError) {
+      return NextResponse.json(
+        { error: "Busy. Please try again shortly.", retryAfterSeconds: error.retryAfterSeconds },
+        { status: 503, headers: { ...NO_STORE, "Retry-After": String(error.retryAfterSeconds) } }
+      );
     }
     if (error instanceof FplUnavailableError) {
       return NextResponse.json({ error: "FPL data is unavailable" }, { status: 502, headers: NO_STORE });

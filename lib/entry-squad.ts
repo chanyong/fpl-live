@@ -176,6 +176,19 @@ export class FplUnavailableError extends Error {
   }
 }
 
+/** Too many teams are being loaded from FPL at once, whoever asks (the route answers 503 + Retry-After). */
+export class EntryBusyError extends Error {
+  constructor(readonly retryAfterSeconds: number) {
+    super("Too many team loads in progress");
+    this.name = "EntryBusyError";
+  }
+}
+
+/** An FPL answer other than "no such team" (maintenance, rate limit) is an outage, not our bug. */
+function asOutage(error: unknown) {
+  return error instanceof FplRequestError ? new FplUnavailableError() : error;
+}
+
 /** Price of each player in the gameweek a late-joining manager built the first squad (element-summary). */
 async function loadStartPrices(startedEvent: number, ids: number[]) {
   const prices = new Map<number, number>();
@@ -213,7 +226,7 @@ async function loadEntrySquad(entryId: number): Promise<EntrySquadPayload> {
     if (error instanceof FplRequestError && error.status === 404) {
       throw new EntryNotFoundError();
     }
-    throw error;
+    throw asOutage(error);
   }
 
   const lastEvent = history.current.reduce<number | null>(
@@ -230,7 +243,12 @@ async function loadEntrySquad(entryId: number): Promise<EntrySquadPayload> {
         ? lastEvent - 1
         : lastEvent;
 
-  const picks = squadGw === null ? null : await getEntryPicks(entryId, squadGw);
+  const picks =
+    squadGw === null
+      ? null
+      : await getEntryPicks(entryId, squadGw).catch((error: unknown) => {
+          throw asOutage(error);
+        });
 
   let eventPointsOverride: Map<number, number> | null = null;
   if (squadGw !== null && squadGw !== currentGw) {
@@ -267,15 +285,24 @@ async function loadEntrySquad(entryId: number): Promise<EntrySquadPayload> {
 /**
  * One team's squad screen data. Memoised per team for 5 minutes (at most 200 teams, oldest dropped), and
  * concurrent requests for the same team share one set of FPL calls. `forceRefresh` skips the memo.
+ *
+ * Loads from FPL are capped for the whole process, whatever IP asks: the per-IP limits in
+ * lib/entry-request-limit rest on a forwarded header, and one load is up to 20 FPL calls (60 with retries).
+ * FPL blocking this server would take the league screens down with it.
  */
 const TTL_MS = 5 * 60_000;
 const MAX_ENTRIES = 200;
+const MAX_CONCURRENT_LOADS = 5;
+const MAX_LOADS_PER_MINUTE = 60;
+const LOAD_WINDOW_MS = 60_000;
+let loadTimes: number[] = [];
 const cache = new Map<number, { data: EntrySquadPayload; expiresAt: number }>();
 const inflight = new Map<number, Promise<EntrySquadPayload>>();
 
 export function resetEntrySquadCache() {
   cache.clear();
   inflight.clear();
+  loadTimes = [];
 }
 
 export async function getEntrySquad(entryId: number, forceRefresh = false): Promise<EntrySquadPayload> {
@@ -290,6 +317,19 @@ export async function getEntrySquad(entryId: number, forceRefresh = false): Prom
   if (running) {
     return running;
   }
+
+  const now = Date.now();
+  // Expired teams leave memory here rather than waiting to be pushed out by the 200-team cap.
+  for (const [id, item] of cache) if (item.expiresAt <= now) cache.delete(id);
+
+  loadTimes = loadTimes.filter((at) => now - at < LOAD_WINDOW_MS);
+  if (inflight.size >= MAX_CONCURRENT_LOADS) {
+    throw new EntryBusyError(5);
+  }
+  if (loadTimes.length >= MAX_LOADS_PER_MINUTE) {
+    throw new EntryBusyError(Math.max(1, Math.ceil((loadTimes[0] + LOAD_WINDOW_MS - now) / 1000)));
+  }
+  loadTimes.push(now);
 
   const promise = loadEntrySquad(entryId)
     .then((data) => {

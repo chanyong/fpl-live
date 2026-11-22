@@ -6,39 +6,73 @@
  * - at most 12 different entry IDs per IP per 10 minutes (reloading the same team is free);
  * - a forced refresh of one team at most once per 30 seconds per IP.
  *
- * In memory, one process, resets on deploy — the same trade-off as lib/journal/rate-limit.
+ * In memory, one process, resets on deploy — the same trade-off as lib/journal/rate-limit. Expired counters
+ * are swept every minute (also while idle), so an IP is held for about 10 minutes at most, and each map has a
+ * hard cap: past it the oldest keys go first. The per-IP limits lean on a header a client may be able to
+ * forge, so the cap on FPL calls that does not depend on the IP lives in lib/entry-squad (getEntrySquad).
  */
 const MINUTE_MS = 60_000;
 const DISTINCT_WINDOW_MS = 10 * MINUTE_MS;
 const MAX_PER_MINUTE = 20;
 const MAX_DISTINCT_ENTRIES = 12;
 const REFRESH_COOLDOWN_MS = 30_000;
-const MAX_KEYS = 5000;
+const MAX_KEYS_PER_MAP = 2000;
+const SWEEP_MS = MINUTE_MS;
 
 const hits = new Map<string, number[]>();
 const distinct = new Map<string, Map<number, number>>();
 const refreshes = new Map<string, number>();
 
+let lastSweep = 0;
+let sweeper: ReturnType<typeof setInterval> | null = null;
+
 export function resetEntryRequestLimits() {
   hits.clear();
   distinct.clear();
   refreshes.clear();
+  lastSweep = 0;
+}
+
+/** Test hook: how many keys the limiter holds. */
+export function entryRequestLimitSize() {
+  return hits.size + distinct.size + refreshes.size;
+}
+
+function dropOldest(map: Map<string, unknown>) {
+  while (map.size > MAX_KEYS_PER_MAP) {
+    const oldest = map.keys().next().value;
+    if (oldest === undefined) break;
+    map.delete(oldest);
+  }
 }
 
 function prune(now: number) {
-  if (hits.size + distinct.size + refreshes.size < MAX_KEYS) return;
+  const over = hits.size > MAX_KEYS_PER_MAP || distinct.size > MAX_KEYS_PER_MAP || refreshes.size > MAX_KEYS_PER_MAP;
+  if (!over && now - lastSweep < SWEEP_MS) return;
+  lastSweep = now;
   for (const [ip, times] of hits) if (!times.some((at) => now - at <= MINUTE_MS)) hits.delete(ip);
   for (const [ip, seen] of distinct) {
     for (const [entry, at] of seen) if (now - at > DISTINCT_WINDOW_MS) seen.delete(entry);
     if (seen.size === 0) distinct.delete(ip);
   }
   for (const [key, at] of refreshes) if (now - at > REFRESH_COOLDOWN_MS) refreshes.delete(key);
+  dropOldest(hits);
+  dropOldest(distinct);
+  dropOldest(refreshes);
+}
+
+/** Sweeps while no request comes in either, so counters do not sit in memory until the next deploy. */
+function startSweeper() {
+  if (sweeper) return;
+  sweeper = setInterval(() => prune(Date.now()), SWEEP_MS);
+  sweeper.unref?.();
 }
 
 export type EntryRequestVerdict = { allowed: true } | { allowed: false; retryAfterSeconds: number };
 
 /** Records the request when it is allowed. `refresh` is a forced reload that skips the server cache. */
 export function checkEntryRequest(ip: string, entryId: number, refresh: boolean, now = Date.now()): EntryRequestVerdict {
+  startSweeper();
   prune(now);
 
   const recent = (hits.get(ip) ?? []).filter((at) => now - at <= MINUTE_MS);
