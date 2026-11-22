@@ -15,6 +15,7 @@ import { PlayerTrendsPanel } from "@/components/player-trends-panel";
 import { PremierLeagueTable } from "@/components/premier-league-table";
 import { RankChangePanel } from "@/components/rank-change-panel";
 import { SidePanelLayout } from "@/components/side-panel-layout";
+import { SiteNav } from "@/components/site-nav";
 import { SubTabs, TabLink } from "@/components/sub-tabs";
 import { TeamFixtureTable } from "@/components/team-fixture-table";
 import { ShareButton } from "@/components/share-button";
@@ -22,6 +23,7 @@ import { RefreshIndicator } from "@/components/refresh-indicator";
 import { RivalCard, useRivalPick } from "@/components/rival-card";
 import { RankMovementCard } from "@/components/rank-movement-card";
 import { rememberLeague } from "@/lib/recent-leagues";
+import { PUBLIC_PAGES, type PublicPageKey } from "@/lib/public-pages";
 import {
   isStandingsView,
   leagueViewPath,
@@ -66,6 +68,13 @@ async function fetchPlayerStats(leagueId: string, fallbackError: string) {
 
   return (await response.json()) as PlayerStatsResponse;
 }
+
+/** The league-free page that shows the same thing for the whole Premier League, per screen (issue #33 stage 2). */
+const PUBLIC_LINKS: Partial<Record<LeagueView, PublicPageKey[]>> = {
+  fixtures: ["fixtures"],
+  teams: ["premier-league", "fixtures"],
+  players: ["players"]
+};
 
 export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; buildId: string }) {
   const { tr } = useLocale();
@@ -171,15 +180,18 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
   return (
     <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-1.5 py-1.5 sm:px-2 md:px-3 md:py-2">
-      <div className="mb-1 flex flex-wrap items-center justify-end gap-2">
-        <ShareButton leagueName={query.data?.league.name} />
-        <Link
-          href="/"
-          className="inline-flex shrink-0 items-center rounded-md border border-[var(--border)] bg-[var(--bg)] px-3.5 py-1.5 text-caption font-semibold text-[var(--text)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-        >
-          {tr("다른 리그 검색", "Search another league")}
-        </Link>
-        <LocaleToggle />
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <SiteNav />
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <ShareButton leagueName={query.data?.league.name} />
+          <Link
+            href="/"
+            className="inline-flex shrink-0 items-center rounded-md border border-[var(--border)] bg-[var(--bg)] px-3.5 py-1.5 text-caption font-semibold text-[var(--text)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          >
+            {tr("다른 리그 검색", "Search another league")}
+          </Link>
+          <LocaleToggle />
+        </div>
       </div>
       <div className="mb-2 flex flex-col gap-2 md:mb-3 md:flex-row md:items-end md:justify-between md:gap-3">
         <div className="min-w-0">
@@ -297,6 +309,20 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
                 onChange={goTo}
               />
             </div>
+          ) : null}
+
+          {(PUBLIC_LINKS[view] ?? []).length > 0 ? (
+            <p className="mb-2 px-1 text-caption text-[var(--muted)]">
+              {tr("리그와 상관없이 전체 보기: ", "Across the whole Premier League: ")}
+              {(PUBLIC_LINKS[view] ?? []).map((key, index) => (
+                <span key={key}>
+                  {index > 0 ? " · " : null}
+                  <Link href={PUBLIC_PAGES[key].path} className="font-semibold text-[var(--accent)] underline-offset-2 hover:underline">
+                    {tr(PUBLIC_PAGES[key].label.ko, PUBLIC_PAGES[key].label.en)}
+                  </Link>
+                </span>
+              ))}
+            </p>
           ) : null}
 
           {tab === "standings" && standingsView === "table" && query.data && query.data.rows.length > 1 ? (
