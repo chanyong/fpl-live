@@ -102,3 +102,13 @@ export function ShirtIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+/** My league: a trophy. */
+export function TrophyIcon({ className }: IconProps) {
+  return (
+    <svg {...MENU_ICON_PROPS} className={className}>
+      <path d="M6 3h8v5a4 4 0 0 1-8 0V3Z" />
+      <path d="M6 5H3.5c0 2.2 1 3.3 2.7 3.6M14 5h2.5c0 2.2-1 3.3-2.7 3.6M10 12v3M7 17h6" />
+    </svg>
+  );
+}

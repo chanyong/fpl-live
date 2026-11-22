@@ -62,14 +62,14 @@ function ChipBadge({ chip }: { chip: ChipStatus }) {
 }
 
 /** Bank, free transfers, transfer cost, squad value and the eight chips of the season. */
-export function SquadStatusBar({ data }: { data: EntrySquadPayload }) {
+export function SquadStatusBar({ data, className = "" }: { data: EntrySquadPayload; className?: string }) {
   const { tr } = useLocale();
   const t = data.transfers;
   const nextGw = data.nextGw;
 
   return (
-    <section aria-label={tr("팀 현황", "Team status")} className="flex flex-col gap-2">
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+    <section aria-label={tr("팀 현황", "Team status")} className={`flex min-w-0 flex-col gap-2 ${className}`}>
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-2">
         <Stat label={tr("은행 잔액", "Bank")} value={formatMoney(data.bank)} />
         <Stat
           label={tr("무료 이적", "Free transfers")}
@@ -116,7 +116,7 @@ export function SquadStatusBar({ data }: { data: EntrySquadPayload }) {
 
       <div>
         <h2 className="mb-1.5 text-body font-semibold">{tr("칩 현황", "Chips")}</h2>
-        <ul className="grid grid-cols-2 gap-1.5 lg:grid-cols-4">
+        <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-4 lg:grid-cols-1 xl:grid-cols-2">
           {data.chips.map((chip) => (
             <ChipBadge key={`${chip.name}-${chip.startEvent}`} chip={chip} />
           ))}
