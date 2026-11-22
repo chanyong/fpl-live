@@ -95,6 +95,9 @@ const squadPayload = (): EntrySquadPayload =>
     teamName: "Test FC",
     managerName: "A B",
     gw: 11,
+    bank: 0,
+    chips: [],
+    transfers: { freeTransfers: 1, freeTransfersMatchHistory: true, lastGwTransfers: 0, lastGwCost: 0, pendingTransfers: 0 },
     squad: pickOrder.map((id, index) => squadPlayer(elements.find((item) => item.id === id)!, index + 1)),
     fetchedAt: NOW
   }) as unknown as EntrySquadPayload;
