@@ -305,7 +305,8 @@ type PoolPlayer = { id: number; weighted: number; form: number; rising: number }
 function buildPool(table: XpTable, weights: Float64Array, ownIds: Set<number>, rival: Set<number>) {
   const byType = new Map<number, PoolPlayer[]>([[1, []], [2, []], [3, []], [4, []]]);
   for (const player of table.players.values()) {
-    if (ownIds.has(player.id) || player.availability <= 0 || player.status === XP_PARAMS.goneStatus) continue;
+    // A missing price (0) would make the player free to buy: leave him out.
+    if (ownIds.has(player.id) || player.availability <= 0 || player.nowCost <= 0 || player.status === XP_PARAMS.goneStatus) continue;
     const list = byType.get(player.elementType);
     if (!list) continue;
     let weighted = 0;
