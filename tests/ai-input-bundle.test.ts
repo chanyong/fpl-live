@@ -50,6 +50,10 @@ describe("buildAiInput", () => {
     }
     expect(sent).not.toContain("Zorro");
     expect(input.user).not.toMatch(/news|manager_name|team_name|teamName|managerName/i);
+    // Terms check (issue #43, condition 5): no FPL team number, manager name or team name reaches the model.
+    expect(input.user).not.toMatch(/entry|manager/i);
+    expect(sent).not.toContain(String(payload.entryId));
+    expect(Object.keys(JSON.parse(input.user).meta).sort()).toEqual(["gws", "horizon", "lang", "model", "squad_gw", "target_gw"]);
     // Identification is by ID, position number and club abbreviation.
     const bundle = JSON.parse(input.user);
     expect(bundle.P.cols).toContain("club");

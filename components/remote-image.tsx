@@ -37,6 +37,12 @@ export function RemoteImage({
   );
 }
 
-export function crestUrl(teamCode: number) {
-  return teamCode > 0 ? `https://resources.premierleague.com/premierleague/badges/70/t${teamCode}.png` : null;
+/**
+ * Club crests are switched off (issue #43, terms check of 2026-11-22: no Premier League logos or emblems on an
+ * unofficial site). Every caller already draws its text fallback (the club's initial or nothing) when this is
+ * null, so the screens keep their layout. To bring crests back, return the badge address here again.
+ */
+export function crestUrl(teamCode: number): string | null {
+  void teamCode;
+  return null;
 }
