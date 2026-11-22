@@ -4,6 +4,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { LeagueDashboard } from "@/components/league-dashboard";
 import { RivalCard, useRivalPick } from "@/components/rival-card";
 import type { LeagueLiveResponse, LeagueRow } from "@/lib/types";
+import { nav } from "./helpers/mock-navigation";
+
+// The dashboard reads its tab from the address (issue #33); an in-memory address bar stands in for Next.
+vi.mock("next/navigation", () => import("./helpers/mock-navigation"));
 
 // The panels around the card need full FPL payloads; this file is only about the me/rival choice.
 vi.mock("@/components/fixtures-panel", () => ({ FixturesPanel: () => null }));
@@ -104,6 +108,7 @@ function Harness({ rows, leagueId = LEAGUE_ID, showCard = true }: { rows: League
 }
 
 afterEach(() => {
+  nav.set(`/league/${LEAGUE_ID}`);
   vi.useRealTimers();
   vi.unstubAllGlobals();
   focusManager.setFocused(undefined);
