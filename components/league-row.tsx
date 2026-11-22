@@ -3,6 +3,7 @@ import { RankDelta } from "@/components/rank-delta";
 import { chipLabel } from "@/lib/chips";
 import type { LeagueRow as LeagueRowType } from "@/lib/types";
 import { SquadStrip } from "@/components/squad-strip";
+import Link from "next/link";
 import { useLocale } from "@/components/locale-provider";
 
 /** "22 -4" — the hit is invisible otherwise, since gwPoints is already net. */
@@ -61,5 +62,17 @@ export function LeagueRow({
 }
 
 export function LeagueRowExpanded({ row, gw }: { row: LeagueRowType; gw: number }) {
-  return <SquadStrip squad={row.squad} gw={gw} />;
+  const { tr } = useLocale();
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <SquadStrip squad={row.squad} gw={gw} />
+      <Link
+        href={`/team/${row.entryId}`}
+        className="self-end text-meta font-semibold text-[var(--accent)] underline-offset-2 hover:underline"
+      >
+        {tr("이 팀의 스쿼드·판매가·칩 보기 →", "Squad, selling prices and chips →")}
+      </Link>
+    </div>
+  );
 }

@@ -41,6 +41,13 @@ export function HomeHero() {
           </p>
           <LeagueSearchForm />
           <LeagueIdLinks />
+          <p className="home-slide mt-4 text-body leading-6 text-[var(--ink-soft)]">
+            {tr("리그 없이 내 팀만 보려면 ", "To see just your own team, ")}
+            <Link href="/team" className="font-semibold text-[var(--ink)] underline underline-offset-2">
+              {tr("FPL 팀 ID로 스쿼드 보기", "open your squad by team ID")}
+            </Link>
+            .
+          </p>
         </div>
 
         <aside style={{ "--i": 4 } as React.CSSProperties} className="home-rise home-ticket-stub" aria-labelledby="home-stub-title">

@@ -93,3 +93,12 @@ export function PriceChangeIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+/** My team: a shirt. */
+export function ShirtIcon({ className }: IconProps) {
+  return (
+    <svg {...MENU_ICON_PROPS} className={className}>
+      <path d="M7 3 2.5 5.5 4 9l2-.9V17h8V8.1l2 .9 1.5-3.5L13 3c-.4 1.2-1.5 2-3 2S7.4 4.2 7 3Z" />
+    </svg>
+  );
+}

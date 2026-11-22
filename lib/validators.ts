@@ -65,6 +65,8 @@ export const bootstrapStaticSchema = z.object({
       minutes: z.number().optional().default(0),
       now_cost: z.number().optional().default(0),
       cost_change_event: z.number().optional().default(0),
+      // Price move since the season's opening price, in tenths (selling-price estimate, issue #39 stage 2).
+      cost_change_start: z.number().optional().default(0),
       total_points: z.number().optional().default(0),
       event_points: z.number().optional().default(0),
       transfers_in_event: z.number().optional().default(0),
@@ -145,8 +147,25 @@ export const entryHistorySchema = z.object({
 
 export const entrySchema = z.object({
   id: z.number(),
-  summary_overall_points: z.number()
+  summary_overall_points: z.number(),
+  // The squad screen (issue #39 stage 2) names the team and starts counting free transfers from the first gameweek.
+  name: z.string().optional().default(""),
+  player_first_name: z.string().optional().default(""),
+  player_last_name: z.string().optional().default(""),
+  started_event: z.number().optional().default(1)
 });
+
+/** `entry/{id}/transfers/` — every transfer the manager has made, with the price paid and received. */
+export const transfersSchema = z.array(
+  z.object({
+    element_in: z.number(),
+    element_in_cost: z.number(),
+    element_out: z.number(),
+    element_out_cost: z.number(),
+    event: z.number(),
+    time: z.string().optional().default("")
+  })
+);
 
 export const picksSchema = z.object({
   active_chip: z
@@ -184,7 +203,10 @@ export const picksSchema = z.object({
     event: z.number(),
     points: z.number(),
     total_points: z.number(),
-    event_transfers_cost: z.number()
+    event_transfers_cost: z.number(),
+    event_transfers: z.number().optional().default(0),
+    bank: z.number().optional().default(0),
+    value: z.number().optional().default(0)
   })
 });
 

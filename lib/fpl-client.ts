@@ -7,7 +7,8 @@ import {
   liveSchema,
   picksSchema,
   priceChangeHistorySchema,
-  standingsPageSchema
+  standingsPageSchema,
+  transfersSchema
 } from "@/lib/validators";
 
 const FPL_BASE_URL =
@@ -18,7 +19,7 @@ const MAX_ATTEMPTS = Number(process.env.FPL_MAX_ATTEMPTS ?? 3);
 const BASE_BACKOFF_MS = 400;
 const MAX_BACKOFF_MS = 4_000;
 
-class FplRequestError extends Error {
+export class FplRequestError extends Error {
   constructor(
     message: string,
     readonly status: number,
@@ -141,6 +142,10 @@ export function getEntryHistory(entryId: number) {
 
 export function getEntry(entryId: number) {
   return fetchJson(`/entry/${entryId}/`, entrySchema);
+}
+
+export function getEntryTransfers(entryId: number) {
+  return fetchJson(`/entry/${entryId}/transfers/`, transfersSchema);
 }
 
 export function getEntryPicks(entryId: number, gw: number) {
