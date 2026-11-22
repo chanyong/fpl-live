@@ -11,7 +11,7 @@ import { useLocale } from "@/components/locale-provider";
 export function SiteLogo({ tone = "app", className = "" }: { tone?: "app" | "home"; className?: string }) {
   const { tr } = useLocale();
   const mark =
-    tone === "home" ? "bg-[var(--paper)] text-[var(--ink)]" : "bg-[var(--accent)] text-[var(--paper)]";
+    tone === "home" ? "bg-[var(--paper)] text-[var(--ink)]" : "bg-[var(--accent)] text-white";
   const text = tone === "home" ? "text-[var(--paper)]" : "text-[var(--text)]";
 
   return (
