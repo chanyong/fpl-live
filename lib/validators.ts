@@ -81,6 +81,10 @@ export const bootstrapStaticSchema = z.object({
       price_change_calibrating: z.boolean().optional().default(false),
       form: numeric,
       points_per_game: numeric,
+      // xP model inputs (issue #43): starts = matches started this season; chance = FPL's % of playing the next
+      // gameweek, null when FPL gives none (then the availability flag decides).
+      starts: z.number().nullable().optional().default(null),
+      chance_of_playing_next_round: z.number().nullable().optional().default(null),
       selected_by_percent: numeric,
       ict_index: numeric,
       expected_goal_involvements: numeric
