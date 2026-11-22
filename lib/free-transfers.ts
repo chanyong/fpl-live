@@ -6,8 +6,9 @@
  * - After the first deadline a manager gets 1 free transfer per gameweek.
  * - An unused free transfer rolls over; at most 5 can be stored (1 + game_config.rules.max_extra_free_transfers).
  * - Each transfer beyond the free ones costs 4 points.
- * - Playing a Wildcard or Free Hit: "any saved free transfers are retained for the following Gameweek" — the
- *   week's own free transfer is used up by the chip, so the count does not grow that week.
+ * - Playing a Wildcard or Free Hit: the gameweek after the chip starts again with 1 free transfer; the stored
+ *   count is NOT kept (owner's decision, issue #43, 2026-11-22). The rules page reads "any saved free
+ *   transfers are retained", but the decision takes precedence; the screen keeps calling the figure an estimate.
  * - A manager who joins mid-season builds an unlimited first squad; the free transfers start the week after.
  */
 export const MAX_FREE_TRANSFERS = 5;
@@ -60,11 +61,12 @@ export function estimateFreeTransfers(args: {
     const used = week?.transfers ?? 0;
 
     if (transferChipEvents.has(event)) {
-      // Unlimited, no cost, and the stored count carries over unchanged.
+      // Unlimited and no cost that week; the week after starts again with 1 free transfer.
       if (week && week.cost !== 0 && matchesHistory) {
         matchesHistory = false;
         firstMismatchEvent = event;
       }
+      free = 1;
       continue;
     }
 

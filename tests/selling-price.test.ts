@@ -11,8 +11,19 @@ describe("sellingPrice", () => {
     expect(sellingPrice(61, 70)).toBe(65);
   });
 
-  it("pays a fallen price out in full", () => {
+  it("sells a player whose price fell at the current price, whatever the size of the fall (owner's decision, issue #43)", () => {
     expect(sellingPrice(50, 40)).toBe(40);
+    expect(sellingPrice(45, 44)).toBe(44);
+    // A fall of 0.2m is where "current price" and "half the difference, rounded down" would differ (4.3 vs 4.4).
+    expect(sellingPrice(45, 43)).toBe(43);
+  });
+
+  it("matches the owner's formula (current - purchase) / 2 + purchase, rounded down to 0.1m, for the checked squad", () => {
+    // Purchase, current, official selling price (tenths) from the rules document's check table.
+    for (const [purchase, current, official] of [[46, 55, 50], [55, 59, 57], [55, 63, 59], [75, 78, 76]]) {
+      expect(sellingPrice(purchase, current)).toBe(official);
+      expect(sellingPrice(purchase, current)).toBe(Math.floor((current - purchase) / 2 + purchase));
+    }
   });
 });
 

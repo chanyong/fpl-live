@@ -52,7 +52,7 @@ describe("estimateFreeTransfers", () => {
     expect(result.free).toBe(2);
   });
 
-  it("keeps the stored count through a Wildcard or Free Hit week (no +1, no spend)", () => {
+  it("starts again with 1 free transfer after a Wildcard or Free Hit week (owner's decision, issue #43)", () => {
     const weeks: TransferWeek[] = [
       { event: 1, transfers: 0, cost: 0 },
       { event: 2, transfers: 0, cost: 0 },
@@ -60,10 +60,17 @@ describe("estimateFreeTransfers", () => {
       { event: 4, transfers: 9, cost: 0 } // chip week
     ];
     const wildcard = estimateFreeTransfers({ weeks, chips: [{ name: "wildcard", event: 4 }], startedEvent: 1 });
-    expect(wildcard.free).toBe(3);
+    expect(wildcard.free).toBe(1);
     expect(wildcard.matchesHistory).toBe(true);
     const freeHit = estimateFreeTransfers({ weeks, chips: [{ name: "freehit", event: 4 }], startedEvent: 1 });
-    expect(freeHit.free).toBe(3);
+    expect(freeHit.free).toBe(1);
+    // The count builds up again from 1 in the weeks after the chip.
+    const later = estimateFreeTransfers({
+      weeks: [...weeks, { event: 5, transfers: 0, cost: 0 }, { event: 6, transfers: 0, cost: 0 }],
+      chips: [{ name: "wildcard", event: 4 }],
+      startedEvent: 1
+    });
+    expect(later.free).toBe(3);
   });
 
   it("does not treat a Bench Boost or Triple Captain week as a transfer chip", () => {
