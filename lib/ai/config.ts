@@ -33,12 +33,12 @@ export const AI_MAX_TOKENS = 16_000;
 export const AI_EFFORT = "medium" as const;
 
 /**
- * Input size guard. The input has not been measured with the API yet, so it is bounded by characters, one token
- * per character (see `estimateInputTokens`): the input is mostly short numbers and punctuation, where a token can
- * be a single character. A request above the ceiling is not sent at all. Loosen the ratio only after the first
- * trial call reports the real `usage.input_tokens`.
+ * Input size guard, in characters counted as one token each (see `estimateInputTokens`). A request above the
+ * ceiling is not sent at all. Measured on the first real call (2026-11-22): about 20,650 characters (system
+ * 3,480 + data 15,765 + schema 1,405) were billed as 14,158 input tokens, 0.69 tokens per character, so one
+ * token per character stays a safe upper bound. The ceiling leaves about 35% room above that input.
  */
-export const INPUT_TOKEN_CEILING = 40_000;
+export const INPUT_TOKEN_CEILING = 28_000;
 
 /** Caps, enforced inside the database (db/migrations/0002). Every call counts: trials, failures, truncations, retries. */
 export const MONTHLY_CAP_USD = 40;
