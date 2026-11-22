@@ -141,12 +141,12 @@ export function SquadPage({ entryId }: { entryId: number }) {
   const isMine = mine?.id === entryId;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col gap-3 px-2 py-3 md:px-4">
+    <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col gap-2 px-2 py-2 md:px-4 md:py-3">
       <SiteHeader>
         <LocaleToggle />
       </SiteHeader>
 
-      <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+      <header className="flex flex-col gap-1.5 md:flex-row md:items-end md:justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold leading-tight md:text-3xl">
             {data ? data.teamName || tr(`팀 ${entryId}`, `Team ${entryId}`) : tr("내 스쿼드", "My squad")}
@@ -241,11 +241,14 @@ export function SquadPage({ entryId }: { entryId: number }) {
                 </p>
               ) : null}
 
-              <SquadStatusBar data={data} />
-
-              <section aria-label={tr("스쿼드", "Squad")} className="flex flex-col gap-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div role="group" aria-label={tr("보기 방식", "View")} className="inline-flex overflow-hidden rounded-md border border-[var(--border)]">
+              {/* One column on a narrow screen; from lg the pitch (left) and the team status (right) sit side by side so the pitch is not stretched across the page. */}
+              <div
+                role="group"
+                aria-label={tr("스쿼드", "Squad")}
+                className="grid gap-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-x-3 xl:grid-cols-[minmax(0,760px)_minmax(0,1fr)]"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 lg:contents">
+                  <div role="group" aria-label={tr("보기 방식", "View")} className="inline-flex justify-self-start overflow-hidden rounded-md border border-[var(--border)] lg:col-start-1 lg:row-start-1">
                     {(["pitch", "list"] as const).map((mode) => (
                       <button
                         key={mode}
@@ -259,7 +262,7 @@ export function SquadPage({ entryId }: { entryId: number }) {
                     ))}
                   </div>
                   {view.mode === "pitch" ? (
-                    <label className="flex items-center gap-2 text-meta">
+                    <label className="flex items-center gap-2 text-meta lg:col-start-2 lg:row-start-1">
                       <span className="text-[var(--muted)]">{tr("카드에 표시", "Card shows")}</span>
                       <select
                         value={view.metric}
@@ -276,15 +279,19 @@ export function SquadPage({ entryId }: { entryId: number }) {
                   ) : null}
                 </div>
 
-                {view.mode === "pitch" ? <SquadPitch squad={data.squad} metric={view.metric} /> : <SquadList squad={data.squad} />}
+                <div className="min-w-0 lg:col-start-1 lg:row-start-2">
+                  {view.mode === "pitch" ? <SquadPitch squad={data.squad} metric={view.metric} /> : <SquadList squad={data.squad} />}
+                </div>
 
-                <p className="text-caption text-[var(--muted)]">
+                <p className="text-caption text-[var(--muted)] lg:col-start-1">
                   {tr(
                     `점수는 GW${data.gw} 선수 점수(주장 배수 제외), 상대·FDR은 ${data.nextGw ? `GW${data.nextGw}` : "다음 게임위크"} 기준, 가격 변동은 시즌 시작가 대비입니다. 판매가는 구매가 + 오른 폭의 절반(내림)으로 계산한 추정값입니다.`,
                     `Points are each player's GW${data.gw} score (captain multiplier not applied); opponent and FDR are for ${data.nextGw ? `GW${data.nextGw}` : "the next gameweek"}; price change is since the season's opening price. Selling price is estimated as purchase price plus half of any rise, rounded down.`
                   )}
                 </p>
-              </section>
+
+                <SquadStatusBar data={data} className="lg:col-start-2 lg:row-start-2 lg:row-span-2" />
+              </div>
             </>
           )}
 

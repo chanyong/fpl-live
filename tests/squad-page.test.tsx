@@ -83,6 +83,15 @@ describe("squad page", () => {
     expect(screen.getByText("LIV (A)")).toBeInTheDocument();
   });
 
+  it("keeps the pitch, the card-value choice and the team status in one squad group so a wide screen can set them side by side", async () => {
+    renderPage();
+    await screen.findByRole("heading", { level: 1, name: "Test FC" });
+    const group = screen.getByRole("group", { name: "스쿼드" });
+    expect(within(group).getByLabelText("카드에 표시")).toBeInTheDocument();
+    expect(within(group).getByRole("region", { name: "팀 현황" })).toBeInTheDocument();
+    expect(within(group).getByText("벤치 (왼쪽부터 교체 순서)")).toBeInTheDocument();
+  });
+
   it("switches what the cards show, and remembers the choice", async () => {
     const user = userEvent.setup();
     renderPage();

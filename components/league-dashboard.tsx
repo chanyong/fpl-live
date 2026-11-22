@@ -184,7 +184,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
         <ShareButton leagueName={query.data?.league.name} />
         <LocaleToggle />
       </SiteHeader>
-      <div className="mb-2 flex flex-col gap-2 md:mb-3 md:flex-row md:items-end md:justify-between md:gap-3">
+      <div className="mb-2 flex flex-col gap-1.5 md:flex-row md:items-end md:justify-between md:gap-3">
         <div className="min-w-0">
           <h1 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight md:text-3xl">
             {query.data?.league.name ??
@@ -255,17 +255,12 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
             </div>
           ) : null}
 
-          {query.data?.league.nextDeadline ? (
-            <DeadlineBanner
-              gw={query.data.league.nextDeadline.gw}
-              deadlineTime={query.data.league.nextDeadline.deadlineTime}
-            />
-          ) : null}
-
+          {/* Tabs on the left and the deadline on the right share one row on a wide screen (issue #39); stacked on a narrow one. */}
+          <div className="mb-2 flex flex-col gap-1.5 lg:flex-row lg:items-stretch lg:gap-2">
           <div
             role="tablist"
             aria-label={tr("대시보드 보기", "Dashboard views")}
-            className="mb-2 flex w-full gap-1 overflow-x-auto rounded-md border border-[var(--border)] bg-[var(--surface)] p-1 md:w-auto"
+            className="flex w-full gap-1 overflow-x-auto rounded-md border border-[var(--border)] bg-[var(--surface)] p-1 md:w-auto lg:shrink-0"
           >
             {tabs.map((item) => {
               const active = tab === item.id;
@@ -284,6 +279,15 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
                 </TabLink>
               );
             })}
+          </div>
+
+          {query.data?.league.nextDeadline ? (
+            <DeadlineBanner
+              gw={query.data.league.nextDeadline.gw}
+              deadlineTime={query.data.league.nextDeadline.deadlineTime}
+              className="lg:min-w-0 lg:flex-1"
+            />
+          ) : null}
           </div>
 
           {tab === "standings" ? (

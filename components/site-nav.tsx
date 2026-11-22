@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useLocale } from "@/components/locale-provider";
-import { CalendarIcon, PlayerIcon, PriceChangeIcon, ShirtIcon, TableIcon } from "@/components/icons";
+import { CalendarIcon, PlayerIcon, PriceChangeIcon, ShirtIcon, TableIcon, TrophyIcon } from "@/components/icons";
+import { loadRecentLeagues } from "@/lib/recent-leagues";
 import { PUBLIC_MENU, PUBLIC_PAGES, type PublicPageKey } from "@/lib/public-pages";
 
 const MENU_ICONS: Record<PublicPageKey, (props: { className?: string }) => React.JSX.Element> = {
@@ -17,12 +19,26 @@ const MENU_ICONS: Record<PublicPageKey, (props: { className?: string }) => React
 const MY_TEAM_PATH = "/team";
 
 /**
+ * "My league" (issue #39): the league being viewed, else the one opened most recently in this browser
+ * (the same "recent leagues" list the home page shows), else the home page where a league is searched.
+ */
+const LEAGUE_PATH = /^\/league\/(\d+)(?:\/|$)/;
+
+/**
  * The top menu: the pages that need no league ID (issue #33 stage 2) and the squad screen. Plain links, so it
  * renders on the server and works without script. "home" is the light-on-dark variant for the home page.
  */
 export function SiteNav({ tone = "app", className = "" }: { tone?: "app" | "home"; className?: string }) {
   const { tr } = useLocale();
   const pathname = usePathname() ?? "";
+  // Storage is read after mount, so the server render and the first client render both point home.
+  const [recentLeagueId, setRecentLeagueId] = useState<number | null>(null);
+  useEffect(() => {
+    setRecentLeagueId(loadRecentLeagues()[0]?.id ?? null);
+  }, []);
+  const viewedLeague = LEAGUE_PATH.exec(pathname);
+  const leagueId = viewedLeague ? Number(viewedLeague[1]) : recentLeagueId;
+  const leagueHref = leagueId ? `/league/${leagueId}` : "/";
 
   const itemStyle = (active: boolean) =>
     tone === "home"
@@ -37,7 +53,7 @@ export function SiteNav({ tone = "app", className = "" }: { tone?: "app" | "home
   const myTeamActive = pathname === MY_TEAM_PATH || pathname.startsWith(`${MY_TEAM_PATH}/`);
 
   return (
-    <nav aria-label={tr("주요 메뉴", "Main menu")} className={`grid grid-cols-5 gap-1 sm:flex sm:flex-wrap sm:items-center sm:gap-x-0.5 ${className}`}>
+    <nav aria-label={tr("주요 메뉴", "Main menu")} className={`grid grid-cols-6 gap-1 sm:flex sm:flex-wrap sm:items-center sm:gap-x-0.5 ${className}`}>
       {PUBLIC_MENU.map((key) => {
         const page = PUBLIC_PAGES[key];
         const Icon = MENU_ICONS[key];
@@ -54,6 +70,10 @@ export function SiteNav({ tone = "app", className = "" }: { tone?: "app" | "home
           </Link>
         );
       })}
+      <Link href={leagueHref} aria-current={viewedLeague ? "page" : undefined} className={itemClass(viewedLeague !== null)}>
+        <TrophyIcon className="shrink-0" />
+        <span>{tr("내 리그", "My league")}</span>
+      </Link>
       <Link href={MY_TEAM_PATH} aria-current={myTeamActive ? "page" : undefined} className={itemClass(myTeamActive)}>
         <ShirtIcon className="shrink-0" />
         <span>{tr("내 팀", "My team")}</span>

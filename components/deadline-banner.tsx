@@ -43,7 +43,7 @@ function remainingParts(deadline: number, now: number) {
   return { days: Math.floor(minutes / 1440), hours: Math.floor((minutes % 1440) / 60), minutes: minutes % 60 };
 }
 
-export function DeadlineBanner({ gw, deadlineTime }: { gw: number; deadlineTime: string }) {
+export function DeadlineBanner({ gw, deadlineTime, className = "" }: { gw: number; deadlineTime: string; className?: string }) {
   const { tr, locale } = useLocale();
   const [now, setNow] = useState(() => Date.now());
 
@@ -65,7 +65,7 @@ export function DeadlineBanner({ gw, deadlineTime }: { gw: number; deadlineTime:
   return (
     <section
       aria-label={tr(`게임위크 ${gw} 마감`, `Gameweek ${gw} deadline`)}
-      className={`mb-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-0.5 rounded-md border px-3 py-2 md:flex-nowrap md:gap-x-3 md:py-1.5 ${
+      className={`flex flex-wrap items-center justify-between gap-x-4 gap-y-0.5 rounded-md border px-3 py-2 md:flex-nowrap md:gap-x-3 md:py-1.5 ${className} ${
         urgent
           ? "border-amber-500 bg-amber-50"
           : "border-[var(--border)] bg-[var(--surface-strong)]"
