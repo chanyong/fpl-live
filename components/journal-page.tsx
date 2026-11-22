@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { JournalPitch, StepHeading } from "@/components/journal-pitch";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
+import { SiteLogo } from "@/components/site-logo";
 import { CONTACT_EMAIL } from "@/lib/site";
 import type { WeeklySnapshot } from "@/lib/journal-snapshot";
 import { parseJournalGw } from "@/lib/journal/gw-link";
@@ -97,7 +98,7 @@ export function JournalPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col px-4 py-10 sm:px-6 sm:py-12">
       <div className="flex items-center justify-between gap-3">
-        <Link href="/" className="text-body font-semibold text-[var(--muted)] hover:text-[var(--accent)]">← FPL Live</Link>
+        <SiteLogo />
         <LocaleToggle />
       </div>
       <h1 className="mt-6 text-3xl font-semibold leading-tight">{tr("주간 경기 리뷰 일지", "Weekly review journal")}</h1>

@@ -15,7 +15,7 @@ import { PlayerTrendsPanel } from "@/components/player-trends-panel";
 import { PremierLeagueTable } from "@/components/premier-league-table";
 import { RankChangePanel } from "@/components/rank-change-panel";
 import { SidePanelLayout } from "@/components/side-panel-layout";
-import { SiteNav } from "@/components/site-nav";
+import { SiteHeader } from "@/components/site-header";
 import { SubTabs, TabLink } from "@/components/sub-tabs";
 import { TeamFixtureTable } from "@/components/team-fixture-table";
 import { ShareButton } from "@/components/share-button";
@@ -180,19 +180,10 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
   return (
     <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-1.5 py-1.5 sm:px-2 md:px-3 md:py-2">
-      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <SiteNav />
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <ShareButton leagueName={query.data?.league.name} />
-          <Link
-            href="/"
-            className="inline-flex shrink-0 items-center rounded-md border border-[var(--border)] bg-[var(--bg)] px-3.5 py-1.5 text-caption font-semibold text-[var(--text)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-          >
-            {tr("다른 리그 검색", "Search another league")}
-          </Link>
-          <LocaleToggle />
-        </div>
-      </div>
+      <SiteHeader className="mb-1">
+        <ShareButton leagueName={query.data?.league.name} />
+        <LocaleToggle />
+      </SiteHeader>
       <div className="mb-2 flex flex-col gap-2 md:mb-3 md:flex-row md:items-end md:justify-between md:gap-3">
         <div className="min-w-0">
           <h1 className="mt-1 text-2xl font-extrabold leading-tight tracking-tight md:text-3xl">

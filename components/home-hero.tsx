@@ -4,7 +4,7 @@ import { LeagueSearchForm } from "@/components/league-search-form";
 import { LeagueIdLinks } from "@/components/league-id-links";
 import Link from "next/link";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
-import { SiteNav } from "@/components/site-nav";
+import { SiteHeader } from "@/components/site-header";
 
 /**
  * Home, set as a matchday ticket (taste pilot). Main panel: what it is + the league ID field.
@@ -15,24 +15,18 @@ export function HomeHero() {
 
   return (
     <>
-      <header className="home-rise mb-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:mb-7">
-        <p className="whitespace-nowrap text-body-lg font-extrabold tracking-tight text-[var(--paper)]">
-          {tr("FPL 라이브", "FPL Live")}
-        </p>
-        <SiteNav tone="home" className="order-last w-full md:order-none md:ml-4 md:w-auto" />
-        <div className="ml-auto flex items-center gap-2">
-          <Link
-            href="/faq"
-            title={tr("자주 묻는 질문", "FAQ")}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[var(--radius)] bg-[var(--paper)] px-3.5 text-body font-semibold text-[var(--ink)] transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 4 2c-.9.6-1.5 1.1-1.5 2.2M12 17h.01" /></svg>
-            <span className="sm:hidden">FAQ</span>
-            <span className="hidden sm:inline">{tr("자주 묻는 질문", "FAQ")}</span>
-          </Link>
-          <LocaleToggle />
-        </div>
-      </header>
+      <SiteHeader tone="home" className="home-rise mb-5 md:mb-7">
+        <Link
+          href="/faq"
+          title={tr("자주 묻는 질문", "FAQ")}
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[var(--radius)] bg-[var(--paper)] px-3.5 text-body font-semibold text-[var(--ink)] transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 4 2c-.9.6-1.5 1.1-1.5 2.2M12 17h.01" /></svg>
+          <span className="sm:hidden">FAQ</span>
+          <span className="hidden sm:inline">{tr("자주 묻는 질문", "FAQ")}</span>
+        </Link>
+        <LocaleToggle />
+      </SiteHeader>
 
       <section className="home-ticket" aria-labelledby="home-title">
         <div className="home-ticket-main">
