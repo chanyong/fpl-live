@@ -20,7 +20,11 @@ describe("journal auth form", () => {
   });
 
   it("warns on mismatch, blocks submit, and never sends the confirm field", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    const fetchMock = vi.fn(async (url: string) =>
+      String(url).startsWith("/api/journal/team-lookup")
+        ? { ok: true, status: 200, json: async () => ({ teamId: 123, teamName: "Pleiades", managerName: "Kim Lee" }) }
+        : { ok: true, status: 200, json: async () => ({}) }
+    );
     vi.stubGlobal("fetch", fetchMock);
     render(<AuthForms onDone={() => {}} />);
     fireEvent.click(screen.getByRole("tab", { name: "가입", selected: false }));
@@ -33,10 +37,20 @@ describe("journal auth form", () => {
     fireEvent.change(screen.getByLabelText("비밀번호 확인"), { target: { value: "password1" } });
     expect(screen.queryByRole("alert")).toBeNull();
     fireEvent.change(screen.getByLabelText(/FPL 팀 번호/), { target: { value: "123" } });
-    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByLabelText(/만 14세 이상/));
+    // Not confirmed yet: the button stays off and a submit sends nothing.
+    expect((screen.getByRole("button", { name: "가입하기" }) as HTMLButtonElement).disabled).toBe(true);
     fireEvent.submit(screen.getByRole("form", { hidden: true }));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "조회" }));
+    fireEvent.click(await screen.findByLabelText("이 팀이 맞습니다"));
+    expect((screen.getByRole("button", { name: "가입하기" }) as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.submit(screen.getByRole("form", { hidden: true }));
+    await waitFor(() => expect(fetchMock.mock.calls.some((call) => String(call[0]) === "/api/journal/signup")).toBe(true));
+    const signup = fetchMock.mock.calls.find((call) => String(call[0]) === "/api/journal/signup") as unknown as [string, { body: string }];
+    const body = JSON.parse(signup[1].body);
+    expect(body.teamId).toBe("123");
     expect(body.password).toBe("password1");
     expect(body).not.toHaveProperty("passwordConfirm");
   });

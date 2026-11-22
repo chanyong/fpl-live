@@ -8,6 +8,12 @@ vi.mock("@/lib/entry-squad", async (importActual) => ({
   getEntrySquad
 }));
 vi.mock("@/lib/public-data", () => ({ getBase }));
+// Issue #47: these tests are about what the route computes, not who may ask. The own-team guard has its own tests
+// (tests/own-team-guard.test.ts), so here it lets the request through.
+vi.mock("@/lib/journal/own-team", async (importActual) => ({
+  ...(await importActual<typeof import("@/lib/journal/own-team")>()),
+  checkOwnTeam: async () => "ok"
+}));
 
 import { GET } from "@/app/api/entry-recommend/route";
 import { resetEntryRequestLimits } from "@/lib/entry-request-limit";

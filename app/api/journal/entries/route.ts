@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { nextTeamChangeAt } from "@/lib/journal/service";
 import { currentMember, requireStore } from "@/lib/journal/session";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "load_failed" }, { status: 502 });
   }
   const [profile, snapshots, notes] = loaded;
-  const response = NextResponse.json({ email: member.user.email, teamId: profile?.teamId ?? null, snapshots, notes });
+  const response = NextResponse.json({
+    email: member.user.email,
+    teamId: profile?.teamId ?? null,
+    nextTeamChangeAt: nextTeamChangeAt(profile?.teamChangedAt ?? null),
+    snapshots,
+    notes
+  });
   response.headers.set("Cache-Control", "private, no-store");
   return response;
 }

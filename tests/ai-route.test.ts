@@ -8,6 +8,12 @@ import { DISABLED, FakeClient, FakeStore, TEAM, answerText, deferred, makeAiInpu
 
 const state = vi.hoisted(() => ({ deps: null as unknown as AiDeps }));
 vi.mock("@/lib/ai/runtime", () => ({ getAiDeps: () => state.deps }));
+// Issue #47: these tests are about what the route computes, not who may ask. The own-team guard has its own tests
+// (tests/own-team-guard.test.ts), so here it lets the request through.
+vi.mock("@/lib/journal/own-team", async (importActual) => ({
+  ...(await importActual<typeof import("@/lib/journal/own-team")>()),
+  checkOwnTeam: async () => "ok"
+}));
 
 import { GET, POST } from "@/app/api/entry-ai/route";
 
@@ -25,7 +31,7 @@ afterEach(() => vi.restoreAllMocks());
 const post = (body: unknown, ip = "9.9.9.9") =>
   new NextRequest("http://localhost/api/entry-ai", {
     method: "POST",
-    headers: { "x-forwarded-for": ip, "content-type": "application/json" },
+    headers: { "x-forwarded-for": ip, "content-type": "application/json", "sec-fetch-site": "same-origin" },
     body: typeof body === "string" ? body : JSON.stringify(body)
   });
 const get = (query: string) => new NextRequest(`http://localhost/api/entry-ai${query}`);

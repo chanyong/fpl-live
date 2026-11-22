@@ -9,6 +9,10 @@ export const signupSchema = z.object({
   teamId: z.coerce.number().int().positive().max(100_000_000)
 });
 
+export const teamChangeSchema = z.object({
+  teamId: z.coerce.number().int().positive().max(100_000_000)
+});
+
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
   password: z.string().min(1).max(72)
@@ -34,6 +38,19 @@ export type JournalNotes = z.infer<typeof notesSchema>;
 
 export type JournalUser = { id: string; email: string };
 
+/** Days a member must wait after changing the registered team before changing it again (issue #47). */
+export const TEAM_CHANGE_COOLDOWN_DAYS = 30;
+
+/** nextChangeAt (ISO) only comes with too_soon. "error" means the database call itself failed. */
+export type ChangeTeamResult =
+  | { code: "ok" }
+  | { code: "same_team" }
+  | { code: "team_taken" }
+  | { code: "too_soon"; nextChangeAt: string }
+  | { code: "error" };
+
+export type JournalProfile = { teamId: number; teamChangedAt: string | null };
+
 /** Storage seam. The Supabase implementation and the test fake both satisfy it. */
 export interface JournalStore {
   /** existing=true when the email already has an account (Supabase returns a fake user with no identities). */
@@ -53,7 +70,12 @@ export interface JournalStore {
   getUser(accessToken: string): Promise<JournalUser | null>;
   /** team_taken only for the unique team constraint; other failures are 'error' and must not delete the account. */
   createProfile(userId: string, teamId: number): Promise<"ok" | "team_taken" | "error">;
-  getProfile(userId: string): Promise<{ teamId: number } | null>;
+  getProfile(userId: string): Promise<JournalProfile | null>;
+  /**
+   * Atomic team change (database function journal_change_team): same-team and cooldown checks, the new team number,
+   * and removal of the member's auto-saved snapshots (hand-written notes stay). Creates the profile when it is missing.
+   */
+  changeTeam(userId: string, teamId: number, cooldownDays: number): Promise<ChangeTeamResult>;
   listProfiles(): Promise<Array<{ userId: string; teamId: number }>>;
   listSnapshots(userId: string, accessToken: string): Promise<Array<{ gw: number; snapshot: unknown }>>;
   savedGws(userId: string): Promise<number[]>;

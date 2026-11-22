@@ -10,7 +10,11 @@ afterEach(() => {
 
 describe("after sign-up", () => {
   it("tells the user a mail was sent and offers a resend button with cooldown", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, needsConfirmation: true }) });
+    const fetchMock = vi.fn(async (url: string) =>
+      String(url).startsWith("/api/journal/team-lookup")
+        ? { ok: true, status: 200, json: async () => ({ teamId: 123, teamName: "Pleiades", managerName: "Kim Lee" }) }
+        : { ok: true, status: 200, json: async () => ({ ok: true, needsConfirmation: true }) }
+    );
     vi.stubGlobal("fetch", fetchMock);
     render(<AuthForms onDone={() => {}} />);
     fireEvent.click(screen.getByRole("tab", { name: "가입", selected: false }));
@@ -18,7 +22,9 @@ describe("after sign-up", () => {
     fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: "password1" } });
     fireEvent.change(screen.getByLabelText("비밀번호 확인"), { target: { value: "password1" } });
     fireEvent.change(screen.getByLabelText(/FPL 팀 번호/), { target: { value: "123" } });
-    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: "조회" }));
+    fireEvent.click(await screen.findByLabelText("이 팀이 맞습니다"));
+    fireEvent.click(screen.getByLabelText(/만 14세 이상/));
     fireEvent.submit(screen.getByRole("form", { hidden: true }));
     await waitFor(() => expect(screen.getByRole("status").textContent).toContain("확인 메일을 보냈습니다"));
     const resend = screen.getByRole("button", { name: "확인 메일 다시 보내기" }) as HTMLButtonElement;

@@ -5,6 +5,8 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { JournalPitch, StepHeading } from "@/components/journal-pitch";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
 import { SiteLogo } from "@/components/site-logo";
+import { TeamPicker, type ConfirmedTeam } from "@/components/team-picker";
+import { TeamRow } from "@/components/team-row";
 import { CONTACT_EMAIL } from "@/lib/site";
 import type { WeeklySnapshot } from "@/lib/journal-snapshot";
 import { parseJournalGw } from "@/lib/journal/gw-link";
@@ -15,6 +17,8 @@ import type { JournalNotes } from "@/lib/journal/types";
 type Entries = {
   email: string;
   teamId: number | null;
+  /** When the registered team may be changed again (30 days after the last change), or null when it may be changed now. */
+  nextTeamChangeAt?: string | null;
   snapshots: Array<{ gw: number; snapshot: WeeklySnapshot }>;
   notes: JournalNotes[];
 };
@@ -143,6 +147,7 @@ export function JournalPage() {
         <Journal
           entries={entries}
           focusGw={focusGw}
+          onReload={load}
           onLogout={() => {
             setEntries(null);
             setState("guest");
@@ -164,6 +169,8 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
   const [busy, setBusy] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  // Sign-up needs the team number looked up and confirmed (issue #47); the picker reports it here.
+  const [confirmedTeam, setConfirmedTeam] = useState<ConfirmedTeam | null>(null);
   const mismatch = mode === "signup" && confirm !== "" && password !== confirm;
   const tooLong = mode === "signup" && passwordTooLong(password);
 
@@ -184,6 +191,10 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
       "Wrong email or password. If you just signed up, confirm via the email link first."
     ]
   };
+
+  useEffect(() => {
+    if (mode !== "signup") setConfirmedTeam(null);
+  }, [mode]);
 
   const coolTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
@@ -219,7 +230,7 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (mode === "signup" && (password !== confirm || tooLong)) return;
+    if (mode === "signup" && (password !== confirm || tooLong || !confirmedTeam)) return;
     const form = new FormData(event.currentTarget);
     form.delete("passwordConfirm");
     setBusy(true);
@@ -359,13 +370,14 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
       )}
       {tooLong && <p role="alert" className="text-sm text-red-700">{tr("비밀번호가 너무 깁니다. 72바이트 이하(영문 72자, 한글 약 24자)여야 합니다.", "Password is too long: 72 bytes max (72 letters; about 24 Korean characters).")}</p>}
       {mode === "signup" && (
-        <label className="block text-body">
-          {tr("FPL 팀 번호", "FPL team ID")}
-          <input name="teamId" inputMode="numeric" pattern="[0-9]+" required className={inputClass} />
-          <span className="mt-1 block text-sm text-[var(--muted)]">
-            {tr("FPL 사이트 Points 화면 주소의 /entry/숫자/ 부분입니다. 팀 번호당 계정은 하나입니다.", "The number in /entry/<id>/ on the FPL Points page. One account per team.")}
-          </span>
-        </label>
+        <TeamPicker
+          name="teamId"
+          onConfirmed={setConfirmedTeam}
+          help={tr(
+            "FPL 사이트 Points 화면 주소의 /entry/숫자/ 부분입니다. 팀 번호당 계정은 하나입니다. 이 번호로 내 팀의 선발·캡틴·이적 분석을 보여 드립니다.",
+            "The number in /entry/<id>/ on the FPL Points page. One account per team. It is used to show the lineup, captain and transfer analysis for your team."
+          )}
+        />
       )}
       {mode === "signup" && (
         <label className="flex items-start gap-2 text-body">
@@ -377,9 +389,12 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
           </span>
         </label>
       )}
-      <button type="submit" disabled={busy || mismatch || tooLong || (mode === "forgot" && cooling)} className={buttonClass}>
+      <button type="submit" disabled={busy || mismatch || tooLong || (mode === "signup" && !confirmedTeam) || (mode === "forgot" && cooling)} className={buttonClass}>
         {mode === "login" ? tr("로그인", "Log in") : mode === "signup" ? tr("가입하기", "Sign up") : tr("재설정 메일 보내기", "Send reset email")}
       </button>
+      {mode === "signup" && !confirmedTeam && (
+        <p className="text-sm text-[var(--muted)]">{tr("팀 번호를 조회해 ‘이 팀이 맞습니다’를 선택하면 가입할 수 있습니다.", "Look up your team ID and tick “This is my team” to sign up.")}</p>
+      )}
       {mode !== "signup" && (
         <button
           type="button"
@@ -471,7 +486,7 @@ export function ResetPasswordForm({ token, onDone, onExpired }: { token: string;
   );
 }
 
-function Journal({ entries, focusGw, onLogout }: { entries: Entries; focusGw: number | null; onLogout: () => void }) {
+function Journal({ entries, focusGw, onLogout, onReload }: { entries: Entries; focusGw: number | null; onLogout: () => void; onReload: () => void }) {
   const { tr } = useLocale();
   const notesByGw = new Map(entries.notes.map((note) => [note.gw, note]));
   const focusSaved = focusGw !== null && entries.snapshots.some((item) => item.gw === focusGw);
@@ -491,13 +506,12 @@ function Journal({ entries, focusGw, onLogout }: { entries: Entries; focusGw: nu
   return (
     <section className="mt-8">
       <div className="flex items-center justify-between gap-3 text-body">
-        <span>
-          {entries.email} · {tr("팀", "Team")} #{entries.teamId ?? "-"}
-        </span>
-        <button type="button" onClick={logout} className="font-semibold text-[var(--accent)] underline">
+        <span className="min-w-0 break-all">{entries.email}</span>
+        <button type="button" onClick={logout} className="shrink-0 font-semibold text-[var(--accent)] underline">
           {tr("로그아웃", "Log out")}
         </button>
       </div>
+      <TeamRow teamId={entries.teamId} nextChangeAt={entries.nextTeamChangeAt ?? null} onChanged={onReload} />
       {focusGw !== null && !focusSaved && (
         <p role="status" className="mt-4 text-body">
           {tr(

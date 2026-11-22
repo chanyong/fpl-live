@@ -1,4 +1,4 @@
-import type { JournalNotes, JournalStore, JournalUser } from "@/lib/journal/types";
+import type { ChangeTeamResult, JournalNotes, JournalStore, JournalUser } from "@/lib/journal/types";
 
 /**
  * Supabase implementation over plain fetch (GoTrue + PostgREST), so no SDK dependency is added.
@@ -112,10 +112,31 @@ export function createSupabaseStore(env: { url: string; anonKey: string; service
       return "error";
     },
     async getProfile(userId) {
-      const response = await call(`/rest/v1/journal_profiles?select=fpl_team_id&user_id=eq.${encodeURIComponent(userId)}&limit=1`, { key: env.serviceKey });
-      if (!response.ok) return null;
-      const rows = (await response.json()) as Array<{ fpl_team_id: number }>;
-      return rows[0] ? { teamId: rows[0].fpl_team_id } : null;
+      const response = await call(`/rest/v1/journal_profiles?select=fpl_team_id,team_changed_at&user_id=eq.${encodeURIComponent(userId)}&limit=1`, { key: env.serviceKey });
+      // A failed read is not "no profile": callers answer 5xx instead of "not your team".
+      if (!response.ok) throw new Error(`profile read failed (${response.status})`);
+      const rows = (await response.json()) as Array<{ fpl_team_id: number; team_changed_at?: string | null }>;
+      return rows[0] ? { teamId: rows[0].fpl_team_id, teamChangedAt: rows[0].team_changed_at ?? null } : null;
+    },
+    async changeTeam(userId, teamId, cooldownDays): Promise<ChangeTeamResult> {
+      const response = await call("/rest/v1/rpc/journal_change_team", {
+        method: "POST",
+        key: env.serviceKey,
+        body: { p_user: userId, p_team: teamId, p_cooldown_days: cooldownDays }
+      });
+      if (!response.ok) {
+        console.error(`journal: team change failed (${response.status})`);
+        return { code: "error" };
+      }
+      const body = (await response.json().catch(() => null)) as { ok?: unknown; reason?: unknown; next_change_at?: unknown } | null;
+      if (body?.ok === true) return { code: "ok" };
+      if (body?.reason === "same_team" || body?.reason === "team_taken") return { code: body.reason };
+      if (body?.reason === "too_soon" && typeof body.next_change_at === "string") {
+        const at = Date.parse(body.next_change_at);
+        if (Number.isFinite(at)) return { code: "too_soon", nextChangeAt: new Date(at).toISOString() };
+      }
+      console.error("journal: team change returned an unknown answer");
+      return { code: "error" };
     },
     async listProfiles() {
       const response = await call("/rest/v1/journal_profiles?select=user_id,fpl_team_id", { key: env.serviceKey });

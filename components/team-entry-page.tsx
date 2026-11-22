@@ -6,25 +6,37 @@ import { useEffect, useState } from "react";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
 import { SiteHeader } from "@/components/site-header";
 import { TeamIdForm } from "@/components/team-id-form";
+import { fetchMember, registeredTeam } from "@/lib/journal/member-client";
 import { loadMyTeam } from "@/lib/my-team";
 
 /**
- * /team: opens the team remembered in this browser, or asks for a team ID (issue #39 stage 2). The ID typed
- * here is saved as "my team"; the squad screen has its own form for looking at someone else without saving.
+ * /team: opens the team registered on the signed-in member's account, else the team remembered in this browser, else
+ * asks for a team ID (issues #39 stage 2 and #47). The ID typed here is saved as "my team" in this browser; the squad
+ * screen has its own form for looking at someone else without saving.
  */
 export function TeamEntryPage() {
   const { tr } = useLocale();
   const router = useRouter();
-  // "checking" until storage has been read, so a remembered team never flashes the empty form.
+  // "checking" until the member answer and storage have been read, so a registered or remembered team never flashes the empty form.
   const [state, setState] = useState<"checking" | "ask">("checking");
 
   useEffect(() => {
-    const mine = loadMyTeam();
-    if (mine) {
-      router.replace(`/team/${mine.id}`);
-    } else {
-      setState("ask");
-    }
+    let cancelled = false;
+    void fetchMember().then((info) => {
+      if (cancelled) return;
+      const registered = registeredTeam(info);
+      const mine = registered === null ? loadMyTeam() : null;
+      if (registered !== null) {
+        router.replace(`/team/${registered}`);
+      } else if (mine) {
+        router.replace(`/team/${mine.id}`);
+      } else {
+        setState("ask");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   return (

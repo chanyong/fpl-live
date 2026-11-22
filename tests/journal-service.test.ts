@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { isValidCronSecret, runSnapshotJob, signUpMember, type FplSource } from "@/lib/journal/service";
-import { notesSchema, signupSchema, type JournalNotes, type JournalStore } from "@/lib/journal/types";
+import { notesSchema, signupSchema, type ChangeTeamResult, type JournalNotes, type JournalStore } from "@/lib/journal/types";
 
 function fakeStore(overrides: Partial<JournalStore> = {}) {
   const snapshots = new Map<string, Set<number>>();
@@ -15,7 +15,8 @@ function fakeStore(overrides: Partial<JournalStore> = {}) {
     teamTaken: vi.fn(async () => false),
     getUser: vi.fn(async () => null),
     createProfile: vi.fn(async (): Promise<"ok" | "team_taken" | "error"> => "ok"),
-    getProfile: vi.fn(async () => null),
+    getProfile: vi.fn(async (): Promise<{ teamId: number; teamChangedAt: string | null } | null> => null),
+    changeTeam: vi.fn(async (): Promise<ChangeTeamResult> => ({ code: "ok" })),
     listProfiles: vi.fn(async () => [
       { userId: "u1", teamId: 111 },
       { userId: "u2", teamId: 222 }

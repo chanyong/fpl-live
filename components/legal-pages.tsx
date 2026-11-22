@@ -75,23 +75,23 @@ export function PrivacyContent() {
                 <td>{tr("주간 경기 리뷰 일지 (회원가입 시)", "Weekly review journal (members only)")}</td>
                 <td>
                   {tr(
-                    "이메일, 비밀번호(암호화 저장은 인증 서비스가 처리), FPL 팀 번호, 게임위크별 자동 저장 기록(점수·순위·선발·벤치·주장·이적·경기 결과), 직접 적은 일지 내용. FPL 비밀번호는 받지 않습니다.",
-                    "Email, password (stored hashed by the auth provider), FPL team ID, per-gameweek saved records (points, rank, squad, bench, captain, transfers, results) and the notes you write. We never ask for your FPL password."
+                    "이메일, 비밀번호(암호화 저장은 인증 서비스가 처리), 등록한 FPL 팀 번호와 그 팀을 바꾼 시각, 게임위크별 자동 저장 기록(점수·순위·선발·벤치·주장·이적·경기 결과), 직접 적은 일지 내용. FPL 비밀번호는 받지 않습니다.",
+                    "Email, password (stored hashed by the auth provider), the FPL team ID you registered and the time you last changed it, per-gameweek saved records (points, rank, squad, bench, captain, transfers, results) and the notes you write. We never ask for your FPL password."
                   )}
                 </td>
                 <td>
                   {tr(
-                    "일지 제공·로그인. 본인만 열람할 수 있고, 탈퇴 요청 시 지체 없이 삭제합니다. 저장·인증은 수탁자 Supabase Inc.가 운영하는 서울 리전 서버에서 처리하고, 확인 메일 발송을 위해 이메일 주소가 Resend에 전달됩니다. 로그인 상태 유지를 위한 쿠키 1개를 씁니다.",
-                    "Providing the journal and login. Only you can read it; deleted promptly on request. Storage and authentication are processed by our processor, Supabase Inc., on servers in the Seoul region; your email address is passed to Resend to send confirmation emails. One login cookie is used."
+                    "일지 제공·로그인. 등록한 팀 번호는 본인 팀의 선발·캡틴·이적 분석을 보여 주는 데 쓰고(다른 팀의 분석은 보여 주지 않습니다), 팀을 바꾼 시각은 잦은 변경을 막는 30일 제한에 씁니다. 팀을 바꾸면 이전 팀의 자동 저장 기록은 삭제되고 직접 적은 메모는 남습니다. 본인만 열람할 수 있고, 탈퇴 요청 시 지체 없이 삭제합니다. 저장·인증은 수탁자 Supabase Inc.가 운영하는 서울 리전 서버에서 처리하고, 확인 메일 발송을 위해 이메일 주소가 Resend에 전달됩니다. 로그인 상태 유지를 위한 쿠키 1개를 씁니다.",
+                    "Providing the journal and login. The registered team ID is used to show the lineup, captain and transfer analysis for your own team (not for other teams), and the time of the last change is used for a 30-day limit on changes. When you change teams, the previous team's automatically saved records are deleted and the notes you wrote are kept. Only you can read it; deleted promptly on request. Storage and authentication are processed by our processor, Supabase Inc., on servers in the Seoul region; your email address is passed to Resend to send confirmation emails. One login cookie is used."
                   )}
                 </td>
               </tr>
               <tr>
-                <td>{tr("내 스쿼드 보기 (/team, 가입 없이)", "My squad screen (/team, no account)")}</td>
+                <td>{tr("내 스쿼드 보기 (/team, 가입 없이 스쿼드 화면)", "My squad screen (/team, the squad view needs no account)")}</td>
                 <td>
                   {tr(
-                    "이용자가 입력하거나 리그 순위표에서 연 FPL 팀 번호(화면 주소에 포함). 그 번호로 FPL 이 공개한 팀 이름·매니저 이름·선수단·이적·칩 사용 기록을 불러와 보여 줍니다. 다른 사람의 팀 번호로도 볼 수 있는 공개 정보이며, FPL 로그인·비밀번호는 받지 않습니다.",
-                    "The FPL team ID you type or open from a league table (part of the page address). With it the Service loads the team name, manager name, squad, transfers and chip history that FPL publishes and shows them. It is public information anyone can look up by team ID; no FPL login or password is taken."
+                    "이용자가 입력하거나 리그 순위표에서 연 FPL 팀 번호(화면 주소에 포함). 그 번호로 FPL 이 공개한 팀 이름·매니저 이름·선수단·이적·칩 사용 기록을 불러와 보여 줍니다. 다른 사람의 팀 번호로도 볼 수 있는 공개 정보이며, FPL 로그인·비밀번호는 받지 않습니다. 선발·캡틴·이적 분석은 이 화면에 나오지만 그 팀을 등록한 회원에게만 보입니다(회원 항목 참고).",
+                    "The FPL team ID you type or open from a league table (part of the page address). With it the Service loads the team name, manager name, squad, transfers and chip history that FPL publishes and shows them. It is public information anyone can look up by team ID; no FPL login or password is taken. The lineup, captain and transfer analysis also appears on this screen but only to the member who registered that team (see the members row)."
                   )}
                 </td>
                 <td>
@@ -219,7 +219,8 @@ export function TermsContent() {
       <section>
         <h2>{tr("6. 회원(주간 경기 리뷰 일지)", "6. Members (weekly review journal)")}</h2>
         <ul>
-          <li>{tr("가입은 이메일과 FPL 팀 번호로 하며, FPL 비밀번호는 받지 않습니다. 팀 번호당 계정은 하나입니다.", "Sign-up uses an email and an FPL team ID; we never ask for your FPL password. One account per team ID.")}</li>
+          <li>{tr("가입은 이메일과 FPL 팀 번호로 하며, FPL 비밀번호는 받지 않습니다. 팀 번호당 계정은 하나입니다. 가입 때 팀 번호를 조회해 팀 이름과 매니저 이름을 확인합니다.", "Sign-up uses an email and an FPL team ID; we never ask for your FPL password. One account per team ID. At sign-up you look the team ID up and confirm the team name and manager.")}</li>
+          <li>{tr("등록한 팀 번호는 본인 팀의 선발·캡틴·이적 분석을 제공하는 데 쓰입니다. 이 분석은 등록한 본인 팀에만 제공하며, 다른 팀 번호로는 볼 수 없습니다. 이용자는 등록한 팀을 바꿀 수 있으나, 바꾸면 이전 팀의 자동 저장 기록이 삭제되고(직접 쓴 메모는 남음) 바꾼 뒤 30일 동안은 다시 바꿀 수 없습니다.", "The registered team ID is used to provide the lineup, captain and transfer analysis for your own team. The analysis is available only for the team you registered, not for other team IDs. You may change the registered team, but doing so deletes the previous team's automatically saved records (your own notes are kept) and you cannot change it again for 30 days.")}</li>
           <li>{tr("본인이 아닌 팀 번호로 가입하거나 타인의 계정에 접근하지 마세요. 팀 번호를 도용당했다면 문의처로 알려 주세요.", "Do not sign up with a team ID that is not yours or access others' accounts. If your team ID was taken, contact us.")}</li>
           <li>{tr("자동 저장은 FPL 공개 데이터를 기준으로 하며 지연·누락될 수 있고, 일지 내용의 백업은 이용자 책임입니다. 탈퇴·삭제는 문의처로 요청하세요.", "Auto-saving relies on FPL's public data and may be delayed or missed; keeping a backup of your notes is your responsibility. Ask via the contact below to delete your account.")}</li>
         </ul>

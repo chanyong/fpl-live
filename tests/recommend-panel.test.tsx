@@ -51,6 +51,8 @@ const json = (body: unknown, status = 200) =>
   Promise.resolve(new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } }));
 
 type Handlers = {
+  /** What /api/journal/me answers. Default: a member whose registered team is the one on screen. */
+  me?: (entryId: number) => Promise<Response>;
   recommend?: (url: string) => Promise<Response>;
   aiGet?: () => Promise<Response>;
   aiPost?: (body: Record<string, unknown>) => Promise<Response>;
@@ -66,6 +68,9 @@ function installFetch(entryId: number, handlers: Handlers = {}) {
     const body = typeof init?.body === "string" ? (JSON.parse(init.body) as Record<string, unknown>) : null;
     calls.push({ url, method, body });
     if (url.startsWith("/api/entry-squad")) return json(squad);
+    if (url.startsWith("/api/journal/me")) {
+      return handlers.me ? handlers.me(entryId) : json({ member: true, teamId: entryId, nextTeamChangeAt: null });
+    }
     if (url.startsWith("/api/entry-recommend")) return handlers.recommend ? handlers.recommend(url) : json(recommend);
     if (url.startsWith("/api/entry-ai") && method === "POST") return handlers.aiPost ? handlers.aiPost(body!) : json({ status: "disabled" });
     if (url.startsWith("/api/entry-ai")) return handlers.aiGet ? handlers.aiGet() : json({ status: "disabled" });
@@ -143,14 +148,56 @@ describe("who sees the recommendation panel", () => {
     expect(ALLOWED_ENTRY_IDS).toEqual([4300767]);
   });
 
-  it("shows nothing and asks for nothing extra on any other team ID", async () => {
-    const { calls } = installFetch(777);
+  const NOTICE = "선발·캡틴·이적 분석은 이 팀을 등록한 회원에게만 보입니다.";
+
+  it("shows one quiet line and asks for nothing extra to a visitor who is not signed in", async () => {
+    const { calls } = installFetch(777, { me: () => json({ member: false }) });
     renderPage(777);
     await screen.findByRole("heading", { level: 1, name: "Test FC" });
+    expect(await screen.findByText(NOTICE)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "로그인·가입" })).toHaveAttribute("href", "/journal");
     expect(screen.queryByRole("region", { name: "추천" })).not.toBeInTheDocument();
-    expect(screen.queryByText(/AI 의견/)).not.toBeInTheDocument();
     expect(screen.queryByText(/추정·참고용 분석/)).not.toBeInTheDocument();
-    expect(calls.map((call) => call.url)).toEqual(["/api/entry-squad?entryId=777"]);
+    expect(calls.map((call) => call.url).sort()).toEqual(["/api/entry-squad?entryId=777", "/api/journal/me"]);
+  });
+
+  it("shows the same line to a member whose registered team is another one", async () => {
+    const { calls } = installFetch(777, { me: () => json({ member: true, teamId: 4300767, nextTeamChangeAt: null }) });
+    renderPage(777);
+    expect(await screen.findByText(NOTICE)).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "추천" })).not.toBeInTheDocument();
+    expect(calls.some((call) => call.url.startsWith("/api/entry-recommend"))).toBe(false);
+  });
+
+  it("draws the rules-based panel for the member's own team, without the AI opinion or the log for a team that is not allowed", async () => {
+    const { calls } = installFetch(777);
+    renderPage(777);
+    const panel = await screen.findByRole("region", { name: "추천" });
+    await within(panel).findByText("이적 시나리오");
+    expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
+    expect(screen.queryByText("지난 추천 기록(참고)")).not.toBeInTheDocument();
+    expect(calls.some((call) => call.url.startsWith("/api/entry-ai") || call.url.startsWith("/api/entry-recommend-log"))).toBe(false);
+  });
+
+  it("turns the panel into the same line, not an error screen, when the session has run out (401) or the team changed (403)", async () => {
+    for (const status of [401, 403]) {
+      installFetch(777, { recommend: () => json({ error: status === 401 ? "login_required" : "not_your_team" }, status) });
+      const { unmount } = renderPage(777);
+      expect(await screen.findByText(NOTICE)).toBeInTheDocument();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: "추천" })).not.toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it("keeps the source line of the allowed team only for its own member", async () => {
+    installFetch(TEAM, { me: () => json({ member: false }), aiGet: () => json({ status: "disabled" }) });
+    const { unmount } = renderPage(TEAM);
+    expect(await screen.findByText(/팀 정보는 그때그때 불러와 보여 줄 뿐 저장하지 않습니다/)).toBeInTheDocument();
+    unmount();
+    installFetch(TEAM, { aiGet: () => json({ status: "disabled" }) });
+    renderPage(TEAM);
+    expect(await screen.findByText(/추천 결과와 GW별 추천 기록만 서버에 저장합니다/)).toBeInTheDocument();
   });
 });
 

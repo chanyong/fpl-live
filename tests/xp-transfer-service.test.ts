@@ -9,6 +9,12 @@ vi.mock("@/lib/entry-squad", async (importActual) => ({
   getEntrySquad
 }));
 vi.mock("@/lib/xp/xp-table", () => ({ getXpTable, resetXpTableCache: () => undefined }));
+// Issue #47: these tests are about what the route computes, not who may ask. The own-team guard has its own tests
+// (tests/own-team-guard.test.ts), so here it lets the request through.
+vi.mock("@/lib/journal/own-team", async (importActual) => ({
+  ...(await importActual<typeof import("@/lib/journal/own-team")>()),
+  checkOwnTeam: async () => "ok"
+}));
 vi.mock("@/lib/xp/transfer-search", async (importActual) => {
   const actual = await importActual<typeof import("@/lib/xp/transfer-search")>();
   searchSpy.mockImplementation(actual.searchTransfers);

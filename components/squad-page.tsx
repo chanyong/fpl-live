@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
+import { MemberOnlyNotice } from "@/components/member-only-notice";
 import { RecommendPanel } from "@/components/recommend-panel";
 import { SiteHeader } from "@/components/site-header";
 import { SquadList } from "@/components/squad-list";
@@ -12,6 +13,7 @@ import { SquadStatusBar } from "@/components/squad-status-bar";
 import { TeamIdForm } from "@/components/team-id-form";
 import { isAllowedEntry } from "@/lib/ai/allowed-entry";
 import { chipLabel } from "@/lib/chips";
+import { fetchMember, registeredTeam } from "@/lib/journal/member-client";
 import { clearMyTeam, loadMyTeam, saveMyTeam, type MyTeam } from "@/lib/my-team";
 import type { EntrySquadPayload } from "@/lib/squad-types";
 import {
@@ -96,6 +98,16 @@ export function SquadPage({ entryId }: { entryId: number }) {
     retry: false,
     refetchOnWindowFocus: false
   });
+
+  // Who is signed in and which team the account registered (issue #47). Read fresh each time the page opens; it is cheap.
+  const member = useQuery({
+    queryKey: ["journal-me"],
+    queryFn: fetchMember,
+    staleTime: 0,
+    retry: false,
+    refetchOnWindowFocus: false
+  });
+  const ownsTeam = registeredTeam(member.data) === entryId;
 
   // Saved view and "my team" live in this browser only; read them after mount so server and client agree.
   useEffect(() => {
@@ -295,8 +307,8 @@ export function SquadPage({ entryId }: { entryId: number }) {
                 <SquadStatusBar data={data} className="lg:col-start-2 lg:row-start-2 lg:row-span-2" />
               </div>
 
-              {/* Issue #43 stage 4: lineup, captain, transfer and AI recommendations for the allowed team only (personal transfer analysis is members-only, #47). Every other team ID gets the screen as it was, with no extra request. */}
-              {isAllowedEntry(entryId) ? <RecommendPanel entryId={entryId} /> : null}
+              {/* Issue #47: lineup, captain and transfer analysis only for the member who registered this team (the server checks it too). Everyone else sees one quiet line and no extra request; nothing is drawn until we know who is looking. */}
+              {member.isPending ? null : ownsTeam ? <RecommendPanel entryId={entryId} /> : <MemberOnlyNotice />}
             </>
           )}
 
@@ -305,7 +317,7 @@ export function SquadPage({ entryId }: { entryId: number }) {
               {tr("개인정보처리방침", "Privacy policy")}
             </Link>
             {" · "}
-            {isAllowedEntry(entryId)
+            {ownsTeam && isAllowedEntry(entryId)
               ? tr(
                   "데이터 출처: Fantasy Premier League 공개 데이터. FPL Live는 비공식 서비스이며 Premier League·FPL과 제휴 관계가 없습니다. 이 팀은 추천 결과와 GW별 추천 기록만 서버에 저장합니다.",
                   "Source: Fantasy Premier League public data. FPL Live is unofficial and not affiliated with the Premier League or FPL. For this team only the recommendations and the per-gameweek recommendation log are stored."
