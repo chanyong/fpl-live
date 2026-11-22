@@ -1,3 +1,4 @@
+import { loadPlayerMeta } from "@/lib/ai/players";
 import { EntryNotFoundError, EntryBusyError, FplUnavailableError, getEntrySquad } from "@/lib/entry-squad";
 import type { EntrySquadPayload } from "@/lib/squad-types";
 import { buildCaptainCandidates, type CaptainCandidate } from "@/lib/xp/captain";
@@ -46,8 +47,17 @@ export type EntryRecommendBase = {
   assumptions: RecommendAssumption[];
 };
 
-/** The route's answer: the base plus the transfer scenarios (null when the team has no full squad yet). */
-export type EntryRecommendPayload = EntryRecommendBase & { transfers: TransferSearchResult | null };
+/** What the screen needs to name a player a transfer scenario moves (the buyer is usually not in the squad). */
+export type ScenarioPlayerInfo = { webName: string; teamShortName: string; position: string; nowCost: number };
+
+/**
+ * The route's answer: the base plus the transfer scenarios (null when the team has no full squad yet) and the
+ * display info of every player those scenarios move, keyed by player ID.
+ */
+export type EntryRecommendPayload = EntryRecommendBase & {
+  transfers: TransferSearchResult | null;
+  playerInfo: Record<string, ScenarioPlayerInfo>;
+};
 
 export const ASSUMPTIONS: RecommendAssumption[] = [
   {
@@ -140,6 +150,43 @@ export function buildEntryRecommend(squad: EntrySquadPayload, table: XpTable): E
   };
 }
 
+const POSITION_BY_TYPE: Record<number, string> = { 1: "GKP", 2: "DEF", 3: "MID", 4: "FWD" };
+
+/** Name, club, position and current price of everyone a scenario moves, from the shared bootstrap (no FPL call). */
+export async function buildScenarioPlayerInfo(
+  transfers: TransferSearchResult | null,
+  table: XpTable
+): Promise<Record<string, ScenarioPlayerInfo>> {
+  if (!transfers) {
+    return {};
+  }
+  const ids = new Set<number>();
+  for (const scenario of transfers.scenarios) {
+    for (const id of [...scenario.out, ...scenario.in]) ids.add(id);
+  }
+  let meta: Awaited<ReturnType<typeof loadPlayerMeta>>;
+  try {
+    meta = await loadPlayerMeta();
+  } catch {
+    // The names are decoration: without the bootstrap the screen falls back to the player ID.
+    return {};
+  }
+  const info: Record<string, ScenarioPlayerInfo> = {};
+  for (const id of [...ids].sort((a, b) => a - b)) {
+    const name = meta.get(id);
+    const row = table.players.get(id);
+    if (name) {
+      info[String(id)] = {
+        webName: name.name,
+        teamShortName: name.teamShort,
+        position: name.position,
+        nowCost: row?.nowCost ?? 0
+      };
+    }
+  }
+  return info;
+}
+
 /**
  * One team's recommendation: getEntrySquad (memoised 5 minutes, FPL calls capped for the whole process) plus
  * the shared xP table (memoised 10 minutes). No FPL call of its own.
@@ -156,5 +203,5 @@ export async function getEntryRecommend(
   }
   const base = buildEntryRecommend(squad, table);
   const transfers = await getTransfers(squad, table, horizon);
-  return { ...base, transfers };
+  return { ...base, transfers, playerInfo: await buildScenarioPlayerInfo(transfers, table) };
 }

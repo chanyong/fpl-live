@@ -4,11 +4,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
+import { RecommendPanel } from "@/components/recommend-panel";
 import { SiteHeader } from "@/components/site-header";
 import { SquadList } from "@/components/squad-list";
 import { SquadPitch } from "@/components/squad-pitch";
 import { SquadStatusBar } from "@/components/squad-status-bar";
 import { TeamIdForm } from "@/components/team-id-form";
+import { isAllowedEntry } from "@/lib/ai/allowed-entry";
 import { chipLabel } from "@/lib/chips";
 import { clearMyTeam, loadMyTeam, saveMyTeam, type MyTeam } from "@/lib/my-team";
 import type { EntrySquadPayload } from "@/lib/squad-types";
@@ -292,6 +294,9 @@ export function SquadPage({ entryId }: { entryId: number }) {
 
                 <SquadStatusBar data={data} className="lg:col-start-2 lg:row-start-2 lg:row-span-2" />
               </div>
+
+              {/* Issue #43 stage 4: lineup, captain, transfer and AI recommendations for the allowed team only (personal transfer analysis is members-only, #47). Every other team ID gets the screen as it was, with no extra request. */}
+              {isAllowedEntry(entryId) ? <RecommendPanel entryId={entryId} /> : null}
             </>
           )}
 

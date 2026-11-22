@@ -8,8 +8,10 @@
  *   SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY - the usage / job tables (migration 0002)
  */
 
-/** Team IDs allowed to use the AI layer. A code constant on purpose: it cannot be widened by an environment variable. */
-export const ALLOWED_ENTRY_IDS: readonly number[] = [4300767];
+// The allow list lives in its own tiny file so the browser bundle can read it without pulling in the rest of this layer.
+import { ALLOWED_ENTRY_IDS, isAllowedEntry } from "@/lib/ai/allowed-entry";
+
+export { ALLOWED_ENTRY_IDS, isAllowedEntry };
 
 export const AI_MODEL_ID = "claude-fable-5-2";
 
@@ -80,8 +82,4 @@ export function aiConfigFromEnv(env: Record<string, string | undefined> = proces
     apiKey: enabled ? (apiKey as string) : null,
     supabase: enabled ? { url: url as string, serviceKey: serviceKey as string } : null
   };
-}
-
-export function isAllowedEntry(entryId: number) {
-  return ALLOWED_ENTRY_IDS.includes(entryId);
 }

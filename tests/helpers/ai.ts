@@ -75,7 +75,16 @@ export async function makeAiInput(locale: "ko" | "en" = "ko"): Promise<{ input: 
     lineups,
     captains,
     assumptions: ASSUMPTIONS,
-    transfers: result
+    transfers: result,
+    // What /api/entry-recommend adds for the players a scenario moves.
+    playerInfo: Object.fromEntries(
+      [...new Set(result.scenarios.flatMap((scenario) => [...scenario.out, ...scenario.in]))]
+        .sort((a, b) => a - b)
+        .map((id) => {
+          const spec = specs.find((item) => item.id === id)!;
+          return [String(id), { webName: `Zorro${id}`, teamShortName: `T${id}`, position: POSITION[spec.type], nowCost: spec.cost }];
+        })
+    )
   };
 
   const meta: PlayerMetaMap = new Map(

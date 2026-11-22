@@ -14,7 +14,8 @@ import { resetEntryRequestLimits } from "@/lib/entry-request-limit";
 import { EntryBusyError, EntryNotFoundError, FplUnavailableError } from "@/lib/entry-squad";
 import type { EntrySquadPayload, SquadPlayer } from "@/lib/squad-types";
 import { buildXpTable, type XpBootstrap, type XpElement, type XpFixtureRow } from "@/lib/xp/model";
-import { buildEntryRecommend } from "@/lib/xp/recommend";
+import { buildEntryRecommend, buildScenarioPlayerInfo } from "@/lib/xp/recommend";
+import type { TransferSearchResult } from "@/lib/xp/transfer-search";
 import { getXpTable, resetXpTableCache } from "@/lib/xp/xp-table";
 
 // Issue #43 stage 1-A: /api/entry-recommend assembles the squad and the shared xP table, no FPL call of its own.
@@ -198,7 +199,8 @@ describe("GET /api/entry-recommend", () => {
     expect(body.lineups[0].starters).toHaveLength(11);
     expect(body.captains).toHaveLength(5);
     expect(getEntrySquad).toHaveBeenCalledWith(5, false);
-    expect(getBase).toHaveBeenCalledTimes(1);
+    // getBase is the memoised bootstrap read: the xP table and the scenario names share it, neither calls FPL itself.
+    expect(getBase.mock.calls.length).toBeLessThanOrEqual(2);
   });
 
   it("passes refresh=1 on as a forced refresh of the squad", async () => {
@@ -218,6 +220,12 @@ describe("GET /api/entry-recommend", () => {
     expect((await GET(req("?entryId=9"))).status).toBe(500);
   });
 
+  it("adds a playerInfo object for the players the scenarios move", async () => {
+    const body = await (await GET(req("?entryId=5"))).json();
+    expect(body.playerInfo).toBeTypeOf("object");
+    expect(body.playerInfo).not.toBeNull();
+  });
+
   it("answers 503 with Retry-After when too many teams are being loaded at once", async () => {
     getEntrySquad.mockRejectedValueOnce(new EntryBusyError(5));
     const response = await GET(req("?entryId=10"));
@@ -234,5 +242,36 @@ describe("GET /api/entry-recommend", () => {
     expect(blocked.status).toBe(429);
     expect(Number(blocked.headers.get("retry-after"))).toBeGreaterThan(0);
     expect((await GET(req("?entryId=13", "8.8.8.8"))).status).toBe(200);
+  });
+});
+
+describe("buildScenarioPlayerInfo", () => {
+  const table = buildXpTable(xpBootstrap, fixtures, NOW)!;
+  const transfers = {
+    scenarios: [
+      { id: "roll", type: "roll", out: [], in: [] },
+      { id: "one:25>21", type: "one", out: [25], in: [21] },
+      { id: "wildcard", type: "wildcard", out: [11, 25], in: [21, 31] }
+    ]
+  } as unknown as TransferSearchResult;
+
+  beforeEach(() => {
+    getBase.mockReset().mockResolvedValue({
+      bootstrap: { ...xpBootstrap, elements: elements.map((element) => ({ ...element, web_name: `Name${element.id}` })) },
+      fixtures
+    });
+  });
+
+  it("gives every player a scenario moves a display name, club, position and current price, from the shared bootstrap", async () => {
+    const info = await buildScenarioPlayerInfo(transfers, table);
+    expect(Object.keys(info).sort()).toEqual(["11", "21", "25", "31"]);
+    expect(info["21"]).toEqual({ webName: "Name21", teamShortName: "ARS", position: "MID", nowCost: table.players.get(21)!.nowCost });
+    expect(info["31"].position).toBe("FWD");
+  });
+
+  it("is empty without scenarios, and falls back to nothing (not an error) when the bootstrap is unavailable", async () => {
+    expect(await buildScenarioPlayerInfo(null, table)).toEqual({});
+    getBase.mockResolvedValue(null);
+    expect(await buildScenarioPlayerInfo(transfers, table)).toEqual({});
   });
 });

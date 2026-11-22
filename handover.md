@@ -210,3 +210,8 @@ npm run build
 - **DB**: `db/migrations/0002_ai_recommendations.sql`(롤백 `.rollback.sql`). 표 3개(`ai_recommendations` 작업·결과, `ai_usage` 사용량, `ai_recommendation_log` 추천 기록 — 쓰는 코드는 다음 PR)와 상한 집행 함수(`ai_start_job`, `ai_reserve_usage`). **운영 DB에 먼저 적용(관제 창, L2)한 뒤 PR 병합.** 표가 없으면 호출 전에 읽기가 실패해 호출하지 않는다(fail closed).
 - 흐름: `POST /api/entry-ai`(저장본 있으면 그대로, 없으면 작업 생성 + 호출 전 DB 예약 후 202) → 서버가 같은 프로세스에서 스트리밍으로 받아 검증된 완성본만 저장 → `GET /api/entry-ai?entryId=&locale=`로 상태(`none|pending|done|failed|disabled|not_allowed|limit`). 백그라운드 자동 실행·cron 없음. 15분 넘게 running인 작업은(호출 1건 기한 6분 × 최대 2건 + 여유 3분) 조회 때 failed로 정리되고 그 예약 금액은 누적에 남는다.
 - 사용량 확인(콘솔 대신 DB): `select date_trunc('month', created_at), sum(cost_usd) from ai_usage group by 1;`
+
+## 2026-11-22 추천 화면 (#43 4단계)
+- `/team/4300767`에만 추천 패널(선발·캡틴·이적 시나리오, 그 아래 AI 의견)이 보인다. 다른 팀 ID는 이전 화면 그대로이고 추가 요청도 없다. 허용 팀 상수는 `lib/ai/allowed-entry.ts`(import 없는 작은 파일, 브라우저 번들용)로 옮겼고 `lib/ai/config.ts`가 다시 내보낸다. 넓히는 것은 #47(회원 전용) 뒤.
+- 규칙 기반 패널은 AI 설정과 무관하게 항상 보인다(`/api/entry-recommend`, 응답에 `playerInfo`로 시나리오 선수의 이름·팀·포지션·현재가를 붙임). AI 패널은 화면이 열릴 때 `GET /api/entry-ai`로 상태만 읽고, 사람이 버튼을 누를 때만 POST한다. `disabled`·`not_allowed`면 AI 패널을 그리지 않는다.
+- 파일: `components/recommend-panel.tsx`(규칙 기반), `recommend-transfers.tsx`, `ai-opinion-panel.tsx`(상태별 화면·5초 폴링·20분 포기·탭 숨김 시 중지), `recommend-parts.tsx`, 문구 `lib/recommend-text.ts`. AI 문장은 일반 텍스트로만 그린다.
