@@ -16,7 +16,7 @@ function limitKey(headers: Headers) {
 
 /**
  * A signed-in member registers a different FPL team (issue #47): `{ teamId }`. Answers `{ ok: true }` or `{ error }` with
- * team_not_found 404, fpl_unavailable 503, team_taken 409, same_team 400, too_soon 429 (+ nextTeamChangeAt) and
+ * team_not_found 404, fpl_unavailable 503, team_taken 409, same_team 400, team_locked 403 (the AI allow-list team), too_soon 429 (+ nextTeamChangeAt) and
  * change_failed 502. The old team's auto-saved snapshots are removed by the database function; notes stay.
  */
 export async function POST(request: NextRequest) {
@@ -46,6 +46,6 @@ export async function POST(request: NextRequest) {
   if (result.code === "too_soon") {
     return NextResponse.json({ error: "too_soon", nextTeamChangeAt: result.nextChangeAt }, { status: 429, headers: NO_STORE });
   }
-  const status = { same_team: 400, team_taken: 409, team_not_found: 404, fpl_unavailable: 503, change_failed: 502 }[result.code];
+  const status = { same_team: 400, team_locked: 403, team_taken: 409, team_not_found: 404, fpl_unavailable: 503, change_failed: 502 }[result.code];
   return NextResponse.json({ error: result.code }, { status, headers: NO_STORE });
 }

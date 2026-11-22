@@ -113,7 +113,8 @@ export function createSupabaseStore(env: { url: string; anonKey: string; service
     },
     async getProfile(userId) {
       const response = await call(`/rest/v1/journal_profiles?select=fpl_team_id,team_changed_at&user_id=eq.${encodeURIComponent(userId)}&limit=1`, { key: env.serviceKey });
-      if (!response.ok) return null;
+      // A failed read is not "no profile": callers answer 5xx instead of "not your team".
+      if (!response.ok) throw new Error(`profile read failed (${response.status})`);
       const rows = (await response.json()) as Array<{ fpl_team_id: number; team_changed_at?: string | null }>;
       return rows[0] ? { teamId: rows[0].fpl_team_id, teamChangedAt: rows[0].team_changed_at ?? null } : null;
     },

@@ -28,6 +28,21 @@ describe("changeMemberTeam", () => {
     expect(TEAM_CHANGE_COOLDOWN_DAYS).toBe(30);
   });
 
+  it("team_locked: the account holding the AI allow-list team cannot release it (no FPL call, no change)", async () => {
+    found.mockClear();
+    const s = store({ teamId: 4300767, teamChangedAt: null });
+    expect(await run(s)).toEqual({ ok: false, code: "team_locked" });
+    expect(found).not.toHaveBeenCalled();
+    expect(s.changeTeam).not.toHaveBeenCalled();
+  });
+
+  it("a profile that cannot be read is change_failed, not a change", async () => {
+    const s = store(null);
+    (s.getProfile as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("profile read failed (503)"));
+    expect(await run(s)).toEqual({ ok: false, code: "change_failed" });
+    expect(s.changeTeam).not.toHaveBeenCalled();
+  });
+
   it("also works for a member whose profile is missing (the function creates it)", async () => {
     const s = store(null);
     expect(await run(s)).toEqual({ ok: true });

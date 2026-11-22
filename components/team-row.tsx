@@ -45,6 +45,7 @@ export function TeamRow({ teamId, nextChangeAt, onChanged }: { teamId: number | 
 
   const errors: Record<string, [string, string]> = {
     same_team: ["이미 등록된 팀입니다.", "That is already your registered team."],
+    team_locked: ["이 계정의 팀은 바꿀 수 없게 고정돼 있습니다.", "The team on this account is locked and cannot be changed."],
     team_taken: [
       `이미 다른 계정에 등록된 팀 번호입니다. 본인 팀인데 막혔다면 ${CONTACT_EMAIL} 로 문의해 주세요.`,
       `Another account already has this team ID. If it is your team, contact ${CONTACT_EMAIL}.`

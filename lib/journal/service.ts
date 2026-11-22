@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { buildWeeklySnapshot, getDueSnapshotGws, hasSnapshotDetail, mergeDetailIntoSnapshot, type SnapshotDetail, type SnapshotEvent, type WeeklySnapshot } from "@/lib/journal-snapshot";
 import { journalReturnUrl } from "@/lib/journal/recovery";
+import { isAllowedEntry } from "@/lib/ai/allowed-entry";
 import { TEAM_CHANGE_COOLDOWN_DAYS, type JournalStore } from "@/lib/journal/types";
 
 export type SignupResult =
@@ -197,7 +198,7 @@ function logFailure(teamId: number, gw: number | null, error: unknown) {
 
 export type ChangeTeamOutcome =
   | { ok: true }
-  | { ok: false; code: "same_team" | "team_taken" | "team_not_found" | "fpl_unavailable" | "change_failed" }
+  | { ok: false; code: "same_team" | "team_locked" | "team_taken" | "team_not_found" | "fpl_unavailable" | "change_failed" }
   | { ok: false; code: "too_soon"; nextChangeAt: string };
 
 /** When the registered team may be changed again, or null when it may be changed now. */
@@ -221,8 +222,16 @@ export async function changeMemberTeam(
   checkTeam: (teamId: number) => Promise<TeamCheck>,
   now = Date.now()
 ): Promise<ChangeTeamOutcome> {
-  const profile = await store.getProfile(userId);
+  let profile;
+  try {
+    profile = await store.getProfile(userId);
+  } catch {
+    return { ok: false, code: "change_failed" };
+  }
   if (profile?.teamId === teamId) return { ok: false, code: "same_team" };
+  // The account holding a team on the AI allow list keeps it: once released, anyone could register that team and
+  // reach the paid analysis, and the holder could not take it back for the whole cooldown.
+  if (profile && isAllowedEntry(profile.teamId)) return { ok: false, code: "team_locked" };
   const wait = profile ? nextTeamChangeAt(profile.teamChangedAt, TEAM_CHANGE_COOLDOWN_DAYS, now) : null;
   if (wait) return { ok: false, code: "too_soon", nextChangeAt: wait };
 
