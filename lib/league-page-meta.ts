@@ -30,11 +30,18 @@ export async function leagueViewMetadata(rawLeagueId: string, view: LeagueView):
   const title = leagueViewTitle(name, gw, view);
   const description = leagueViewDescription(name, gw, view);
 
+  // The share card image is a file route on /league/ID only; Next does not carry it down to the tab
+  // addresses once they set their own openGraph, so those name it here.
+  const images =
+    view === "fixtures"
+      ? undefined
+      : [{ url: `/league/${parsed.leagueId}/opengraph-image`, width: 1200, height: 630, alt: "FPL Live 미니리그 실시간 순위" }];
+
   return {
     title,
     description,
     alternates: { canonical: path },
-    openGraph: { type: "website", siteName: "FPL Live", locale: "ko_KR", title, description, url: path },
-    twitter: { card: "summary_large_image", title, description }
+    openGraph: { type: "website", siteName: "FPL Live", locale: "ko_KR", title, description, url: path, images },
+    twitter: { card: "summary_large_image", title, description, images }
   };
 }
