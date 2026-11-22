@@ -19,12 +19,12 @@ const TTL_MS = 60_000;
 const STALE_MAX_MS = 24 * 60 * 60_000;
 const DEADLINE_MS = 8_000;
 
-type Base = { bootstrap: Awaited<ReturnType<typeof getBootstrapStatic>>; fixtures: Awaited<ReturnType<typeof getFixtures>> };
+export type FplBase = { bootstrap: Awaited<ReturnType<typeof getBootstrapStatic>>; fixtures: Awaited<ReturnType<typeof getFixtures>> };
 
-let cache: { base: Base; fetchedAt: number } | null = null;
-let pending: Promise<Base> | null = null;
+let cache: { base: FplBase; fetchedAt: number } | null = null;
+let pending: Promise<FplBase> | null = null;
 
-function refresh(): Promise<Base> {
+function refresh(): Promise<FplBase> {
   if (!pending) {
     pending = Promise.all([getBootstrapStatic(), getFixtures()])
       .then(([bootstrap, fixtures]) => {
@@ -41,7 +41,7 @@ function refresh(): Promise<Base> {
   return pending;
 }
 
-async function getBase(): Promise<Base | null> {
+export async function getBase(): Promise<FplBase | null> {
   if (cache && Date.now() - cache.fetchedAt < TTL_MS) {
     return cache.base;
   }
