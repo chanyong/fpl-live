@@ -4,17 +4,21 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { AiOpinionPanel } from "@/components/ai-opinion-panel";
 import { useLocale } from "@/components/locale-provider";
+import { MemberOnlyNotice } from "@/components/member-only-notice";
 import { RecommendLogPanel } from "@/components/recommend-log-panel";
 import { Badge, fmtSigned, fmtTime, fmtXp, FixtureText, playerLookup, PlayerTag, SubHeading, type PlayerShown } from "@/components/recommend-parts";
 import { TransferScenarios } from "@/components/recommend-transfers";
+import { isAllowedEntry } from "@/lib/ai/allowed-entry";
 import { assumptionText } from "@/lib/recommend-text";
 import type { LineupCandidate } from "@/lib/xp/lineup";
 import type { EntryRecommendPayload } from "@/lib/xp/recommend";
 
 /**
  * Recommendation panel of /team/[id] (issue #43, stage 4): the rules-based lineup, captain and transfer
- * candidates, then the AI opinion beside them. Shown for the allowed team only (decided by the caller): every
- * other team ID gets the screen without it and without any extra request.
+ * candidates, then the AI opinion beside them. Drawn only for the member who registered this team (issue #47, decided by
+ * the caller from /api/journal/me). The server checks that too: a 401 or 403 here (a session that ran out, a team changed
+ * in another tab) turns the panel into the quiet "members only" line instead of an error screen. The AI opinion and the
+ * recommendation log belong to the allowed team only.
  */
 
 class RecommendRequestError extends Error {
@@ -159,6 +163,10 @@ export function RecommendPanel({ entryId }: { entryId: number }) {
   const data = query.data;
   const lookup = data ? playerLookup(data) : null;
 
+  if (query.error instanceof RecommendRequestError && (query.error.status === 401 || query.error.status === 403)) {
+    return <MemberOnlyNotice />;
+  }
+
   return (
     <section aria-label={tr("추천", "Recommendations")} className="flex flex-col gap-3 rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-3">
       <div className="flex flex-col gap-1">
@@ -236,8 +244,8 @@ export function RecommendPanel({ entryId }: { entryId: number }) {
         </>
       ) : null}
 
-      <AiOpinionPanel entryId={entryId} />
-      <RecommendLogPanel entryId={entryId} />
+      {isAllowedEntry(entryId) ? <AiOpinionPanel entryId={entryId} /> : null}
+      {isAllowedEntry(entryId) ? <RecommendLogPanel entryId={entryId} /> : null}
     </section>
   );
 }
