@@ -54,7 +54,8 @@ export function JournalGwLink({
   if (!data) return null;
 
   const link = resolveJournalGwLink({ gw, currentGw, leagueEntryIds, access: data });
-  if (link.kind === "hidden") return null;
+  // Visitors log in from the account button in the top band (issue #82); the week link shows for members only.
+  if (link.kind === "hidden" || link.kind === "login") return null;
   if (link.kind === "pending") {
     return (
       <span className="shrink-0 text-caption text-[var(--muted)]">
@@ -64,11 +65,7 @@ export function JournalGwLink({
   }
 
   const label =
-    link.kind === "login"
-      ? tr("로그인 후 일지 쓰기", "Log in to write")
-      : link.kind === "view"
-        ? tr("일지 보기", "View journal")
-        : tr("일지 쓰기", "Write journal");
+    link.kind === "view" ? tr("일지 보기", "View journal") : tr("일지 쓰기", "Write journal");
   return (
     <Link
       href={link.href}
