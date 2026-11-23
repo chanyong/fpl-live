@@ -2,6 +2,7 @@ import { loadPlayerMeta } from "@/lib/ai/players";
 import { EntryNotFoundError, EntryBusyError, FplUnavailableError, getEntrySquad, photoUrl } from "@/lib/entry-squad";
 import { getBase } from "@/lib/public-data";
 import type { EntrySquadPayload } from "@/lib/squad-types";
+import type { FplPosition } from "@/lib/types";
 import { buildCaptainCandidates, type CaptainCandidate } from "@/lib/xp/captain";
 import { buildLineups, type LineupCandidate } from "@/lib/xp/lineup";
 import { XP_MODEL_VERSION, type XpPlayer, type XpTable } from "@/lib/xp/model";
@@ -137,6 +138,8 @@ function toRecommendPlayer(player: EntrySquadPayload["squad"][number], xp: XpPla
   };
 }
 
+const ELEMENT_TYPE_BY_POSITION: Record<FplPosition, number> = { GKP: 1, DEF: 2, MID: 3, FWD: 4 };
+
 /** Pure assembly of the recommendation from one team's squad and the shared xP table. */
 export function buildEntryRecommend(squad: EntrySquadPayload, table: XpTable): EntryRecommendBase {
   const squadPlayers = squad.squad;
@@ -145,7 +148,7 @@ export function buildEntryRecommend(squad: EntrySquadPayload, table: XpTable): E
   const lineups = buildLineups(
     squadPlayers.map((player) => ({
       id: player.elementId,
-      elementType: { GKP: 1, DEF: 2, MID: 3, FWD: 4 }[player.position],
+      elementType: ELEMENT_TYPE_BY_POSITION[player.position],
       xp: table.players.get(player.elementId)?.next ?? 0,
       isStarter: player.isStarter
     }))
@@ -221,7 +224,13 @@ export async function buildScenarioLineups(
     const gone = new Set(scenario.out);
     const ids = [...squad.squad.map((player) => player.elementId).filter((id) => !gone.has(id)), ...scenario.in];
     const best = buildLineups(
-      ids.map((id) => ({ id, elementType: table.players.get(id)?.elementType ?? 3, xp: table.players.get(id)?.next ?? 0, isStarter: false })),
+      ids.map((id) => {
+        // Same position source as buildEntryRecommend for squad players, so roll matches lineups[0] even when the
+        // xP table lacks a player.
+        const mine = own.get(id);
+        const elementType = mine ? ELEMENT_TYPE_BY_POSITION[mine.position] : (table.players.get(id)?.elementType ?? 3);
+        return { id, elementType, xp: table.players.get(id)?.next ?? 0, isStarter: false };
+      }),
       1
     )[0];
     if (!best) continue;
