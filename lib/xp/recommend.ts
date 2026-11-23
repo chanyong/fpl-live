@@ -190,29 +190,20 @@ export function buildEntryRecommend(squad: EntrySquadPayload, table: XpTable): E
 }
 
 /**
- * Issue #61: for every scenario, the best XI / bench / captain of the squad after its transfers, by the same
- * lineup and captain rules as the "roll" recommendation (so roll equals the lineups[0] and captains above).
- * The card info of everyone involved comes from the squad, else the shared bootstrap (names and photos only).
+ * Pitch card of any player: from the squad when he is in it, else from the shared bootstrap and the xP table (names,
+ * photos and fixtures only). Built once per squad; the returned function is pure and free (no FPL call of its own).
  */
-export async function buildScenarioLineups(
-  squad: EntrySquadPayload,
-  transfers: TransferSearchResult | null,
-  table: XpTable
-): Promise<{ scenarioLineups: Record<string, ScenarioLineup>; lineupPlayers: Record<string, LineupPlayerCard> }> {
-  if (!transfers) {
-    return { scenarioLineups: {}, lineupPlayers: {} };
-  }
+export async function makeCardBuilder(squad: EntrySquadPayload, table: XpTable): Promise<(id: number) => LineupPlayerCard> {
   const base = await getBase().catch(() => null);
   const elements = new Map((base?.bootstrap.elements ?? []).map((element) => [element.id, element]));
   const teams = new Map((base?.bootstrap.teams ?? []).map((team) => [team.id, team.short_name]));
   const own = new Map(squad.squad.map((player) => [player.elementId, player]));
 
-  const cards: Record<string, LineupPlayerCard> = {};
-  const cardOf = (id: number) => {
+  return (id: number) => {
     const row = table.players.get(id);
     const mine = own.get(id);
     const element = elements.get(id);
-    cards[String(id)] = {
+    return {
       webName: mine?.webName ?? element?.web_name ?? `#${id}`,
       teamShortName: mine?.teamShortName ?? teams.get(row?.teamId ?? 0) ?? "-",
       position: mine?.position ?? POSITION_BY_TYPE[row?.elementType ?? 3] ?? "MID",
@@ -225,6 +216,27 @@ export async function buildScenarioLineups(
         ? row.weeks.slice(0, 5).map((week) => ({ gw: week.gw, games: week.games.map((game) => ({ opponent: game.opponent, home: game.home, difficulty: game.difficulty })) }))
         : mine?.outlook
     };
+  };
+}
+
+/**
+ * Issue #61: for every scenario, the best XI / bench / captain of the squad after its transfers, by the same
+ * lineup and captain rules as the "roll" recommendation (so roll equals the lineups[0] and captains above).
+ * The card info of everyone involved comes from the squad, else the shared bootstrap (names and photos only).
+ */
+export async function buildScenarioLineups(
+  squad: EntrySquadPayload,
+  transfers: TransferSearchResult | null,
+  table: XpTable
+): Promise<{ scenarioLineups: Record<string, ScenarioLineup>; lineupPlayers: Record<string, LineupPlayerCard> }> {
+  if (!transfers) {
+    return { scenarioLineups: {}, lineupPlayers: {} };
+  }
+  const cardOf0 = await makeCardBuilder(squad, table);
+  const own = new Map(squad.squad.map((player) => [player.elementId, player]));
+  const cards: Record<string, LineupPlayerCard> = {};
+  const cardOf = (id: number) => {
+    cards[String(id)] = cardOf0(id);
   };
 
   const scenarioLineups: Record<string, ScenarioLineup> = {};

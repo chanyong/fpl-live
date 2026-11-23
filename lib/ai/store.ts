@@ -59,12 +59,29 @@ export type RefusalReason = "busy" | "exists" | "regen_limit" | "month_limit" | 
 export type StartJobResult = { ok: true; jobId: string; usageId: string; generation: number } | { ok: false; reason: RefusalReason };
 export type ReserveResult = { ok: true; usageId: string } | { ok: false; reason: RefusalReason | "job_not_running" };
 
-export type LatestJobs = { running: StoredJob | null; done: StoredJob | null; failed: StoredJob | null };
+/**
+ * Which answer a job holds. "full" (issue #85) jobs live in the same table and key as the ranking mode's, marked by
+ * `basis.mode === "full"` (the column is free-form jsonb), so no migration is needed. They share the key's running
+ * slot, its 3 generations and its one manual run a day, which only makes them stricter.
+ */
+export type JobMode = "standard" | "full";
+export const jobModeOf = (job: Pick<StoredJob, "basis">): JobMode =>
+  typeof job.basis === "object" && job.basis !== null && (job.basis as { mode?: unknown }).mode === "full" ? "full" : "standard";
+
+export type LatestJobs = {
+  /** A running job of either mode: the key has one running slot. */
+  running: StoredJob | null;
+  /** The latest finished / failed job OF THE MODE asked for. */
+  done: StoredJob | null;
+  failed: StoredJob | null;
+  /** The latest finished job of either mode (a later run of the other mode counts as "manual"). Fakes may omit it. */
+  doneAny?: StoredJob | null;
+};
 
 export interface AiStore {
   /** Closes jobs of this key that have been "running" since before `olderThanIso` as failed (their usage stays counted). */
   sweepStale(key: JobKey, olderThanIso: string): Promise<void>;
-  latest(key: JobKey): Promise<LatestJobs>;
+  latest(key: JobKey, mode?: JobMode): Promise<LatestJobs>;
   /** Atomic: no running job for the key, generation caps, then the budget; inserts the job and its reservation. */
   startJob(params: StartJobParams): Promise<StartJobResult>;
   /** Atomic: the budget check and a new reservation for a retry of a running job. */
@@ -167,16 +184,18 @@ export function createSupabaseAiStore(env: { url: string; serviceKey: string }, 
       );
     },
 
-    async latest(key) {
+    async latest(key, mode = "standard") {
       const response = await call(
         "latest",
         `/rest/v1/ai_recommendations?select=id,generation,request_kind,status,result,basis,failure_code,model_id,model_version,created_at,completed_at&${keyFilter(key)}&order=created_at.desc&limit=10`
       );
       const rows = ((await response.json()) as Row[]).map(toJob);
+      const ofMode = rows.filter((job) => jobModeOf(job) === mode);
       return {
         running: rows.find((job) => job.status === "running") ?? null,
-        done: rows.find((job) => job.status === "done") ?? null,
-        failed: rows.find((job) => job.status === "failed") ?? null
+        done: ofMode.find((job) => job.status === "done") ?? null,
+        failed: ofMode.find((job) => job.status === "failed") ?? null,
+        doneAny: rows.find((job) => job.status === "done") ?? null
       };
     },
 

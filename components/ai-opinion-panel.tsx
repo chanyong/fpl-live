@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { AiFullView } from "@/components/ai-full-view";
+import { POLL_GIVE_UP_MS, POLL_INTERVAL_MS } from "@/components/ai-poll";
+import { useAiFull } from "@/components/use-ai-full";
 import { useLocale } from "@/components/locale-provider";
 import { Badge, fmtSigned, fmtTime, fmtXp, SubHeading } from "@/components/recommend-parts";
 import { scenarioTypeLabel } from "@/components/recommend-transfers";
@@ -20,8 +23,7 @@ import type { TransferScenario } from "@/lib/xp/transfer-search";
  *   stored `basis`; the model's sentences are drawn as plain text (never as HTML, never as links).
  */
 
-export const POLL_INTERVAL_MS = 5_000;
-export const POLL_GIVE_UP_MS = 20 * 60_000;
+export { POLL_GIVE_UP_MS, POLL_INTERVAL_MS };
 
 type AiBody = (
   | { status: "none" | "disabled" | "not_allowed" }
@@ -402,6 +404,77 @@ function AiResultView({ done }: { done: DonePayload }) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// Full AI (issue #85)
+
+const FULL_PREF_KEY = "fpl-ai-full";
+
+/** The "full AI" answer and its states, drawn under the ranking-mode opinion while the box is ticked. */
+function FullSection({ full }: { full: ReturnType<typeof useAiFull> }) {
+  const { tr, locale } = useLocale();
+  const view = full.view;
+  const shown = "shown" in view ? view.shown : null;
+  const buttonClass = "min-h-10 rounded-md border border-[var(--border)] bg-[var(--surface-strong)] px-4 text-body font-semibold disabled:opacity-60";
+
+  if (view.phase === "idle" || view.phase === "loading" || view.phase === "hidden") {
+    return null;
+  }
+  return (
+    <div className="flex flex-col gap-2 rounded-md border border-[var(--border)] p-2" data-ai-full-section>
+      <h3 className="text-body-lg font-semibold">{tr("AI 전체 추천 (참고용)", "AI full plan (for reference)")}</h3>
+
+      {view.phase === "none" ? (
+        <p className="text-meta text-[var(--muted)]">
+          {tr("아직 전체 AI 분석이 없습니다. 위의 버튼을 누르면 만듭니다(유료 호출, 하루·월 한도 안).", "No full AI analysis yet. Press the button above to make one (a paid call within the daily and monthly limits).")}
+        </p>
+      ) : null}
+
+      {view.phase === "pending" ? (
+        <div role="status" className="flex flex-col gap-1 rounded-md border border-[var(--info-border)] bg-[var(--info-soft)] px-3 py-2 text-meta">
+          <p className="animate-pulse font-semibold">{tr("AI가 선발·이적을 고르는 중입니다…", "The AI is choosing the lineup and transfers…")}</p>
+          <p className="text-caption text-[var(--muted)]">{tr("몇 분 걸릴 수 있습니다. 이 화면은 5초마다 상태를 확인합니다.", "This can take a few minutes. The screen checks the status every 5 seconds.")}</p>
+          {shown ? <p className="text-caption text-[var(--muted)]">{tr("아래는 이전 전체 분석입니다.", "Below is the previous full analysis.")}</p> : null}
+        </div>
+      ) : null}
+
+      {view.phase === "timeout" ? (
+        <p role="status" className="rounded-md border border-[var(--border)] px-3 py-2 text-meta">
+          {tr("분석이 오래 걸리고 있습니다. 잠시 뒤 이 화면을 새로고침해 주세요.", "The analysis is taking long. Reload this page in a little while.")}
+        </p>
+      ) : null}
+
+      {view.phase === "failed" ? (
+        <div role="alert" className="flex flex-col items-start gap-1.5 rounded-md border border-[var(--border)] px-3 py-2">
+          <p className="text-body">
+            {view.code === "no_squad" || view.code === "no_lineup"
+              ? tr("이 팀은 아직 전체 AI를 쓸 수 있는 15명 스쿼드 정보가 없습니다.", "This team has no full 15-player squad data yet for full AI.")
+              : tr("AI 전체 추천을 만들지 못했습니다. 위의 수치 기준 결과를 참고하세요.", "The full AI plan could not be made. Use the rules-based result above.")}
+          </p>
+          <button type="button" disabled={full.busy} onClick={() => void full.analyse(shown !== null)} className={buttonClass}>
+            {full.busy ? tr("요청하는 중…", "Requesting…") : tr("다시 시도", "Try again")}
+          </button>
+        </div>
+      ) : null}
+
+      {view.phase === "limit" ? (
+        <p role="alert" className="rounded-md border border-[var(--border)] px-3 py-2 text-body text-[var(--warning)]">
+          {limitText(view.reason, locale)}
+        </p>
+      ) : null}
+
+      {full.notice ? (
+        <p role="alert" className="text-meta text-[var(--danger)]">
+          {full.notice === "too_many"
+            ? tr("요청이 많아 잠시 막혔습니다. 잠시 뒤 다시 눌러 주세요.", "Too many requests. Press again shortly.")
+            : tr("AI 분석을 요청하지 못했습니다. 잠시 뒤 다시 시도해 주세요.", "Could not ask for the AI analysis. Try again in a moment.")}
+        </p>
+      ) : null}
+
+      {shown ? <AiFullView done={shown} /> : null}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------------------------
 // Panel
 
 export function AiOpinionPanel({ entryId }: { entryId: number }) {
@@ -411,6 +484,37 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
   const [notice, setNotice] = useState<string | null>(null);
   // The server's "80% of this month's limit" flag; only status reads carry it, and the latest read wins.
   const [nearLimit, setNearLimit] = useState(false);
+  // Issue #85: the "full AI" box (off by default, remembered in this browser). Ticking it only changes what the
+  // analysis button asks for; the status is read, and a paid call made, only as the ranking mode does.
+  const [fullPref, setFullPref] = useState(false);
+  useEffect(() => {
+    try {
+      setFullPref(window.localStorage.getItem(FULL_PREF_KEY) === "1");
+    } catch {
+      // Storage can be blocked: the box simply starts unticked.
+    }
+  }, []);
+  const [fullBlockedByMonth, setFullBlockedByMonth] = useState(false);
+  const fullBlocked = nearLimit || fullBlockedByMonth;
+  const fullOn = fullPref && !fullBlocked;
+  const full = useAiFull(entryId, locale, fullOn);
+  const fullShown = "shown" in full.view ? full.view.shown : null;
+  useEffect(() => {
+    setFullBlockedByMonth(full.view.phase === "limit" && full.view.reason === "month");
+  }, [full.view]);
+  // One condition for the box and for the button: a press asks for the full mode only while the box is ticked and
+  // not switched off. `full.nearLimit` is the same server flag read later (after a full run it can turn on alone).
+  const blockedNow = fullBlocked || full.nearLimit;
+  const fullCallable = fullOn && !blockedNow;
+
+  function toggleFull(next: boolean) {
+    setFullPref(next);
+    try {
+      window.localStorage.setItem(FULL_PREF_KEY, next ? "1" : "0");
+    } catch {
+      // Not remembered; still applies to this page view.
+    }
+  }
 
   // Opening the screen reads the status only. It never starts a paid call.
   useEffect(() => {
@@ -477,7 +581,12 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
     };
   }, [polling, entryId, locale]);
 
-  async function analyse(regenerate: boolean) {
+  /** `rankingOnly`: the retry of a failed ranking analysis, which has no box beside it, never turns into a full run. */
+  async function analyse(regenerate: boolean, rankingOnly = false) {
+    if (fullCallable && !rankingOnly) {
+      await full.analyse(fullShown !== null);
+      return;
+    }
     setBusy(true);
     setNotice(null);
     const kept = shownOf(view);
@@ -499,6 +608,32 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
   }
 
   const shown = shownOf(view);
+  const analyseBusy = busy || full.busy;
+  const fullToggle = (
+    <div className="flex flex-col gap-0.5" data-full-toggle>
+      <label className={`flex min-h-10 items-center gap-2 text-body ${blockedNow ? "opacity-60" : ""}`}>
+        <input
+          type="checkbox"
+          className="h-5 w-5"
+          checked={fullCallable}
+          disabled={blockedNow || analyseBusy}
+          onChange={(event) => toggleFull(event.target.checked)}
+        />
+        <span className="font-semibold">{tr("전체 AI 이용", "Use full AI")}</span>
+      </label>
+      <p className="text-caption text-[var(--muted)]">
+        {blockedNow
+          ? tr(
+              "이번 달 AI 한도에 가까워 전체 AI는 쓸 수 없습니다. 다음 달에 다시 열립니다.",
+              "Full AI is unavailable: this month's AI limit is close. It opens again next month."
+            )
+          : tr(
+              "켜고 '다시 분석'을 누르면 AI가 선발·벤치·캡틴·이적(칩 포함)을 직접 고르고 선수마다 근거를 냅니다. 한 번에 비용이 더 듭니다.",
+              "Tick it and press “Analyse again”: the AI picks the lineup, bench, captain and transfers (chips included) itself and gives a reason for every player. Each run costs more."
+            )}
+      </p>
+    </div>
+  );
   const buttonClass = "min-h-10 rounded-md border border-[var(--border)] bg-[var(--surface-strong)] px-4 text-body font-semibold disabled:opacity-60";
 
   return (
@@ -519,8 +654,9 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
               "The AI compares the rules-based candidates above and explains a ranking. A paid AI call is made only when you press the button, within daily and monthly limits."
             )}
           </p>
-          <button type="button" disabled={busy} onClick={() => void analyse(false)} className={buttonClass}>
-            {busy ? tr("요청하는 중…", "Requesting…") : tr("AI 분석", "AI analysis")}
+          {fullToggle}
+          <button type="button" disabled={analyseBusy} onClick={() => void analyse(false)} className={buttonClass}>
+            {analyseBusy ? tr("요청하는 중…", "Requesting…") : fullCallable && fullShown ? tr("다시 분석", "Analyse again") : tr("AI 분석", "AI analysis")}
           </button>
         </div>
       ) : null}
@@ -550,7 +686,7 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
       {view.phase === "failed" ? (
         <div role="alert" className="flex flex-col items-start gap-1.5 rounded-md border border-[var(--border)] px-3 py-2">
           <p className="text-body">{tr("AI 분석을 만들지 못했습니다. 수치 기준 결과를 참고하세요.", "The AI analysis could not be made. Use the rules-based result above.")}</p>
-          <button type="button" disabled={busy} onClick={() => void analyse(shown !== null)} className={buttonClass}>
+          <button type="button" disabled={busy} onClick={() => void analyse(shown !== null, true)} className={buttonClass}>
             {busy ? tr("요청하는 중…", "Requesting…") : tr("다시 시도", "Try again")}
           </button>
         </div>
@@ -570,10 +706,13 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
 
       {shown ? <AiResultView done={shown} /> : null}
 
+      {fullOn ? <FullSection full={full} /> : null}
+
       {shown && view.phase !== "pending" && view.phase !== "timeout" && view.phase !== "failed" ? (
         <div className="flex flex-col items-start gap-1">
-          <button type="button" disabled={busy} onClick={() => void analyse(true)} className={buttonClass}>
-            {busy ? tr("요청하는 중…", "Requesting…") : tr("다시 분석", "Analyse again")}
+          {fullToggle}
+          <button type="button" disabled={analyseBusy} onClick={() => void analyse(true)} className={buttonClass}>
+            {analyseBusy ? tr("요청하는 중…", "Requesting…") : tr("다시 분석", "Analyse again")}
           </button>
           <p className="text-caption text-[var(--muted)]">
             {tr(

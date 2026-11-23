@@ -1,4 +1,4 @@
-import { AI_MAX_TOKENS, INPUT_TOKEN_CEILING, PRICE_USD_PER_MTOK } from "@/lib/ai/config";
+import { AI_MAX_TOKENS, FULL_INPUT_TOKEN_CEILING, FULL_MAX_TOKENS, INPUT_TOKEN_CEILING, PRICE_USD_PER_MTOK } from "@/lib/ai/config";
 
 /**
  * The money arithmetic of the AI layer. The caps themselves are enforced in the database (lib/ai/store); this
@@ -32,6 +32,15 @@ export function maxCostPerCallUsd() {
 }
 
 /**
+ * Reservation of one "full AI" call (issue #85): 36,000 x $8 + 20,000 x $40 per million = $0.288 + $0.80 = $1.088.
+ * It is larger than `maxCostPerCallUsd` ($0.864) and used only when the full-AI box is ticked. The real cost of a
+ * call replaces it once the usage is known; the monthly cap does not change.
+ */
+export function maxCostFullCallUsd() {
+  return roundUsd((FULL_INPUT_TOKEN_CEILING * PRICE_USD_PER_MTOK.input + FULL_MAX_TOKENS * PRICE_USD_PER_MTOK.output) / 1_000_000);
+}
+
+/**
  * Upper bound of the input tokens from the text length: one token per character (UTF-16 code unit). A token is
  * never shorter than one character, so the reservation holds whatever the tokenizer does with digits and
  * punctuation. Callers pass everything that is billed as input: system text, user text and the output schema.
@@ -42,4 +51,8 @@ export function estimateInputTokens(text: string) {
 
 export function withinInputCeiling(...texts: string[]) {
   return estimateInputTokens(texts.join("")) <= INPUT_TOKEN_CEILING;
+}
+
+export function withinFullInputCeiling(...texts: string[]) {
+  return estimateInputTokens(texts.join("")) <= FULL_INPUT_TOKEN_CEILING;
 }

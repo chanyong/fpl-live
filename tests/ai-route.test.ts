@@ -208,3 +208,31 @@ describe("upstream errors", () => {
     }
   });
 });
+
+// Issue #85: `mode: "full"` (POST) and `&mode=full` (GET) pick the full-AI answer; nothing else changes.
+describe("full-AI mode", () => {
+  it("POST mode full starts the full job (202), GET mode=full reads it, the plain GET still reads the ranking mode", async () => {
+    const { makeFullInput, validFullAnswer } = await import("./helpers/ai");
+    const { full } = await makeFullInput();
+    const client = new FakeClient([okResponse(answerText(validFullAnswer()))]);
+    const made = use({ input, fullInput: full, client, store: new FakeStore() });
+
+    const started = await POST(post({ entryId: TEAM, locale: "ko", mode: "full" }));
+    expect(started.status).toBe(202);
+    expect((await started.json()).status).toBe("pending");
+    await Promise.all(made.jobs);
+    expect(client.calls).toBe(1);
+
+    const done = await (await GET(get(`?entryId=${TEAM}&locale=ko&mode=full`))).json();
+    expect(done).toMatchObject({ status: "done", result: { mode: "full", verified: true }, budgetNotice: null });
+    // The ranking read does not see the full answer.
+    expect(await (await GET(get(`?entryId=${TEAM}&locale=ko`))).json()).toMatchObject({ status: "none" });
+  });
+
+  it("a full request to a deployment without the mode answers a status, not an error", async () => {
+    use({ input });
+    const response = await POST(post({ entryId: TEAM, locale: "ko", mode: "full" }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: "failed", code: "full_unsupported" });
+  });
+});

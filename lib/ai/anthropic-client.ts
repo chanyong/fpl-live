@@ -19,7 +19,13 @@ import { AI_OUTPUT_JSON_SCHEMA } from "@/lib/ai/schema";
  * - SDK retries are off (maxRetries 0): every request is one counted call, retried by this layer at most once.
  */
 
-export type AiCallRequest = { system: string; user: string };
+export type AiCallRequest = {
+  system: string;
+  user: string;
+  /** Full-AI mode (issue #85): its own answer schema and output cap. Absent = the ranking mode's. */
+  schema?: Record<string, unknown>;
+  maxTokens?: number;
+};
 
 export type AiCallResponse = {
   stopReason: string | null;
@@ -60,10 +66,10 @@ export function createAnthropicClient(apiKey: string, deadlineMs: number = AI_CA
       try {
         const stream = client.messages.stream({
           model: AI_MODEL_ID,
-          max_tokens: AI_MAX_TOKENS,
+          max_tokens: request.maxTokens ?? AI_MAX_TOKENS,
           system: request.system,
           messages: [{ role: "user", content: request.user }],
-          output_config: { effort: AI_EFFORT, format: { type: "json_schema", schema: { ...AI_OUTPUT_JSON_SCHEMA } } }
+          output_config: { effort: AI_EFFORT, format: { type: "json_schema", schema: { ...(request.schema ?? AI_OUTPUT_JSON_SCHEMA) } } }
         });
         // The SDK timeout only covers the wait for headers; this bounds the whole streamed answer.
         timer = setTimeout(() => {

@@ -1,6 +1,7 @@
-import { AiCallError, type AiClient } from "@/lib/ai/anthropic-client";
+import { AiCallError, type AiCallRequest, type AiClient } from "@/lib/ai/anthropic-client";
 import { costUsd, maxCostPerCallUsd, withinInputCeiling } from "@/lib/ai/budget";
 import { AI_MODEL_ID, MAX_RETRIES, MONTHLY_CAP_USD, STALE_RUNNING_MS, isAllowedEntry, type AiConfig } from "@/lib/ai/config";
+import type { FullInput } from "@/lib/ai/full-input";
 import type { AiInput } from "@/lib/ai/input-bundle";
 import { AI_OUTPUT_JSON_SCHEMA, validateAiOutput, type AiResult } from "@/lib/ai/schema";
 import { AiStoreError, type AiStore, type JobKey, type StoredJob } from "@/lib/ai/store";
@@ -22,6 +23,8 @@ export type AiDeps = {
   client: AiClient | null;
   /** The rules-based result, the model input and the server basis for one team (reads the shared caches). */
   loadInput: (entryId: number, locale: Locale) => Promise<AiInput>;
+  /** Full-AI mode (issue #85): the larger input and its rule checker. Absent = the mode is not offered (answers "failed"). */
+  loadFullInput?: (entryId: number, locale: Locale) => Promise<FullInput>;
   /** The gameweek a new analysis would target (the first whose deadline has not passed); null when unknown. */
   targetGw: () => Promise<number | null>;
   /** Runs the call after the response was sent. The default just lets the promise run. */
@@ -43,17 +46,19 @@ export type DonePayload = {
 
 export type LimitReason = "month" | "day" | "regen";
 
-export type AiOutcome =
-  | { status: "done"; value: DonePayload }
-  | { status: "pending"; previous?: DonePayload }
+export type AiOutcomeOf<P> =
+  | { status: "done"; value: P }
+  | { status: "pending"; previous?: P }
   | { status: "failed"; code: string }
   | { status: "none" }
   | { status: "disabled" }
   | { status: "not_allowed" }
-  | { status: "limit"; reason: LimitReason; previous?: DonePayload };
+  | { status: "limit"; reason: LimitReason; previous?: P };
+
+export type AiOutcome = AiOutcomeOf<DonePayload>;
 
 /** Off, or a team that is not on the list: the rules-based result only. */
-export function aiGate(entryId: number, deps: AiDeps): AiOutcome | null {
+export function aiGate(entryId: number, deps: AiDeps): AiOutcomeOf<never> | null {
   if (!deps.config.enabled || !deps.store || !deps.client) {
     return { status: "disabled" };
   }
@@ -79,9 +84,9 @@ function toDone(job: StoredJob, targetGw: number): DonePayload | null {
   };
 }
 
-const withPrevious = (previous: DonePayload | null) => (previous ? { previous } : {});
+export const withPrevious = <P>(previous: P | null) => (previous ? { previous } : {});
 
-function logCode(where: string, code: string) {
+export function logCode(where: string, code: string) {
   // Codes only: never the request, a header, the key or an SDK message.
   console.error(`[entry-ai] ${where}: ${code}`);
 }
@@ -193,7 +198,8 @@ export async function requestEntryAi(
 
     const started = await store.startJob({
       ...key,
-      kind: done ? "manual" : "first",
+      // A finished answer of the other mode also makes this run a "manual" one (the database refuses a second "first").
+      kind: done || latest.doneAny ? "manual" : "first",
       inputHash: input.inputHash,
       modelId: AI_MODEL_ID,
       modelVersion: input.basis.modelVersion,
@@ -249,20 +255,34 @@ function parseModelJson(text: string): { ok: true; value: unknown } | { ok: fals
   }
 }
 
+/** What one paid job needs: the request, what to reserve per call, how to check the answer. */
+export type JobSpec = {
+  request: AiCallRequest;
+  /** Reserved in the database before the call and again before a retry. */
+  reserveUsd: number;
+  /** The checked answer to store, or the code of the broken rule. */
+  validate: (raw: unknown) => { ok: true; result: unknown } | { ok: false; code: string };
+  /**
+   * What to store when the answer still breaks a rule after the retry. Absent: the job fails with `invalid_output:<code>`.
+   * Full-AI mode stores the rules engine's own option here, marked as not verified (issue #85).
+   */
+  onInvalid?: (code: string) => unknown;
+};
+
 /**
  * The paid part: call, settle the real cost, check the answer, store it. One retry at most, only for an answer
  * that failed validation, and only after a second reservation succeeded. A refusal or a truncation is never
  * read or retried. A failed or unreadable call leaves its reservation counted (the cost is unknown).
  */
-export async function runJob(args: { store: AiStore; client: AiClient; input: AiInput; jobId: string; usageId: string }): Promise<void> {
-  const { store, client, input, jobId } = args;
+export async function runJobSpec(args: { store: AiStore; client: AiClient; spec: JobSpec; jobId: string; usageId: string }): Promise<void> {
+  const { store, client, spec, jobId } = args;
   let usageId = args.usageId;
 
   try {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
       let response: Awaited<ReturnType<AiClient["generate"]>>;
       try {
-        response = await client.generate({ system: input.system, user: input.user });
+        response = await client.generate(spec.request);
       } catch (error) {
         const code = error instanceof AiCallError ? error.code : "api_unknown";
         // A request the API rejected outright is not billed: free its reservation. Anything else (timeout,
@@ -303,17 +323,21 @@ export async function runJob(args: { store: AiStore; client: AiClient; input: Ai
       }
 
       const json = parseModelJson(response.text);
-      const checked = json.ok ? validateAiOutput(json.value, input.context) : ({ ok: false, code: "bad_json" } as const);
+      const checked = json.ok ? spec.validate(json.value) : ({ ok: false, code: "bad_json" } as const);
       if (checked.ok) {
-        await store.completeJob(jobId, checked.value);
+        await store.completeJob(jobId, checked.result);
         return;
       }
       if (attempt >= MAX_RETRIES) {
-        await store.failJob(jobId, `invalid_output:${checked.code}`);
+        if (spec.onInvalid) {
+          await store.completeJob(jobId, spec.onInvalid(checked.code));
+        } else {
+          await store.failJob(jobId, `invalid_output:${checked.code}`);
+        }
         return;
       }
 
-      const again = await store.reserveUsage(jobId, maxCostPerCallUsd());
+      const again = await store.reserveUsage(jobId, spec.reserveUsd);
       if (!again.ok) {
         await store.failJob(jobId, "limit");
         return;
@@ -324,4 +348,23 @@ export async function runJob(args: { store: AiStore; client: AiClient; input: Ai
     logCode("job", error instanceof AiStoreError ? `store_${error.operation}_${error.status}` : "error");
     await quietly(() => store.failJob(jobId, "internal"), "fail-job");
   }
+}
+
+/** The ranking mode's job (issue #43): its request, its reservation and its answer check. */
+export async function runJob(args: { store: AiStore; client: AiClient; input: AiInput; jobId: string; usageId: string }): Promise<void> {
+  const { input } = args;
+  await runJobSpec({
+    store: args.store,
+    client: args.client,
+    jobId: args.jobId,
+    usageId: args.usageId,
+    spec: {
+      request: { system: input.system, user: input.user },
+      reserveUsd: maxCostPerCallUsd(),
+      validate: (raw) => {
+        const checked = validateAiOutput(raw, input.context);
+        return checked.ok ? { ok: true, result: checked.value } : { ok: false, code: checked.code };
+      }
+    }
+  });
 }

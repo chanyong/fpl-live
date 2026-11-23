@@ -2,13 +2,17 @@ import { vi } from "vitest";
 import type { AiCallResponse, AiClient } from "@/lib/ai/anthropic-client";
 import { maxCostPerCallUsd } from "@/lib/ai/budget";
 import type { AiConfig } from "@/lib/ai/config";
+import { buildFullInput, type FullInput } from "@/lib/ai/full-input";
 import { buildAiInput, type AiInput } from "@/lib/ai/input-bundle";
+import type { XpTable } from "@/lib/xp/model";
 import type { PlayerMetaMap } from "@/lib/ai/players";
 import type { AiDeps } from "@/lib/ai/recommend";
 import {
   AiStoreError,
   DEFAULT_CAPS,
+  jobModeOf,
   type AiStore,
+  type JobMode,
   type JobKey,
   type LatestJobs,
   type RefusalReason,
@@ -17,7 +21,7 @@ import {
   type StartJobResult,
   type StoredJob
 } from "@/lib/ai/store";
-import { ASSUMPTIONS, type EntryRecommendPayload, type RecommendPlayer } from "@/lib/xp/recommend";
+import { ASSUMPTIONS, type EntryRecommendPayload, type LineupPlayerCard, type RecommendPlayer, type ScenarioLineup } from "@/lib/xp/recommend";
 import { buildCaptainCandidates } from "@/lib/xp/captain";
 import { buildLineups } from "@/lib/xp/lineup";
 import { searchTransfers } from "@/lib/xp/transfer-search";
@@ -29,7 +33,7 @@ export const NOW = Date.parse("2026-11-22T12:00:00Z");
 const POSITION: Record<number, "GKP" | "DEF" | "MID" | "FWD"> = { 1: "GKP", 2: "DEF", 3: "MID", 4: "FWD" };
 
 /** A small but real world: the own 15 (MID 21 is a dud), a few outside players, real lineups, captains and transfer scenarios. */
-export async function makeAiInput(locale: "ko" | "en" = "ko"): Promise<{ input: AiInput; payload: EntryRecommendPayload }> {
+export async function makeAiWorld(locale: "ko" | "en" = "ko") {
   const specs: Spec[] = [
     ...baseSquadSpecs({ 21: 0, 22: 6, 31: 7 }),
     { id: 41, type: 3, team: 41, cost: 50, xp: 6 },
@@ -90,7 +94,71 @@ export async function makeAiInput(locale: "ko" | "en" = "ko"): Promise<{ input: 
   const meta: PlayerMetaMap = new Map(
     specs.map((spec) => [spec.id, { name: `Zorro${spec.id}`, teamShort: `T${spec.id}`, position: POSITION[spec.type] }])
   );
-  return { input: buildAiInput({ payload, table, meta, locale }), payload };
+  return { input: buildAiInput({ payload, table, meta, locale }), payload, table, meta };
+}
+
+export async function makeAiInput(locale: "ko" | "en" = "ko"): Promise<{ input: AiInput; payload: EntryRecommendPayload }> {
+  const { input, payload } = await makeAiWorld(locale);
+  return { input, payload };
+}
+
+const cardFor = (table: XpTable, meta: PlayerMetaMap) => (id: number): LineupPlayerCard => {
+  const row = table.players.get(id)!;
+  return {
+    webName: meta.get(id)?.name ?? `#${id}`,
+    teamShortName: meta.get(id)?.teamShort ?? "-",
+    position: POSITION[row.elementType],
+    status: "a",
+    news: "",
+    photoUrl: null,
+    xpNext: row.next,
+    fixtures: [{ opponent: "ARS", home: true, difficulty: 2 }]
+  };
+};
+
+/**
+ * The full-AI input of the same small world (issue #85). The recommended scenario of the search is "roll" or one
+ * transfer; its pitch is the best lineup of the squad, which is what the fallback shows.
+ */
+export async function makeFullInput(options: { locale?: "ko" | "en"; chips?: boolean } = {}): Promise<{ full: FullInput; payload: EntryRecommendPayload; table: XpTable }> {
+  const { payload: base, table, meta } = await makeAiWorld(options.locale ?? "ko");
+  const best = base.lineups[0];
+  const lineup: ScenarioLineup = {
+    formation: best.formation,
+    starters: best.starters,
+    bench: best.bench,
+    captainId: base.captains[0]?.id ?? null,
+    viceCaptainId: base.captains[1]?.id ?? null,
+    expectedPoints: best.expectedPoints,
+    incoming: []
+  };
+  const recommendedId = base.transfers!.recommendedId;
+  const payload: EntryRecommendPayload = { ...base, scenarioLineups: { roll: lineup, [recommendedId]: lineup } };
+  const squad = OWN_IDS.map((id) => ({ id, sellingPrice: 50, nowCost: 50 }));
+  const cardOf = cardFor(table, meta);
+  const full = buildFullInput({ payload, table, meta, locale: options.locale ?? "ko", squad, cardOf });
+  return { full, payload, table };
+}
+
+/** A full-AI answer that passes every rule: sell 21 (a dud), buy 42, a 4-4-2 with the bought player as captain. */
+export function validFullAnswer(override: Record<string, unknown> = {}) {
+  const starters = [1, 11, 12, 13, 14, 22, 23, 24, 42, 31, 32];
+  const bench = [2, 15, 25, 33];
+  const ids = [...starters, ...bench, 21];
+  return {
+    summary: `Swap {p21} for {p42} and keep the rest steady.`,
+    chip: "none",
+    transfers: [{ out_id: 21, in_id: 42 }],
+    starters,
+    bench,
+    captain_id: 42,
+    vice_captain_id: 22,
+    reasons: ids.map((id) => ({
+      player_id: id,
+      reason: id === 21 ? "Sold: a quiet run of fixtures." : id === 42 ? "Comes in: the best fixtures of the midfielders." : "Steady choice for this week."
+    })),
+    ...override
+  };
 }
 
 /** A model answer that passes validation for `input`: uses the first lineup, the rank-1 captain and the first scenario. */
@@ -181,13 +249,15 @@ export class FakeStore implements AiStore {
     }
   }
 
-  async latest(key: JobKey): Promise<LatestJobs> {
+  async latest(key: JobKey, mode: JobMode = "standard"): Promise<LatestJobs> {
     this.guard("latest");
     const rows = this.jobs.filter((job) => this.keyEq(job.key, key)).sort((a, b) => b.created - a.created || b.generation - a.generation);
+    const ofMode = rows.filter((job) => jobModeOf(job) === mode);
     return {
       running: rows.find((job) => job.status === "running") ?? null,
-      done: rows.find((job) => job.status === "done") ?? null,
-      failed: rows.find((job) => job.status === "failed") ?? null
+      done: ofMode.find((job) => job.status === "done") ?? null,
+      failed: ofMode.find((job) => job.status === "failed") ?? null,
+      doneAny: rows.find((job) => job.status === "done") ?? null
     };
   }
 
@@ -307,21 +377,28 @@ export function makeDeps(args: {
   input: AiInput;
   config?: AiConfig;
   targetGw?: number | null;
-}): { deps: AiDeps; jobs: Array<Promise<void>>; loadInput: ReturnType<typeof vi.fn> } {
+  /** Full-AI mode (issue #85). */
+  fullInput?: FullInput;
+}): { deps: AiDeps; jobs: Array<Promise<void>>; loadInput: ReturnType<typeof vi.fn>; loadFullInput: ReturnType<typeof vi.fn> } {
   const jobs: Array<Promise<void>> = [];
   const loadInput = vi.fn(async () => args.input);
+  const loadFullInput = vi.fn(async () => {
+    if (!args.fullInput) throw new Error("no full input");
+    return args.fullInput;
+  });
   const deps: AiDeps = {
     config: args.config ?? ENABLED,
     store: args.store === undefined ? new FakeStore() : args.store,
     client: args.client === undefined ? new FakeClient([]) : args.client,
     loadInput,
+    loadFullInput: args.fullInput ? loadFullInput : undefined,
     targetGw: async () => (args.targetGw === undefined ? args.input.basis.targetGw : args.targetGw),
     schedule: (job) => {
       jobs.push(job);
     },
     now: () => NOW
   };
-  return { deps, jobs, loadInput };
+  return { deps, jobs, loadInput, loadFullInput };
 }
 
 export const RESERVATION = maxCostPerCallUsd();

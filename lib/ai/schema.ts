@@ -140,11 +140,11 @@ const FORBIDDEN_MARKUP = /[<>]|&[#a-z0-9]+;|https?:|:\/\/|www\.|javascript:|\]\(
 const CONTROL_CHARS = /[\x00-\x1f\x7f]|\p{Zl}|\p{Zp}/u;
 const ANY_DIGIT = /\p{N}/u;
 
-type Fail = { fail: string };
-const failed = (value: unknown): value is Fail => typeof value === "object" && value !== null && "fail" in value;
+export type Fail = { fail: string };
+export const failed = (value: unknown): value is Fail => typeof value === "object" && value !== null && "fail" in value;
 
 /** One sentence: length, no markup, no digits outside placeholders, placeholders known; returns the plain text with names filled in. */
-function checkSentence(raw: string, max: number, ctx: ValidationContext, allowEmpty = false): string | Fail {
+export function checkSentence(raw: string, max: number, ctx: Pick<ValidationContext, "knownPlayerIds" | "playerNames">, allowEmpty = false): string | Fail {
   const text = raw.trim();
   if (text.length === 0) return allowEmpty ? "" : { fail: "empty_text" };
   if (text.length > max) return { fail: "text_too_long" };

@@ -3,7 +3,8 @@ import { checkEntryRequest } from "@/lib/entry-request-limit";
 import { checkOwnTeam, ownTeamRefusal } from "@/lib/journal/own-team";
 import { clientIp } from "@/lib/journal/rate-limit";
 import { isSameOrigin } from "@/lib/journal/session";
-import { aiGate, readBudgetNotice, readEntryAi, requestEntryAi, type AiOutcome, type BudgetNotice } from "@/lib/ai/recommend";
+import { readFullAi, requestFullAi } from "@/lib/ai/full-flow";
+import { aiGate, readBudgetNotice, readEntryAi, requestEntryAi, type AiOutcomeOf, type BudgetNotice } from "@/lib/ai/recommend";
 import { getAiDeps } from "@/lib/ai/runtime";
 import type { Locale } from "@/lib/locale";
 import { parseEntryId } from "@/lib/request-params";
@@ -18,6 +19,9 @@ function limitKey(headers: Headers) {
   return headers.get("x-real-ip")?.trim() || clientIp(headers);
 }
 
+/** `mode=full` asks for the "full AI" answer (issue #85); anything else is the ranking mode. */
+const isFull = (raw: unknown) => raw === "full";
+
 function parseLocale(raw: unknown): Locale | null {
   return raw === "ko" || raw === "en" ? raw : null;
 }
@@ -27,7 +31,7 @@ function parseLocale(raw: unknown): Locale | null {
  * answer 200 with a status, so the screen shows the rules-based result and a one-line note. Only a running job
  * answers 202. The body never carries a prompt, a token count, a cost or an SDK message.
  */
-function outcomeResponse(outcome: AiOutcome, extra: { budgetNotice?: BudgetNotice } = {}) {
+function outcomeResponse(outcome: AiOutcomeOf<object>, extra: { budgetNotice?: BudgetNotice } = {}) {
   switch (outcome.status) {
     case "done":
       return NextResponse.json({ status: "done", ...outcome.value, ...extra }, { headers: NO_STORE });
@@ -64,6 +68,7 @@ function errorResponse(error: unknown, tag: string) {
  * Members only, for the member's own registered team (issue #47), checked after the free "off" and "not allowed" answers.
  * When the layer is on and the team is allowed, the answer also carries `budgetNotice`: "near_limit" once this
  * month's counted usage is at 80% of the cap, else null (no amount, no token count).
+ * `&mode=full` reads the "full AI" answer instead (issue #85); a POST body with `mode: "full"` asks for it.
  */
 export async function GET(request: NextRequest) {
   const parsed = parseEntryId(request.nextUrl.searchParams.get("entryId"));
@@ -82,7 +87,9 @@ export async function GET(request: NextRequest) {
     if (gate) return outcomeResponse(gate);
     const refusal = ownTeamRefusal(await checkOwnTeam(request, parsed.entryId));
     if (refusal) return refusal;
-    const outcome = await readEntryAi(parsed.entryId, locale, deps);
+    const outcome = isFull(request.nextUrl.searchParams.get("mode"))
+      ? await readFullAi(parsed.entryId, locale, deps)
+      : await readEntryAi(parsed.entryId, locale, deps);
     if (outcome.status === "disabled" || outcome.status === "not_allowed") {
       return outcomeResponse(outcome);
     }
@@ -98,7 +105,7 @@ export async function POST(request: NextRequest) {
   if (!isSameOrigin(request)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403, headers: NO_STORE });
   }
-  type Body = { entryId?: unknown; locale?: unknown; regenerate?: unknown };
+  type Body = { entryId?: unknown; locale?: unknown; regenerate?: unknown; mode?: unknown };
   let body: Body | null = null;
   try {
     body = (await request.json()) as Body | null;
@@ -142,7 +149,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    return outcomeResponse(await requestEntryAi({ entryId: parsed.entryId, locale, regenerate: body.regenerate === true }, deps));
+    const ask = { entryId: parsed.entryId, locale, regenerate: body.regenerate === true };
+    return outcomeResponse(isFull(body.mode) ? await requestFullAi(ask, deps) : await requestEntryAi(ask, deps));
   } catch (error) {
     return errorResponse(error, "entry-ai");
   }

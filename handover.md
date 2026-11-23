@@ -229,3 +229,11 @@ npm run build
 - **30일 제한**: `TEAM_CHANGE_COOLDOWN_DAYS = 30`(`lib/journal/types.ts`). 팀을 자유롭게 바꾸면 남의 팀을 차례로 분석하는 통로가 되기 때문. 첫 변경(`team_changed_at` null)은 바로 가능. 서비스(`changeMemberTeam`)가 같은 팀·대기 기간을 FPL 호출 전에 거르고, DB 함수가 행 잠금 아래에서 다시 판정한다.
 - **마이그레이션 0003**(`db/migrations/0003_journal_team_change.sql`, 롤백 `.rollback.sql`, 추가형): `journal_profiles.team_changed_at timestamptz`(null 허용) + `journal_change_team(p_user, p_team, p_cooldown_days)`(security definer, service_role만 실행). 한 트랜잭션: 행 잠금 → 같은 팀 → 대기 기간 → 갱신 → 그 회원의 `journal_snapshots` 삭제(`journal_notes`는 남김). 프로필이 없으면 새로 만든다. **운영 DB에 먼저 적용(관제 창, L2)한 뒤 병합**: 새 코드가 `team_changed_at` 열을 읽는다.
 - 화면: 가입 양식과 일지의 '등록한 팀 · 팀 바꾸기'는 `components/team-picker.tsx`(조회 → 팀 이름·매니저 → '이 팀이 맞습니다' 체크)를 같이 쓴다(`components/team-row.tsx`). `/team`은 회원의 등록 팀이 있으면 그 팀으로, 없으면 브라우저 기억(`team-entry-page.tsx`). `/team/[id]` 추천 패널은 `/api/journal/me`의 `teamId === entryId`일 때만(`squad-page.tsx`), 아니면 한 줄 안내(`member-only-notice.tsx`); 패널이 401·403을 받아도 같은 안내로 바뀐다. AI 의견·추천 기록 구역은 허용 팀일 때만 그린다.
+
+## 2026-11-23 '전체 AI 이용' (#85)
+- 'AI 의견'의 '다시 분석' 앞 체크박스(기본 꺼짐, 브라우저에 기억 `fpl-ai-full`). 켜고 분석하면 AI가 선발 11·벤치 순서·캡틴/부캡틴·포메이션·이적(0~2명 또는 칩)을 직접 고르고 선수마다 근거를 낸다. `GET/POST /api/entry-ai`에 `mode=full`.
+- **서버 규칙 검증**(`lib/ai/full-schema.ts#validateFullOutput`): 칩 사용 가능, 칩 없으면 이적 2명 이하, 15명 구성 2/5/5/3, 같은 팀 3명, 예산(판매가 합 + 은행 ≥ 영입 현재가 합), 선발 11·포메이션, 벤치 첫째 GK, 캡틴·부캡틴 선발, 선수별 근거 완비, 문장 규칙(숫자·마크업 금지). 감점은 서버가 계산. 위반이면 1회 재요청, 또 위반이면 규칙 엔진 최선안으로 대체하고 '검증 실패' 표시.
+- **비용**: 별도 예약 `maxCostFullCallUsd` = $1.088(입력 36,000 + 출력 20,000 토큰 상한, `lib/ai/config.ts`). 일 $5·월 $40·일 10회 상한은 그대로. 예상 실비용 1회 약 $0.3(입력 약 15k·출력 약 4k 토큰 가정; 실제 호출 전이라 확인 못 함). 월 80% 근처면 체크박스 비활성.
+- **저장**: 새 마이그레이션 없음. 같은 `ai_recommendations` 표·키에 `basis.mode="full"`로 저장(`lib/ai/store.ts#jobModeOf`). 키당 진행 1개·세대 3회·수동 하루 1회를 두 모드가 같이 쓴다. 같은 입력 해시의 검증된 답이 있으면 '다시 분석'도 호출 없이 재사용.
+- **전체 AI 한도**: 월 사용액이 80%를 넘으면 화면의 체크박스가 꺼지고, 서버도 `mode=full` 새 호출을 `limit/month`로 거절한다(`lib/ai/full-flow.ts`, 저장된 답 읽기는 그대로).
+- **되돌릴 때**: 이 PR을 revert하면 옛 `latest()`가 `basis.mode="full"` 행을 순위 답으로 읽어 그 GW·언어의 AI 의견 화면이 깨질 수 있다. 되돌리기 전에 해당 GW의 full 행을 지우거나 다음 GW까지 기다린다(운영 DB 쓰기는 관제 창, L2).
