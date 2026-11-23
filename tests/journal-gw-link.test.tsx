@@ -78,11 +78,11 @@ function mockEntries(status: number, body: unknown = {}) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("JournalGwLink", () => {
-  it("shows a login link to a visitor who is not signed in", async () => {
+  it("shows nothing to a visitor who is not signed in (login lives in the top band, issue #82)", async () => {
     mockEntries(401, { error: "unauthorized" });
     renderLink(3);
-    const link = await screen.findByRole("link", { name: /로그인 후 일지 쓰기/ });
-    expect(link.getAttribute("href")).toBe("/journal?gw=3");
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    expect(screen.queryByRole("link")).toBeNull();
   });
 
   it("shows write for a saved week without notes", async () => {

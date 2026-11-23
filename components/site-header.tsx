@@ -1,13 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { AccountMenu } from "@/components/account-menu";
 import { SiteLogo } from "@/components/site-logo";
 import { SiteNav } from "@/components/site-nav";
 
 /**
  * The top band every league-free and league screen shares (issue #39 stage 1): logo-and-home on the left,
  * the menu next to it (under it on a narrow screen), and whatever the screen needs on the right (language
- * toggle, share button).
+ * toggle, share button), then the account button last (issue #82).
  */
 export function SiteHeader({
   tone = "app",
@@ -25,7 +26,9 @@ export function SiteHeader({
     <header className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-2 md:border-b md:pb-2 ${line} ${className}`}>
       <SiteLogo tone={tone} />
       <SiteNav tone={tone} className={`order-last w-full border-y py-1.5 md:order-none md:ml-2 md:w-auto md:border-y-0 md:py-0 ${line}`} />
-      <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{children}</div>
+      <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{children}
+        <AccountMenu tone={tone} />
+      </div>
     </header>
   );
 }
