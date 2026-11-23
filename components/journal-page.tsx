@@ -10,6 +10,7 @@ import { TeamRow } from "@/components/team-row";
 import { CONTACT_EMAIL } from "@/lib/site";
 import type { WeeklySnapshot } from "@/lib/journal-snapshot";
 import { parseJournalGw } from "@/lib/journal/gw-link";
+import { applySavedLoginId, readSavedLoginId } from "@/lib/saved-login-id";
 import { passwordTooLong } from "@/lib/journal/password";
 import { consumeAuthHash } from "@/lib/journal/recovery";
 import type { JournalNotes } from "@/lib/journal/types";
@@ -169,6 +170,17 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
   const [busy, setBusy] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [email, setEmail] = useState("");
+  const [rememberId, setRememberId] = useState(false);
+  const passwordRef = useRef<HTMLInputElement | null>(null);
+  // Restore the saved login ID after mount (localStorage is not available during SSR) and move focus to the password.
+  useEffect(() => {
+    const saved = readSavedLoginId();
+    if (!saved) return;
+    setEmail(saved);
+    setRememberId(true);
+    passwordRef.current?.focus();
+  }, []);
   // Sign-up needs the team number looked up and confirmed (issue #47); the picker reports it here.
   const [confirmedTeam, setConfirmedTeam] = useState<ConfirmedTeam | null>(null);
   const mismatch = mode === "signup" && confirm !== "" && password !== confirm;
@@ -262,7 +274,10 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
         body: JSON.stringify(body)
       });
       const data = (await response.json().catch(() => ({}))) as { error?: string };
-      if (response.ok && mode === "login") return onDone();
+      if (response.ok && mode === "login") {
+        applySavedLoginId(String(body.email ?? ""), rememberId);
+        return onDone();
+      }
       if (response.ok) {
         setMode("login");
         setConfirm("");
@@ -324,7 +339,7 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
       </div>
       <label className="block text-body">
         {tr("이메일", "Email")}
-        <input name="email" type="email" required autoComplete="email" className={inputClass} />
+        <input name="email" type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className={inputClass} />
       </label>
       {mode === "forgot" && (
         <p className="text-body text-[var(--muted)]">
@@ -343,9 +358,16 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
           autoComplete={mode === "signup" ? "new-password" : "current-password"}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
+          ref={passwordRef}
           className={inputClass}
         />
       </label>
+      )}
+      {mode === "login" && (
+        <label className="flex items-center gap-2 text-body">
+          <input type="checkbox" checked={rememberId} onChange={(event) => setRememberId(event.target.checked)} className="size-4" />
+          <span>{tr("아이디 저장", "Remember ID")}</span>
+        </label>
       )}
       {mode === "signup" && (
         <label className="block text-body">
