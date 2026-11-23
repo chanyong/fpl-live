@@ -46,12 +46,12 @@ export function MetricValue({ player, metric }: { player: SquadPlayer; metric: S
 }
 
 /** Optional extras for the recommendation view (issue #61): which players just came in, and a line under the metric. */
-export type PitchExtras = { newIds?: ReadonlySet<number>; below?: (player: SquadPlayer) => ReactNode };
+export type PitchExtras = { newIds?: ReadonlySet<number>; below?: (player: SquadPlayer) => ReactNode; /** Issue #69: short reason per incoming player, shown as a tooltip. */ reasons?: Readonly<Record<number, string>> };
 
 function Card({ player, metric, tag, extras }: { player: SquadPlayer; metric: SquadMetric; tag?: string; extras?: PitchExtras }) {
   const { tr, locale } = useLocale();
   const flag = player.status !== "a" ? availability(player.status, locale) : null;
-  const note = [flag?.label, player.news].filter(Boolean).join(" · ");
+  const note = [extras?.reasons?.[player.elementId], flag?.label, player.news].filter(Boolean).join(" · ");
   const isNew = extras?.newIds?.has(player.elementId) ?? false;
 
   return (

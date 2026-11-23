@@ -316,6 +316,37 @@ describe("rules-based panel (AI off)", () => {
     expect(within(panel).getByText(/은행을 많이 남기고 비싼 선수를 낮게 평가할 수 있습니다/)).toBeInTheDocument();
   });
 
+  it("shows why each incoming player comes in inside the chip cards, worded per chip (issue #69)", async () => {
+    const template = recommend.transfers!.scenarios.find((scenario) => scenario.type === "one")!;
+    const chipScenario = (type: "wildcard" | "freehit"): TransferScenario => ({ ...template, id: type, type, out: [11, 12], in: [43, 44], optimal: false });
+    const pick = (id: number, position: string, replacesId: number, role: "C" | null) => ({
+      id, position, teamShortName: "ARS", cost: 60, xpNext: 6.5, xpPeriod: 21.4,
+      fixtures: [{ opponent: "CRY", home: false, difficulty: 2 }],
+      replacesId, replacesXpNext: 3, replacesXpPeriod: 9, replacesCost: 50, role, starter: true
+    });
+    const explain = (mode: "wildcard" | "freehit") => ({ mode, horizon: 3, targetGw: 12, picks: [pick(43, "DEF", 11, "C"), pick(44, "DEF", 12, null)] });
+    const withChips: EntryRecommendPayload = {
+      ...recommend,
+      transfers: { ...recommend.transfers!, scenarios: [...recommend.transfers!.scenarios, chipScenario("wildcard"), chipScenario("freehit")], skipped: [] },
+      chipExplanations: { wildcard: explain("wildcard"), freehit: explain("freehit") }
+    };
+    installFetch(TEAM, { recommend: () => json(withChips) });
+    renderPage(TEAM);
+    const panel = await screen.findByRole("region", { name: "추천" });
+    await within(panel).findByText("이적 시나리오");
+
+    const wild = panel.querySelector('[data-scenario="wildcard"] [data-chip-why]')!;
+    const free = panel.querySelector('[data-scenario="freehit"] [data-chip-why]')!;
+    expect(wild).toHaveTextContent("다음 3GW 기대 21.4(다음 GW 6.5)");
+    expect(wild).toHaveTextContent("상대 쉬움(CRY A)");
+    expect(wild).toHaveTextContent("캡틴 후보");
+    expect(wild).toHaveTextContent("와일드카드는 팀이 그대로 남습니다");
+    expect(free).toHaveTextContent("이번 주 기대 6.5");
+    expect(free).not.toHaveTextContent("다음 3GW 기대");
+    expect(free).toHaveTextContent("다음 주에는 원래 팀으로");
+    expect(wild.querySelectorAll("[data-chip-pick]")).toHaveLength(2);
+  });
+
   it("switches the horizon to 5 gameweeks with one more request", async () => {
     const user = userEvent.setup();
     const { calls } = installFetch(TEAM);

@@ -20,6 +20,7 @@ import { resetEntryRequestLimits } from "@/lib/entry-request-limit";
 import { EntryBusyError, EntryNotFoundError, FplUnavailableError } from "@/lib/entry-squad";
 import type { EntrySquadPayload, SquadPlayer } from "@/lib/squad-types";
 import { buildXpTable, type XpBootstrap, type XpElement, type XpFixtureRow } from "@/lib/xp/model";
+import { buildChipExplanations, chipModeNote, chipPickReason } from "@/lib/xp/chip-explain";
 import { buildEntryRecommend, buildScenarioLineups, buildScenarioPlayerInfo } from "@/lib/xp/recommend";
 import type { TransferSearchResult } from "@/lib/xp/transfer-search";
 import { getXpTable, resetXpTableCache } from "@/lib/xp/xp-table";
@@ -348,5 +349,59 @@ describe("buildScenarioLineups (issue #61)", () => {
 
   it("is empty without scenarios", async () => {
     expect(await buildScenarioLineups(squad, null, table)).toEqual({ scenarioLineups: {}, lineupPlayers: {} });
+  });
+});
+
+describe("chip explanations (issue #69)", () => {
+  const table = buildXpTable(xpBootstrap, fixtures, NOW)!;
+  const squad = squadPayload();
+  // Wildcard / Free Hit bring MID 22,23 in for owned defenders 14,15 and FWD 32 for FWD 33 (ids from the squad / table above).
+  const chip = (type: "wildcard" | "freehit", horizon: 3 | 5) =>
+    ({
+      horizon,
+      scenarios: [{ id: type, type, out: [24, 33], in: [21, 32], nextGwXp: 0, periodXp: 0, transferCost: 0, netGain: 5, bankAfter: 0, optimal: false }]
+    }) as unknown as TransferSearchResult;
+  const lineups = { wildcard: { starters: [21], captainId: 21, viceCaptainId: 32 }, freehit: { starters: [21], captainId: 21, viceCaptainId: null } };
+
+  it("lists exactly the incoming players with the table's xP, fixtures and a same-position pairing", () => {
+    const result = buildChipExplanations(squad, chip("wildcard", 3), table, lineups)["wildcard"];
+    expect(result.picks.map((pick) => pick.id).sort()).toEqual([21, 32]);
+    const mid = result.picks.find((pick) => pick.id === 21)!;
+    expect(mid.xpNext).toBe(table.players.get(21)!.next);
+    expect(mid.xpPeriod).toBe(table.players.get(21)!.sum3);
+    expect(mid.position).toBe("MID");
+    expect(mid.replacesId).toBe(24);
+    expect(mid.replacesXpNext).toBe(table.players.get(24)!.next);
+    expect(mid.fixtures).toEqual(table.players.get(21)!.weeks[0].games.map((g) => ({ opponent: g.opponent, home: g.home, difficulty: g.difficulty })));
+    expect(mid.role).toBe("C");
+    expect(result.picks.find((pick) => pick.id === 32)!.role).toBe("V");
+    expect(result.picks.find((pick) => pick.id === 32)!.replacesId).toBe(33);
+    // grouped by position order: MID before FWD
+    expect(result.picks.map((pick) => pick.position)).toEqual(["MID", "FWD"]);
+  });
+
+  it("uses the 5-GW sum for a 5-GW horizon and skips non-chip scenarios", () => {
+    const five = buildChipExplanations(squad, chip("wildcard", 5), table, lineups)["wildcard"];
+    expect(five.horizon).toBe(5);
+    expect(five.picks.find((pick) => pick.id === 21)!.xpPeriod).toBe(table.players.get(21)!.sum5);
+    const mixed = { horizon: 3, scenarios: [{ id: "one:24>21", type: "one", out: [24], in: [21] }] } as unknown as TransferSearchResult;
+    expect(buildChipExplanations(squad, mixed, table, {})).toEqual({});
+    expect(buildChipExplanations(squad, null, table, {})).toEqual({});
+  });
+
+  it("words Free Hit as this-week-only and Wildcard by the period, and the figures match the pick", () => {
+    const names = (id: number) => `N${id}`;
+    const fh = buildChipExplanations(squad, chip("freehit", 3), table, lineups)["freehit"];
+    const wc = buildChipExplanations(squad, chip("wildcard", 3), table, lineups)["wildcard"];
+    const fhLine = chipPickReason(fh.picks[0], "freehit", 3, "ko", names);
+    const wcLine = chipPickReason(wc.picks[0], "wildcard", 3, "ko", names);
+    expect(fhLine).toContain("이번 주 기대 " + fh.picks[0].xpNext.toFixed(1));
+    expect(fhLine).not.toContain("다음 3GW");
+    expect(wcLine).toContain("다음 3GW 기대 " + wc.picks[0].xpPeriod.toFixed(1));
+    expect(wcLine).toContain("N24 대신");
+    expect(wcLine).toContain("캡틴 후보");
+    expect(chipModeNote("freehit", 3, "ko")).toContain("다음 주에는 원래 팀으로");
+    expect(chipModeNote("wildcard", 5, "ko")).toContain("다음 5GW");
+    expect(chipModeNote("freehit", 3, "en")).toContain("this week only");
   });
 });

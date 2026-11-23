@@ -3,6 +3,7 @@ import { EntryNotFoundError, EntryBusyError, FplUnavailableError, getEntrySquad,
 import { getBase } from "@/lib/public-data";
 import type { EntrySquadPayload } from "@/lib/squad-types";
 import type { FplPosition } from "@/lib/types";
+import { buildChipExplanations, type ChipExplanation } from "@/lib/xp/chip-explain";
 import { buildCaptainCandidates, type CaptainCandidate } from "@/lib/xp/captain";
 import { buildLineups, type LineupCandidate } from "@/lib/xp/lineup";
 import { XP_MODEL_VERSION, type XpPlayer, type XpTable } from "@/lib/xp/model";
@@ -63,6 +64,8 @@ export type EntryRecommendPayload = EntryRecommendBase & {
   scenarioLineups?: Record<string, ScenarioLineup>;
   /** Issue #61: what a pitch card needs for every player any scenario lineup uses, keyed by player ID. */
   lineupPlayers?: Record<string, LineupPlayerCard>;
+  /** Issue #69: per Wildcard / Free Hit scenario ID, why each incoming player (rules-based, no AI call). */
+  chipExplanations?: Record<string, ChipExplanation>;
 };
 
 /** The recommended XI, bench order and captains of the squad as it is after one transfer scenario. */
@@ -312,5 +315,6 @@ export async function getEntryRecommend(
   const base = buildEntryRecommend(squad, table);
   const transfers = await getTransfers(squad, table, horizon);
   const [playerInfo, lineups] = await Promise.all([buildScenarioPlayerInfo(transfers, table), buildScenarioLineups(squad, transfers, table)]);
-  return { ...base, transfers, playerInfo, ...lineups };
+  const chipExplanations = buildChipExplanations(squad, transfers, table, lineups.scenarioLineups, lineups.lineupPlayers);
+  return { ...base, transfers, playerInfo, ...lineups, chipExplanations };
 }

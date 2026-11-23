@@ -7,6 +7,7 @@ import { ScenarioPitch } from "@/components/scenario-pitch";
 import { chipLabel } from "@/lib/chips";
 import type { Locale } from "@/lib/locale";
 import { chipReasonText } from "@/lib/recommend-text";
+import { chipModeNote, chipPickReason, POSITION_ORDER, type ChipExplanation } from "@/lib/xp/chip-explain";
 import type { EntryRecommendPayload } from "@/lib/xp/recommend";
 import type { ScenarioType, TransferScenario, TransferSearchResult } from "@/lib/xp/transfer-search";
 
@@ -57,6 +58,37 @@ function Swaps({ scenario, lookup }: { scenario: TransferScenario; lookup: Looku
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Issue #69: why each incoming player of a chip scenario, grouped by position; the wording differs for Free Hit and Wildcard. */
+function ChipWhy({ explanation, lookup }: { explanation: ChipExplanation; lookup: Lookup }) {
+  const { tr, locale } = useLocale();
+  const names = (id: number) => lookup(id).name;
+  return (
+    <div className="mt-1.5 flex flex-col gap-1" data-chip-why={explanation.mode}>
+      <p className="text-caption text-[var(--muted)]">{chipModeNote(explanation.mode, explanation.horizon, locale)}</p>
+      {POSITION_ORDER.map((position) => {
+        const picks = explanation.picks.filter((pick) => pick.position === position);
+        if (picks.length === 0) return null;
+        return (
+          <div key={position}>
+            <p className="text-caption font-semibold">{position}</p>
+            <ul className="flex list-none flex-col gap-0.5 p-0">
+              {picks.map((pick) => (
+                <li key={pick.id} className="min-w-0 break-words text-meta" data-chip-pick={pick.id}>
+                  <span className="font-semibold">{names(pick.id)}</span>
+                  <span className="text-caption text-[var(--muted)]">{` (${pick.teamShortName} · ${position} · ${fmtMoney(pick.cost)})`}</span>
+                  {pick.role === "C" ? <Badge tone="accent">{tr("캡틴 후보", "Captain pick")}</Badge> : null}
+                  {pick.role === "V" ? <Badge>{tr("부주장 후보", "Vice pick")}</Badge> : null}
+                  <span className="block text-caption text-[var(--muted)]">{chipPickReason(pick, explanation.mode, explanation.horizon, locale, names)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -122,7 +154,8 @@ function ScenarioCard({
   horizon,
   bank,
   lookup,
-  selection
+  selection,
+  explanation
 }: {
   scenario: TransferScenario;
   recommended: boolean;
@@ -130,6 +163,7 @@ function ScenarioCard({
   bank: number;
   lookup: Lookup;
   selection: Selection | null;
+  explanation?: ChipExplanation;
 }) {
   const { tr } = useLocale();
   const isChip = isChipType(scenario.type);
@@ -167,6 +201,7 @@ function ScenarioCard({
                 <summary className="cursor-pointer text-[var(--muted)]">{tr(`교체 ${scenario.in.length}명 보기`, `Show ${scenario.in.length} swaps`)}</summary>
                 <div className="mt-1">
                   <Swaps scenario={scenario} lookup={lookup} />
+                  {explanation ? <ChipWhy explanation={explanation} lookup={lookup} /> : null}
                 </div>
               </details>
             ) : (
@@ -312,7 +347,8 @@ export function TransferScenarios({
   horizon,
   onHorizon,
   scenarioLineups,
-  lineupPlayers
+  lineupPlayers,
+  chipExplanations
 }: {
   result: TransferSearchResult;
   lookup: Lookup;
@@ -320,6 +356,7 @@ export function TransferScenarios({
   onHorizon: (horizon: 3 | 5) => void;
   scenarioLineups?: EntryRecommendPayload["scenarioLineups"];
   lineupPlayers?: EntryRecommendPayload["lineupPlayers"];
+  chipExplanations?: EntryRecommendPayload["chipExplanations"];
 }) {
   const { tr, locale } = useLocale();
   // Issue #61: the scenario whose XI and bench the pitch shows; the recommended one until the reader picks another.
@@ -327,6 +364,10 @@ export function TransferScenarios({
   const selectedId = pickedId && scenarioLineups?.[pickedId] ? pickedId : result.recommendedId;
   const selectedScenario = result.scenarios.find((scenario) => scenario.id === selectedId);
   const selectedLineup = scenarioLineups?.[selectedId];
+  const selectedWhy = chipExplanations?.[selectedId];
+  const pitchReasons = selectedWhy
+    ? Object.fromEntries(selectedWhy.picks.map((pick) => [pick.id, chipPickReason(pick, selectedWhy.mode, selectedWhy.horizon, locale, (id) => lookup(id).name)]))
+    : undefined;
   const selection: Selection | null = scenarioLineups && lineupPlayers ? { selectedId, onSelect: setPickedId } : null;
 
   const groups = TYPE_ORDER.map((type) => ({
@@ -376,6 +417,7 @@ export function TransferScenarios({
             bank={result.bank}
             lookup={lookup}
             selection={selection}
+            explanation={chipExplanations?.[best.id]}
           />
           {visible.length > 0 ? (
             <li className="list-none">
@@ -444,6 +486,7 @@ export function TransferScenarios({
           cards={lineupPlayers}
           isRoll={selectedScenario.type === "roll"}
           label={scenarioTitle(selectedScenario, lookup, tr, locale)}
+          reasons={pitchReasons}
         />
       ) : null}
 
