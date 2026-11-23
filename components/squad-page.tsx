@@ -255,7 +255,7 @@ export function SquadPage({ entryId }: { entryId: number }) {
                 </p>
               ) : null}
 
-              {/* One column on a narrow screen; from lg the pitch (left, wide like the league standings) and the team status (right, the same 320px column as the league summary) sit side by side (issue #64). */}
+              {/* One column on a narrow screen; from lg the pitch (left, wide like the league standings) and the team status (right, the same 320px column as the league summary) sit side by side; the recommendation panel below stays in the left column so every section ends at the pitch's right edge (issue #64). */}
               <div
                 role="group"
                 aria-label={tr("스쿼드", "Squad")}
@@ -305,10 +305,12 @@ export function SquadPage({ entryId }: { entryId: number }) {
                 </p>
 
                 <SquadStatusBar data={data} className="lg:col-start-2 lg:row-start-2 lg:row-span-2" />
-              </div>
 
               {/* Issue #47: lineup, captain and transfer analysis only for the member who registered this team (the server checks it too). Everyone else sees one quiet line and no extra request; nothing is drawn until we know who is looking. */}
-              {member.isPending ? null : ownsTeam ? <RecommendPanel entryId={entryId} /> : <MemberOnlyNotice />}
+              {member.isPending ? null : (
+                  <div className="min-w-0 lg:col-start-1">{ownsTeam ? <RecommendPanel entryId={entryId} /> : <MemberOnlyNotice />}</div>
+                )}
+              </div>
             </>
           )}
 

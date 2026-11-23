@@ -151,9 +151,9 @@ function ScenarioCard({
       className={`flex min-w-0 flex-col gap-1 rounded-md border px-2.5 py-1.5 sm:px-3 ${recommended ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface)]"}`}
       data-scenario={scenario.id}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-1 lg:flex-row lg:items-start lg:gap-6">
-          <div className="flex min-w-0 flex-col gap-1 lg:flex-1">
+      <div className="flex items-start justify-between gap-4 xl:gap-6">
+        <div className="flex min-w-0 flex-1 flex-col gap-1 xl:flex-row xl:items-start xl:gap-8">
+          <div className="flex min-w-0 flex-col gap-1 xl:flex-1">
             {isChip ? null : (
               // empty:hidden: no badge, no row (so the swaps start at the top, level with the net gain)
               <div className="flex flex-wrap items-center gap-1.5 empty:hidden">
@@ -178,7 +178,7 @@ function ScenarioCard({
               </div>
             ) : null}
           </div>
-          <dl className="flex flex-wrap gap-x-4 gap-y-0.5 lg:shrink-0">
+          <dl className="flex flex-wrap gap-x-4 gap-y-0.5 xl:shrink-0">
             <Figure label={tr("다음 GW 기대 점수", "Next GW xP")}>{fmtXp(scenario.nextGwXp)}</Figure>
             <Figure label={tr(`기간 합 (${horizon}GW)`, `${horizon}-GW total`)}>{fmtXp(scenario.periodXp)}</Figure>
             <Figure label={tr("남는 은행", "Bank left")}>
@@ -188,7 +188,7 @@ function ScenarioCard({
             {scenario.transferCost > 0 ? <Figure label={tr("이적 비용", "Transfer cost")}>{`-${scenario.transferCost}${tr("점", " pts")}`}</Figure> : null}
           </dl>
         </div>
-        <div className="flex shrink-0 flex-col items-end sm:flex-row sm:items-baseline sm:gap-1">
+        <div className="flex shrink-0 flex-col items-end whitespace-nowrap sm:flex-row sm:items-baseline sm:gap-1.5 xl:pl-2">
           <span className="order-2 text-caption text-[var(--muted)] sm:order-1">{tr("넘기기 대비 순이익", "Net gain vs roll")}</span>
           <span className="order-1 text-title font-semibold leading-none tabular-nums sm:order-2">{scenario.type === "roll" ? "0.0" : fmtSigned(scenario.netGain)}</span>
         </div>
@@ -209,7 +209,7 @@ function CompactRow({ scenario, best, recommended, lookup, selection }: { scenar
   const gap = scenario.netGain - best.netGain;
   return (
     <li className="flex min-w-0 flex-col gap-0.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 sm:px-3" data-scenario={scenario.id}>
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-4 xl:gap-6">
         <div className="min-w-0">
           <Swaps scenario={scenario} lookup={lookup} />
         </div>
