@@ -255,11 +255,11 @@ export function SquadPage({ entryId }: { entryId: number }) {
                 </p>
               ) : null}
 
-              {/* One column on a narrow screen; from lg the pitch (left) and the team status (right) sit side by side so the pitch is not stretched across the page. */}
+              {/* One column on a narrow screen; from lg the pitch (left, wide like the league standings) and the team status (right, the same 320px column as the league summary) sit side by side (issue #64). */}
               <div
                 role="group"
                 aria-label={tr("스쿼드", "Squad")}
-                className="grid gap-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-x-3 xl:grid-cols-[minmax(0,760px)_minmax(0,1fr)]"
+                className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-x-1.5"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 lg:contents">
                   <div role="group" aria-label={tr("보기 방식", "View")} className="inline-flex justify-self-start overflow-hidden rounded-md border border-[var(--border)] lg:col-start-1 lg:row-start-1">
