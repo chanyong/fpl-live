@@ -42,12 +42,14 @@ export function ScenarioPitch({
   lineup,
   cards,
   label,
-  isRoll
+  isRoll,
+  reasons
 }: {
   lineup: ScenarioLineup;
   cards: NonNullable<EntryRecommendPayload["lineupPlayers"]>;
   label: string;
   isRoll: boolean;
+  reasons?: Record<number, string>;
 }) {
   const { tr } = useLocale();
   const squad = scenarioSquad(lineup, cards);
@@ -63,7 +65,7 @@ export function ScenarioPitch({
       <SquadPitch
         squad={squad}
         metric="opponent"
-        extras={{ newIds, below: (player) => tr(`기대 ${fmtXp(cards[String(player.elementId)]?.xpNext ?? 0)}`, `xP ${fmtXp(cards[String(player.elementId)]?.xpNext ?? 0)}`) }}
+        extras={{ newIds, reasons, below: (player) => tr(`기대 ${fmtXp(cards[String(player.elementId)]?.xpNext ?? 0)}`, `xP ${fmtXp(cards[String(player.elementId)]?.xpNext ?? 0)}`) }}
       />
     </div>
   );

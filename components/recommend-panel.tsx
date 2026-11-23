@@ -231,6 +231,7 @@ export function RecommendPanel({ entryId }: { entryId: number }) {
                 onHorizon={setHorizon}
                 scenarioLineups={data.scenarioLineups}
                 lineupPlayers={data.lineupPlayers}
+                chipExplanations={data.chipExplanations}
               />
             ) : (
               <p className="text-meta text-[var(--muted)]">
