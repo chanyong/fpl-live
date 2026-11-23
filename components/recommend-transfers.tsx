@@ -45,9 +45,10 @@ function Swaps({ scenario, lookup }: { scenario: TransferScenario; lookup: Looku
       {pairSwaps(scenario, lookup).map((pair) => (
         <li key={pair.out} className="min-w-0 break-words text-meta">
           <PlayerTag player={lookup(pair.out)} />
-          <span aria-label={tr("에서", "to")} className="mx-1 text-[var(--muted)]">
+          <span aria-hidden className="mx-1 text-[var(--muted)]">
             {"→"}
           </span>
+          <span className="sr-only">{tr(" 대신 ", " replaced by ")}</span>
           {pair.in !== null ? <PlayerTag player={lookup(pair.in)} showCost /> : null}
         </li>
       ))}
