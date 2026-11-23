@@ -84,76 +84,85 @@ function ScenarioBadges({ scenario, recommended }: { scenario: TransferScenario;
   );
 }
 
-/** The best scenario of a group, in full: the net gain is the big figure, the rest are small. */
+/**
+ * The best scenario of a group, in full. The first row puts what changes (left) and the net gain (right, pinned to the top)
+ * side by side, so neither leaves an empty line; the figures sit right under the swaps, or beside them on a wide screen.
+ * A chip's badges are shown in its group header instead (see TransferScenarios), so its card has no title line.
+ */
 function ScenarioCard({
   scenario,
   recommended,
   horizon,
   bank,
-  lookup,
-  showTitle
+  lookup
 }: {
   scenario: TransferScenario;
   recommended: boolean;
   horizon: number;
   bank: number;
   lookup: Lookup;
-  showTitle: boolean;
 }) {
-  const { tr, locale } = useLocale();
+  const { tr } = useLocale();
   const isChip = isChipType(scenario.type);
   const change = bankChange(scenario, bank);
+  const notes = [
+    isChip && recommended
+      ? tr(
+          "칩 사용은 신중히 하세요. 칩은 시즌에 한 번뿐이라, 이 수치만으로 쓸 때인지 정할 수 없습니다.",
+          "Use a chip with care. Each chip can be played once, so these figures alone cannot tell you it is the time."
+        )
+      : null,
+    scenario.type === "freehit"
+      ? tr("프리 힛은 그 주만 바뀌고 다음 주에는 원래 팀으로 돌아옵니다.", "A Free Hit changes only that week; the squad returns to what it was the next week.")
+      : null
+  ].filter((note): note is string => note !== null);
 
   return (
     <li
-      className={`flex min-w-0 flex-col gap-1.5 rounded-md border px-2.5 py-1.5 sm:px-3 ${recommended ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface)]"}`}
+      className={`flex min-w-0 flex-col gap-1 rounded-md border px-2.5 py-1.5 sm:px-3 ${recommended ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface)]"}`}
       data-scenario={scenario.id}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          {showTitle ? <span className="text-body font-semibold">{scenarioTypeLabel(scenario.type, tr, locale)}</span> : null}
-          <ScenarioBadges scenario={scenario} recommended={recommended} />
+        <div className="flex min-w-0 flex-1 flex-col gap-1 lg:flex-row lg:items-start lg:gap-6">
+          <div className="flex min-w-0 flex-col gap-1 lg:flex-1">
+            {isChip ? null : (
+              // empty:hidden: no badge, no row (so the swaps start at the top, level with the net gain)
+              <div className="flex flex-wrap items-center gap-1.5 empty:hidden">
+                <ScenarioBadges scenario={scenario} recommended={recommended} />
+              </div>
+            )}
+            {scenario.type === "roll" ? (
+              <p className="text-meta text-[var(--muted)]">{tr("이번 주는 이적하지 않습니다.", "No transfer this week.")}</p>
+            ) : isChip ? (
+              <details className="text-meta">
+                <summary className="cursor-pointer text-[var(--muted)]">{tr(`교체 ${scenario.in.length}명 보기`, `Show ${scenario.in.length} swaps`)}</summary>
+                <div className="mt-1">
+                  <Swaps scenario={scenario} lookup={lookup} />
+                </div>
+              </details>
+            ) : (
+              <Swaps scenario={scenario} lookup={lookup} />
+            )}
+          </div>
+          <dl className="flex flex-wrap gap-x-4 gap-y-0.5 lg:shrink-0">
+            <Figure label={tr("다음 GW 기대 점수", "Next GW xP")}>{fmtXp(scenario.nextGwXp)}</Figure>
+            <Figure label={tr(`기간 합 (${horizon}GW)`, `${horizon}-GW total`)}>{fmtXp(scenario.periodXp)}</Figure>
+            <Figure label={tr("남는 은행", "Bank left")}>
+              {fmtMoney(scenario.bankAfter)}
+              {change ? <span className="ml-1 text-caption font-normal text-[var(--muted)]">({change})</span> : null}
+            </Figure>
+            {scenario.transferCost > 0 ? <Figure label={tr("이적 비용", "Transfer cost")}>{`-${scenario.transferCost}${tr("점", " pts")}`}</Figure> : null}
+          </dl>
         </div>
-        <div className="shrink-0 text-right">
-          <div className="text-title font-semibold leading-none tabular-nums">{scenario.type === "roll" ? "0.0" : fmtSigned(scenario.netGain)}</div>
-          <div className="text-caption text-[var(--muted)]">{tr("넘기기 대비 순이익", "Net gain vs roll")}</div>
+        <div className="flex shrink-0 flex-col items-end sm:flex-row sm:items-baseline sm:gap-1">
+          <span className="order-2 text-caption text-[var(--muted)] sm:order-1">{tr("넘기기 대비 순이익", "Net gain vs roll")}</span>
+          <span className="order-1 text-title font-semibold leading-none tabular-nums sm:order-2">{scenario.type === "roll" ? "0.0" : fmtSigned(scenario.netGain)}</span>
         </div>
       </div>
 
-      {scenario.type === "roll" ? (
-        <p className="text-meta text-[var(--muted)]">{tr("이번 주는 이적하지 않습니다.", "No transfer this week.")}</p>
-      ) : isChip ? (
-        <details className="text-meta">
-          <summary className="cursor-pointer text-[var(--muted)]">{tr(`교체 ${scenario.in.length}명 보기`, `Show ${scenario.in.length} swaps`)}</summary>
-          <div className="mt-1">
-            <Swaps scenario={scenario} lookup={lookup} />
-          </div>
-        </details>
-      ) : (
-        <Swaps scenario={scenario} lookup={lookup} />
-      )}
-
-      <dl className="flex flex-wrap gap-x-4 gap-y-1 border-t border-[var(--border)] pt-1.5">
-        <Figure label={tr("다음 GW 기대 점수", "Next GW xP")}>{fmtXp(scenario.nextGwXp)}</Figure>
-        <Figure label={tr(`기간 합 (${horizon}GW)`, `${horizon}-GW total`)}>{fmtXp(scenario.periodXp)}</Figure>
-        <Figure label={tr("남는 은행", "Bank left")}>
-          {fmtMoney(scenario.bankAfter)}
-          {change ? <span className="ml-1 text-caption font-normal text-[var(--muted)]">({change})</span> : null}
-        </Figure>
-        {scenario.transferCost > 0 ? <Figure label={tr("이적 비용", "Transfer cost")}>{`-${scenario.transferCost}${tr("점", " pts")}`}</Figure> : null}
-      </dl>
-
-      {isChip && recommended ? (
-        <p role="note" className="text-caption text-[var(--warning)]">
-          {tr(
-            "칩 사용은 신중히 하세요. 칩은 시즌에 한 번뿐이라, 이 수치만으로 쓸 때인지 정할 수 없습니다.",
-            "Use a chip with care. Each chip can be played once, so these figures alone cannot tell you it is the time."
-          )}
-        </p>
-      ) : null}
-      {scenario.type === "freehit" ? (
-        <p className="text-caption text-[var(--muted)]">
-          {tr("프리 힛은 그 주만 바뀌고 다음 주에는 원래 팀으로 돌아옵니다.", "A Free Hit changes only that week; the squad returns to what it was the next week.")}
+      {notes.length > 0 ? (
+        <p role="note" className={`text-caption ${isChip && recommended ? "text-[var(--warning)]" : "text-[var(--muted)]"}`}>
+          {notes.join(" ")}
         </p>
       ) : null}
     </li>
@@ -300,6 +309,11 @@ export function TransferScenarios({
               )}
             </p>
           )}
+          {isChipGroup ? (
+            <span className="flex flex-wrap items-center gap-1.5 self-center">
+              <ScenarioBadges scenario={best} recommended={best.id === result.recommendedId} />
+            </span>
+          ) : null}
         </header>
         <ul className="flex list-none flex-col gap-1 p-1 sm:p-1.5">
           <ScenarioCard
@@ -308,7 +322,6 @@ export function TransferScenarios({
             horizon={result.gws.length}
             bank={result.bank}
             lookup={lookup}
-            showTitle={isChipGroup}
           />
           {visible.length > 0 ? (
             <li className="list-none">
