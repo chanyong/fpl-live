@@ -265,10 +265,13 @@ describe("rules-based panel (AI off)", () => {
 
     expect(within(panel).getByText(/프리 힛 안 없음: 이 기간의 칩을 이미 썼습니다/)).toBeInTheDocument();
     expect(panel.querySelector(`[data-scenario="${template.id}"]`)).toHaveTextContent("예산 여유 0.1 이하");
+    // The chip's title and badges live in its group header, not repeated in the card.
+    const header = panel.querySelector('[data-group="wildcard"] header')!;
+    expect(header).toHaveTextContent("와일드카드");
+    expect(header).toHaveTextContent("권장");
+    expect(header).toHaveTextContent("근사 탐색");
     const card = panel.querySelector('[data-scenario="wildcard"]')!;
-    expect(card).toHaveTextContent("와일드카드");
-    expect(card).toHaveTextContent("권장");
-    expect(card).toHaveTextContent("근사 탐색");
+    expect(card).not.toHaveTextContent("근사 탐색");
     expect(card).toHaveTextContent("칩 사용은 신중히 하세요");
     expect(card).toHaveTextContent("£11.2m");
     expect(within(panel).getByText(/은행을 많이 남기고 비싼 선수를 낮게 평가할 수 있습니다/)).toBeInTheDocument();
