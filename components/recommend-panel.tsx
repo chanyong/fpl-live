@@ -224,7 +224,14 @@ export function RecommendPanel({ entryId }: { entryId: number }) {
           <div className="flex flex-col gap-1.5">
             <SubHeading>{tr("이적 시나리오", "Transfer scenarios")}</SubHeading>
             {data.transfers ? (
-              <TransferScenarios result={data.transfers} lookup={lookup} horizon={horizon} onHorizon={setHorizon} />
+              <TransferScenarios
+                result={data.transfers}
+                lookup={lookup}
+                horizon={horizon}
+                onHorizon={setHorizon}
+                scenarioLineups={data.scenarioLineups}
+                lineupPlayers={data.lineupPlayers}
+              />
             ) : (
               <p className="text-meta text-[var(--muted)]">
                 {tr("이 팀은 15명 스쿼드가 아직 없어 이적 시나리오를 계산하지 못했습니다.", "This team has no full 15-player squad yet, so no transfer scenarios were computed.")}

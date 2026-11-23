@@ -234,6 +234,9 @@ function AiResultView({ done }: { done: DonePayload }) {
               )
             : tr(`${result.lineup.option_id} 선택`, `Chose ${result.lineup.option_id}`)}
         </p>
+        <p className="mt-0.5 text-caption text-[var(--muted)]">
+          {tr("지금 스쿼드(이적 없음, 넘기기) 기준의 선발입니다. 이적 뒤 선발은 위 이적 시나리오의 피치에서 확인하세요.", "This lineup is for the current squad (roll, no transfer). For the lineup after a transfer, see the pitch in the transfer scenarios above.")}
+        </p>
         <p className="mt-1 break-words text-body">{result.lineup.reason}</p>
       </div>
 

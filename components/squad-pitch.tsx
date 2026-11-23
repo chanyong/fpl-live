@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { difficultyStyle } from "@/components/fdr-strip";
 import { useLocale } from "@/components/locale-provider";
 import { crestUrl, RemoteImage } from "@/components/remote-image";
@@ -44,15 +45,19 @@ export function MetricValue({ player, metric }: { player: SquadPlayer; metric: S
   return <span className="truncate tabular-nums">{metricText(player, metric)}</span>;
 }
 
-function Card({ player, metric, tag }: { player: SquadPlayer; metric: SquadMetric; tag?: string }) {
+/** Optional extras for the recommendation view (issue #61): which players just came in, and a line under the metric. */
+export type PitchExtras = { newIds?: ReadonlySet<number>; below?: (player: SquadPlayer) => ReactNode };
+
+function Card({ player, metric, tag, extras }: { player: SquadPlayer; metric: SquadMetric; tag?: string; extras?: PitchExtras }) {
   const { tr, locale } = useLocale();
   const flag = player.status !== "a" ? availability(player.status, locale) : null;
   const note = [flag?.label, player.news].filter(Boolean).join(" · ");
+  const isNew = extras?.newIds?.has(player.elementId) ?? false;
 
   return (
-    <div className="flex min-w-0 max-w-[92px] flex-1 flex-col items-center text-center" title={note || undefined}>
+    <div className="flex min-w-0 max-w-[92px] flex-1 flex-col items-center text-center" title={note || undefined} data-new={isNew ? "true" : undefined}>
       {tag ? <span className="mb-0.5 text-caption leading-none text-[var(--muted)]">{tag}</span> : null}
-      <div className="relative">
+      <div className={`relative ${isNew ? "rounded-sm ring-2 ring-[var(--accent)]" : ""}`}>
         <RemoteImage
           src={player.photoUrl}
           alt=""
@@ -67,6 +72,9 @@ function Card({ player, metric, tag }: { player: SquadPlayer; metric: SquadMetri
           >
             {player.isCaptain ? "C" : "V"}
           </span>
+        ) : null}
+        {isNew ? (
+          <span className="absolute -bottom-1 left-0 rounded-sm bg-[var(--accent)] px-1 text-caption font-bold leading-4 text-white">IN</span>
         ) : null}
         {flag && flag.tone !== "ok" ? (
           <span
@@ -88,12 +96,13 @@ function Card({ player, metric, tag }: { player: SquadPlayer; metric: SquadMetri
       <div className="flex min-h-[22px] w-full items-center justify-center rounded-b-sm bg-[var(--accent)] px-0.5 text-caption font-semibold leading-5 text-white">
         <MetricValue player={player} metric={metric} />
       </div>
+      {extras?.below ? <div className="mt-0.5 text-caption leading-tight tabular-nums text-[var(--muted)]">{extras.below(player)}</div> : null}
     </div>
   );
 }
 
 /** Pitch view: the XI by line (goalkeeper at the top), the bench in FPL's substitution order underneath. */
-export function SquadPitch({ squad, metric }: { squad: EntrySquadPayload["squad"]; metric: SquadMetric }) {
+export function SquadPitch({ squad, metric, extras }: { squad: EntrySquadPayload["squad"]; metric: SquadMetric; extras?: PitchExtras }) {
   const { tr } = useLocale();
   const starters = squad.filter((player) => player.isStarter);
   const bench = squad.filter((player) => !player.isStarter);
@@ -107,7 +116,7 @@ export function SquadPitch({ squad, metric }: { squad: EntrySquadPayload["squad"
         {lines.map((line, index) => (
           <div key={index} className="flex items-start justify-around gap-1">
             {line.map((player) => (
-              <Card key={player.elementId} player={player} metric={metric} />
+              <Card key={player.elementId} player={player} metric={metric} extras={extras} />
             ))}
           </div>
         ))}
@@ -118,7 +127,7 @@ export function SquadPitch({ squad, metric }: { squad: EntrySquadPayload["squad"
         </div>
         <div className="flex items-start justify-around gap-1">
           {bench.map((player, index) => (
-            <Card key={player.elementId} player={player} metric={metric} tag={index === 0 ? "GK" : String(index)} />
+            <Card key={player.elementId} player={player} metric={metric} tag={index === 0 ? "GK" : String(index)} extras={extras} />
           ))}
         </div>
       </div>

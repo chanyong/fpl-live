@@ -238,6 +238,45 @@ describe("rules-based panel (AI off)", () => {
     expect(within(panel).getAllByText(`Zorro${buyer}`).length).toBeGreaterThan(0);
   });
 
+  it("draws the squad after a picked scenario on the pitch, with the new signing marked IN (issue #61)", async () => {
+    const scenarios = recommend.transfers!.scenarios;
+    const one = scenarios.find((scenario) => scenario.type === "one")!;
+    const ids = recommend.players.map((player) => player.elementId).filter((id) => !one.out.includes(id));
+    const all = [...ids, ...one.in];
+    const card = (id: number) => ({ webName: `Pitch${id}`, teamShortName: "ARS", position: "MID", status: "a", news: "", photoUrl: null, xpNext: 3.5, fixtures: [{ opponent: "CHE", home: true, difficulty: 3 }] });
+    const lineupPlayers = Object.fromEntries(all.map((id) => [String(id), card(id)]));
+    const scenarioLineups = Object.fromEntries(
+      scenarios.map((scenario) => [
+        scenario.id,
+        {
+          formation: "4-4-2",
+          starters: all.slice(0, 11),
+          bench: all.slice(11, 15),
+          captainId: all[0],
+          viceCaptainId: all[1],
+          expectedPoints: 40,
+          incoming: scenario.in.filter((id) => all.slice(0, 15).includes(id))
+        }
+      ])
+    );
+    // The new signing starts for the "one" scenario.
+    scenarioLineups[one.id].starters = [one.in[0], ...all.filter((id) => id !== one.in[0]).slice(0, 10)];
+    scenarioLineups[one.id].bench = all.filter((id) => !scenarioLineups[one.id].starters.includes(id)).slice(0, 4);
+    scenarioLineups[one.id].incoming = [one.in[0]];
+    installFetch(TEAM, { recommend: () => json({ ...recommend, scenarioLineups, lineupPlayers }) });
+    renderPage(TEAM);
+    const panel = await screen.findByRole("region", { name: "추천" });
+    await within(panel).findByText("추천 선발·벤치");
+
+    // The recommended scenario's pitch is there by default; picking the 1-transfer row switches it.
+    expect(panel.querySelector("[data-scenario-pitch]")).not.toBeNull();
+    await userEvent.click(panel.querySelector(`[data-summary-row="${one.id}"]`) ?? panel.querySelector("[data-summary-row]")!);
+    const pitch = panel.querySelector("[data-scenario-pitch]")!;
+    expect(pitch.querySelectorAll('[data-new="true"]').length).toBe(1);
+    expect(within(pitch as HTMLElement).getAllByText(/기대 3\.5/).length).toBe(15);
+    expect(within(pitch as HTMLElement).getByText(/포메이션 4-4-2/)).toBeInTheDocument();
+  });
+
   it("explains why a chip is missing and warns about a thin budget and a recommended chip", async () => {
     const scenarios = recommend.transfers!.scenarios;
     const template = scenarios.find((scenario) => scenario.type === "one")!;
