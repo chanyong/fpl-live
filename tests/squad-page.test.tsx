@@ -103,7 +103,7 @@ describe("squad page", () => {
     expect(JSON.parse(window.localStorage.getItem(SQUAD_VIEW_KEY)!)).toMatchObject({ metric: "selling" });
 
     await user.selectOptions(screen.getByLabelText("카드에 표시"), "change");
-    expect(screen.getByText("+0.5")).toBeInTheDocument();
+    expect(screen.getByText("+£0.5m")).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("카드에 표시"), "ownership");
     expect(screen.getByText("30.1%")).toBeInTheDocument();
     await user.selectOptions(screen.getByLabelText("카드에 표시"), "form");

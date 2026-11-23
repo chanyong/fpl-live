@@ -4,6 +4,9 @@ import type { FplPosition } from "@/lib/types";
 /** One fixture a squad player has in the coming gameweek. A blank gameweek has none, a double has two. */
 export type SquadFixture = { opponent: string; home: boolean; difficulty: number };
 
+/** One gameweek of a player's outlook: no games is a blank week, two is a double. */
+export type SquadOutlookWeek = { gw: number; games: SquadFixture[] };
+
 export type SquadPlayer = {
   elementId: number;
   webName: string;
@@ -33,6 +36,8 @@ export type SquadPlayer = {
   eventPoints: number | null;
   /** Fixtures in the next gameweek. */
   fixtures: SquadFixture[];
+  /** Issue #74: the next 5 gameweeks from `nextGw`, one entry per week (absent in older cached payloads). */
+  outlook?: SquadOutlookWeek[];
 };
 
 export type SquadTransferSummary = {

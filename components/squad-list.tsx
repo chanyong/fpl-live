@@ -1,15 +1,15 @@
 "use client";
 
-import { difficultyStyle } from "@/components/fdr-strip";
+import { FdrCells } from "@/components/fdr-cells";
 import { useLocale } from "@/components/locale-provider";
 import { crestUrl, RemoteImage } from "@/components/remote-image";
 import { availability, POSITION_LABELS } from "@/lib/player-metrics";
 import { formatMoney } from "@/lib/season-summary";
-import { formatOpponent, formatPriceChange } from "@/lib/squad-view";
+import { formatOpponent, formatPriceChangeMoney, formatPriceChangePercent, priceChangeTone, type FdrHorizon } from "@/lib/squad-view";
 import type { EntrySquadPayload } from "@/lib/squad-types";
 
 /** List view: every value for every player at once, starters first, then the bench in substitution order. */
-export function SquadList({ squad }: { squad: EntrySquadPayload["squad"] }) {
+export function SquadList({ squad, horizon = 3 }: { squad: EntrySquadPayload["squad"]; horizon?: FdrHorizon }) {
   const { tr, locale } = useLocale();
 
   const header = (ko: string, en: string, right = true) => (
@@ -31,7 +31,7 @@ export function SquadList({ squad }: { squad: EntrySquadPayload["squad"] }) {
             {header("FDR", "FDR")}
             {header("폼", "Form")}
             {header("소유율", "Own.")}
-            {header("가격 변동", "Change")}
+            {header("가격 변동(시즌 시작가 대비)", "Change (vs season start)")}
           </tr>
         </thead>
         <tbody>
@@ -80,29 +80,18 @@ export function SquadList({ squad }: { squad: EntrySquadPayload["squad"] }) {
                 <td className="px-2 py-1.5 text-right tabular-nums">{formatMoney(player.nowCost)}</td>
                 <td className="px-2 py-1.5 text-right tabular-nums">{formatMoney(player.sellingPrice)}</td>
                 <td className="px-2 py-1.5 text-right">
-                  {player.fixtures.length === 0 ? (
-                    "-"
-                  ) : (
-                    <span className="inline-flex gap-0.5">
-                      {player.fixtures.map((fixture, index) => (
-                        <span
-                          key={index}
-                          style={difficultyStyle(fixture.difficulty)}
-                          className="inline-flex h-[18px] min-w-6 items-center justify-center rounded-[4px] px-1 text-caption font-semibold tabular-nums"
-                        >
-                          {fixture.difficulty}
-                        </span>
-                      ))}
-                    </span>
-                  )}
+                  <FdrCells player={player} horizon={horizon} className={horizon === 5 ? "min-w-[150px]" : "min-w-[120px]"} />
                 </td>
                 <td className="px-2 py-1.5 text-right tabular-nums">{player.form.toFixed(1)}</td>
                 <td className="px-2 py-1.5 text-right tabular-nums">{player.selectedByPercent.toFixed(1)}%</td>
                 <td className="whitespace-nowrap px-2 py-1.5 text-right tabular-nums">
-                  {formatPriceChange(player.costChangeStart)}
-                  <span className="ml-1 text-caption text-[var(--muted)]">
-                    ({tr("이번 GW ", "GW ")}
-                    {formatPriceChange(player.costChangeEvent)})
+                  <span className={`font-semibold ${priceChangeTone(player.costChangeStart)}`}>{formatPriceChangeMoney(player.costChangeStart)}</span>
+                  {formatPriceChangePercent(player) ? (
+                    <span className="ml-1 text-caption text-[var(--muted)]">({formatPriceChangePercent(player)})</span>
+                  ) : null}
+                  <span className={`ml-1 text-caption ${priceChangeTone(player.costChangeEvent) || "text-[var(--muted)]"}`}>
+                    {tr("이번 GW ", "GW ")}
+                    {formatPriceChangeMoney(player.costChangeEvent)}
                   </span>
                 </td>
               </tr>
