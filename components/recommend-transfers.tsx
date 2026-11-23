@@ -125,7 +125,12 @@ function ScenarioCard({
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-1 lg:flex-row lg:items-start lg:gap-6">
           <div className="flex min-w-0 flex-col gap-1 lg:flex-1">
-            {isChip ? null : <ScenarioBadgeRow scenario={scenario} recommended={recommended} />}
+            {isChip ? null : (
+              // empty:hidden: no badge, no row (so the swaps start at the top, level with the net gain)
+              <div className="flex flex-wrap items-center gap-1.5 empty:hidden">
+                <ScenarioBadges scenario={scenario} recommended={recommended} />
+              </div>
+            )}
             {scenario.type === "roll" ? (
               <p className="text-meta text-[var(--muted)]">{tr("이번 주는 이적하지 않습니다.", "No transfer this week.")}</p>
             ) : isChip ? (
@@ -161,17 +166,6 @@ function ScenarioCard({
         </p>
       ) : null}
     </li>
-  );
-}
-
-/** Badges only when there are any, so an empty row never adds a gap. */
-function ScenarioBadgeRow({ scenario, recommended }: { scenario: TransferScenario; recommended: boolean }) {
-  const any = recommended || scenario.budgetTight || scenario.sellingPriceEstimated || scenario.freeTransfersEstimated || (isChipType(scenario.type) && !scenario.optimal);
-  if (!any) return null;
-  return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <ScenarioBadges scenario={scenario} recommended={recommended} />
-    </div>
   );
 }
 
