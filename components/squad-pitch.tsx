@@ -55,15 +55,15 @@ function Card({ player, metric, tag, extras }: { player: SquadPlayer; metric: Sq
   const isNew = extras?.newIds?.has(player.elementId) ?? false;
 
   return (
-    <div className="flex min-w-0 max-w-[92px] flex-1 flex-col items-center text-center" title={note || undefined} data-new={isNew ? "true" : undefined}>
+    <div className="flex min-w-0 max-w-[92px] flex-1 lg:max-w-[128px] flex-col items-center text-center" title={note || undefined} data-new={isNew ? "true" : undefined}>
       {tag ? <span className="mb-0.5 text-caption leading-none text-[var(--muted)]">{tag}</span> : null}
       <div className={`relative ${isNew ? "rounded-sm ring-2 ring-[var(--accent)]" : ""}`}>
         <RemoteImage
           src={player.photoUrl}
           alt=""
           fallback={player.webName.slice(0, 1)}
-          className="h-[52px] w-10 rounded-sm bg-white/60 object-cover object-top"
-          fallbackClassName="grid h-[52px] w-10 place-items-center rounded-sm bg-white/60 text-body font-bold text-[var(--muted)]"
+          className="h-[52px] w-10 rounded-sm bg-white/60 object-cover object-top lg:h-[72px] lg:w-14"
+          fallbackClassName="grid h-[52px] w-10 place-items-center lg:h-[72px] lg:w-14 rounded-sm bg-white/60 text-body font-bold text-[var(--muted)]"
         />
         {player.isCaptain || player.isViceCaptain ? (
           <span
@@ -112,7 +112,7 @@ export function SquadPitch({ squad, metric, extras }: { squad: EntrySquadPayload
 
   return (
     <div>
-      <div className="flex flex-col gap-3 rounded-md border border-[var(--border)] bg-[var(--accent-soft)] px-2 py-3">
+      <div className="flex flex-col gap-3 rounded-md border border-[var(--border)] bg-[var(--accent-soft)] px-2 py-3 lg:gap-5 lg:py-5">
         {lines.map((line, index) => (
           <div key={index} className="flex items-start justify-around gap-1">
             {line.map((player) => (

@@ -26,37 +26,44 @@ function Stat({ label, value, hint, estimate }: { label: string; value: ReactNod
   );
 }
 
-function ChipBadge({ chip }: { chip: ChipStatus }) {
-  const { tr, locale } = useLocale();
+function useChipState(chip: ChipStatus) {
+  const { tr } = useLocale();
   const state = chip.state;
-  const window = `GW${chip.startEvent}–${chip.stopEvent}`;
-  const half = chip.startEvent < 20 ? tr("전반", "1st half") : tr("후반", "2nd half");
-
-  let text: string;
-  let tone: string;
   if (state.kind === "used") {
-    text = tr(`GW${state.event} 사용`, `Used GW${state.event}`);
-    tone = "bg-[var(--surface-strong)] text-[var(--muted)]";
-  } else if (state.kind === "available") {
-    text = tr("사용 가능", "Available");
-    tone = "bg-[var(--accent-soft)] text-[var(--accent-ink)]";
-  } else if (state.kind === "later") {
-    text = tr(`GW${state.startEvent}부터`, `From GW${state.startEvent}`);
-    tone = "bg-[var(--surface-strong)] text-[var(--muted)]";
-  } else {
-    text = tr("기간 종료", "Expired");
-    tone = "bg-[var(--surface-strong)] text-[var(--muted)]";
+    return { text: tr(`GW${state.event} 사용`, `Used GW${state.event}`), tone: "bg-[var(--surface-strong)] text-[var(--muted)]" };
   }
+  if (state.kind === "available") {
+    return { text: tr("사용 가능", "Available"), tone: "bg-[var(--accent-soft)] text-[var(--accent-ink)]" };
+  }
+  if (state.kind === "later") {
+    return { text: tr(`GW${state.startEvent}부터`, `From GW${state.startEvent}`), tone: "bg-[var(--surface-strong)] text-[var(--muted)]" };
+  }
+  return { text: tr("기간 종료", "Expired"), tone: "bg-[var(--surface-strong)] text-[var(--muted)]" };
+}
 
+function ChipRow({ chip }: { chip: ChipStatus }) {
+  const { tr } = useLocale();
+  const { text, tone } = useChipState(chip);
+  const half = chip.startEvent < 20 ? tr("전반", "1st half") : tr("후반", "2nd half");
   return (
-    <li className="flex flex-col items-start gap-1 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-      <div className="min-w-0">
-        <div className="truncate text-meta font-semibold">{chipLabel(chip.name, false, locale)}</div>
-        <div className="text-caption text-[var(--muted)]">
-          {half} · {window}
-        </div>
-      </div>
+    <div className="flex items-center justify-between gap-2">
+      <span className="min-w-0 truncate text-caption text-[var(--muted)]">
+        {half} · GW{chip.startEvent}–{chip.stopEvent}
+      </span>
       <span className={`shrink-0 rounded-sm px-1.5 py-0.5 text-caption font-semibold ${tone}`}>{text}</span>
+    </div>
+  );
+}
+
+/** One card per chip with its first-half and second-half grants on two lines (issue #64). */
+function ChipCard({ name, chips }: { name: string; chips: ChipStatus[] }) {
+  const { locale } = useLocale();
+  return (
+    <li className="flex min-w-0 flex-col gap-1 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5">
+      <div className="truncate text-meta font-semibold">{chipLabel(name, false, locale)}</div>
+      {chips.map((chip) => (
+        <ChipRow key={`${chip.name}-${chip.startEvent}`} chip={chip} />
+      ))}
     </li>
   );
 }
@@ -66,10 +73,15 @@ export function SquadStatusBar({ data, className = "" }: { data: EntrySquadPaylo
   const { tr } = useLocale();
   const t = data.transfers;
   const nextGw = data.nextGw;
+  const chipMap = new Map<string, ChipStatus[]>();
+  for (const chip of data.chips) {
+    chipMap.set(chip.name, [...(chipMap.get(chip.name) ?? []), chip]);
+  }
+  const chipGroups = [...chipMap.entries()];
 
   return (
     <section aria-label={tr("팀 현황", "Team status")} className={`flex min-w-0 flex-col gap-2 ${className}`}>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-2">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-1">
         <Stat label={tr("은행 잔액", "Bank")} value={formatMoney(data.bank)} />
         <Stat
           label={tr("무료 이적", "Free transfers")}
@@ -116,9 +128,9 @@ export function SquadStatusBar({ data, className = "" }: { data: EntrySquadPaylo
 
       <div>
         <h2 className="mb-1.5 text-body font-semibold">{tr("칩 현황", "Chips")}</h2>
-        <ul className="grid grid-cols-2 gap-1.5 md:grid-cols-4 lg:grid-cols-1 xl:grid-cols-2">
-          {data.chips.map((chip) => (
-            <ChipBadge key={`${chip.name}-${chip.startEvent}`} chip={chip} />
+        <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 lg:grid-cols-1">
+          {chipGroups.map(([name, chips]) => (
+            <ChipCard key={name} name={name} chips={chips} />
           ))}
         </ul>
       </div>
