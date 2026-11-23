@@ -12,12 +12,11 @@ import { LocaleToggle, useLocale } from "@/components/locale-provider";
 import { LeagueKpis } from "@/components/league-kpis";
 import { LeagueTable } from "@/components/league-table";
 import { PlayerTrendsPanel } from "@/components/player-trends-panel";
-import { PremierLeagueTable } from "@/components/premier-league-table";
 import { RankChangePanel } from "@/components/rank-change-panel";
 import { SidePanelLayout } from "@/components/side-panel-layout";
 import { SiteHeader } from "@/components/site-header";
 import { SubTabs, TabLink } from "@/components/sub-tabs";
-import { TeamFixtureTable } from "@/components/team-fixture-table";
+import { TeamsPanel } from "@/components/teams-panel";
 import { ShareButton } from "@/components/share-button";
 import { RefreshIndicator } from "@/components/refresh-indicator";
 import { RivalCard, useRivalPick } from "@/components/rival-card";
@@ -354,10 +353,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
 
           {tab === "team" ? (
             playerStatsQuery.data ? (
-              <>
-                <TeamFixtureTable data={playerStatsQuery.data} />
-                <PremierLeagueTable table={playerStatsQuery.data.table} />
-              </>
+              <TeamsPanel outlook={playerStatsQuery.data} table={playerStatsQuery.data.table} />
             ) : (
               <div className="mt-3 rounded-md border border-[var(--border)] bg-[var(--surface)] px-4 py-6 text-center text-body text-[var(--muted)]">
                 {playerStatsQuery.error

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CaretDown, CaretRight } from "@/components/icons";
 import { JournalGwLink } from "@/components/journal-gw-link";
 import { KpiCard, KpiGrid } from "@/components/kpi-card";
@@ -19,23 +19,32 @@ const EMPTY_IDS = new Set<number>();
 type Tr = <T = string>(ko: T, en: T) => T;
 
 /**
- * Kickoffs follow the viewer's own time zone, spelled in the language on screen. The panel only
- * renders after the league data has loaded in the browser, so reading the zone here is safe.
+ * Kickoffs follow the viewer's own time zone, spelled in the language on screen. The league screen only
+ * renders after its data has loaded in the browser, so reading the zone there is safe. The public pages are
+ * drawn on the server, so they pass `timeZone` (Korean time) to get the same clock on server and browser.
  */
-const DATE_FORMATTERS = {
-  ko: new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric" }),
-  en: new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" })
-};
+type Locale = "ko" | "en";
 
-const WEEKDAY_FORMATTERS = {
-  ko: new Intl.DateTimeFormat("ko-KR", { weekday: "short" }),
-  en: new Intl.DateTimeFormat("en-GB", { weekday: "short" })
-};
+const formatterCache = new Map<string, Intl.DateTimeFormat>();
 
-const TIME_FORMATTERS = {
-  ko: new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit", hour12: false }),
-  en: new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })
-};
+function formatter(locale: Locale, key: "date" | "weekday" | "time" | "zone", timeZone: string | undefined) {
+  const cacheKey = `${locale}|${key}|${timeZone ?? ""}`;
+  let found = formatterCache.get(cacheKey);
+  if (!found) {
+    const tag = locale === "ko" ? "ko-KR" : "en-GB";
+    const zone = timeZone ? { timeZone } : {};
+    found =
+      key === "date"
+        ? new Intl.DateTimeFormat(tag, { ...zone, ...(locale === "ko" ? { month: "long", day: "numeric" } : { day: "numeric", month: "short" }) })
+        : key === "weekday"
+          ? new Intl.DateTimeFormat(tag, { ...zone, weekday: "short" })
+          : key === "time"
+            ? new Intl.DateTimeFormat(tag, { ...zone, hour: "2-digit", minute: "2-digit", hour12: false })
+            : new Intl.DateTimeFormat("en-GB", { ...zone, timeZoneName: "short" });
+    formatterCache.set(cacheKey, found);
+  }
+  return found;
+}
 
 function fixtureStatus(fixture: LeagueFixture, tr: Tr) {
   if (hasFixtureEnded(fixture)) {
@@ -82,37 +91,37 @@ function toKstDate(kickoffTime: string | null) {
 }
 
 /** "GMT+9" for the viewer's zone, so a clock time is never ambiguous. */
-function zoneLabel(date: Date) {
-  const part = new Intl.DateTimeFormat("en-GB", { timeZoneName: "short" })
+function zoneLabel(date: Date, timeZone: string | undefined) {
+  const part = formatter("en", "zone", timeZone)
     .formatToParts(date)
     .find((item) => item.type === "timeZoneName");
 
   return part?.value ?? "";
 }
 
-function formatDate(date: Date, locale: "ko" | "en") {
-  const dateLabel = DATE_FORMATTERS[locale].format(date).replace(/\s+/g, " ").trim();
-  const weekdayLabel = WEEKDAY_FORMATTERS[locale].format(date).replace(/\s+/g, "").trim();
+function formatDate(date: Date, locale: Locale, timeZone: string | undefined) {
+  const dateLabel = formatter(locale, "date", timeZone).format(date).replace(/\s+/g, " ").trim();
+  const weekdayLabel = formatter(locale, "weekday", timeZone).format(date).replace(/\s+/g, "").trim();
 
   return locale === "ko" ? `${dateLabel}(${weekdayLabel})` : `${weekdayLabel} ${dateLabel}`;
 }
 
-function kickoffDateLabel(kickoffTime: string | null, tr: Tr, locale: "ko" | "en") {
+function kickoffDateLabel(kickoffTime: string | null, tr: Tr, locale: Locale, timeZone: string | undefined) {
   const date = toKstDate(kickoffTime);
   if (!date) {
     return tr("일정 미정", "Date TBC");
   }
 
-  return formatDate(date, locale);
+  return formatDate(date, locale, timeZone);
 }
 
-function kickoffDateTimeLabel(kickoffTime: string | null, tr: Tr, locale: "ko" | "en") {
+function kickoffDateTimeLabel(kickoffTime: string | null, tr: Tr, locale: Locale, timeZone: string | undefined) {
   const date = toKstDate(kickoffTime);
   if (!date) {
     return tr("일정 미정", "Date TBC");
   }
 
-  return `${formatDate(date, locale)} ${TIME_FORMATTERS[locale].format(date)} ${zoneLabel(date)}`;
+  return `${formatDate(date, locale, timeZone)} ${formatter(locale, "time", timeZone).format(date)} ${zoneLabel(date, timeZone)}`;
 }
 
 type StatusFilter = "all" | "live" | "upcoming" | "ended";
@@ -305,18 +314,29 @@ function TeamLine({ name, code, align }: { name: string; code: number; align: "l
   );
 }
 
+/**
+ * The fixture cards of one gameweek. The league screen and the top-menu /fixtures page both draw them here
+ * (issue #80), so they cannot drift apart. Without `rows` (no league) everything about league holdings is left out.
+ */
 export function FixturesPanel({
   fixtures,
   currentGw,
-  rows
+  rows = [],
+  timeZone,
+  headerExtra
 }: {
   fixtures: LeagueFixture[];
   currentGw: number;
-  rows: LeagueRow[];
+  rows?: LeagueRow[];
+  /** Spell kickoff times in this zone; set by the server-drawn public page so server and browser agree. */
+  timeZone?: string;
+  /** Rendered beside the heading, e.g. the previous/next gameweek buttons. */
+  headerExtra?: ReactNode;
 }) {
+  const hasLeague = rows.length > 0;
   const { tr, locale } = useLocale();
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   useEffect(() => {
@@ -324,6 +344,7 @@ export function FixturesPanel({
   }, [fixtures]);
 
   useEffect(() => {
+    setNow(Date.now());
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);
   }, []);
@@ -356,18 +377,19 @@ export function FixturesPanel({
     const groups = new Map<string, LeagueFixture[]>();
 
     for (const fixture of visibleFixtures) {
-      const key = kickoffDateLabel(fixture.kickoffTime, tr, locale);
+      const key = kickoffDateLabel(fixture.kickoffTime, tr, locale, timeZone);
       const existing = groups.get(key) ?? [];
       existing.push(fixture);
       groups.set(key, existing);
     }
 
     return Array.from(groups.entries()).map(([label, items]) => ({ label, items }));
-  }, [visibleFixtures, tr, locale]);
+  }, [visibleFixtures, tr, locale, timeZone]);
 
   if (fixtures.length === 0) {
     return (
       <section className="rounded-md border border-[var(--border)] bg-[var(--surface)] p-4">
+        {headerExtra ? <div className="mb-2">{headerExtra}</div> : null}
         <div className="text-body text-[var(--muted)]">
           {tr(`게임위크 ${currentGw} 경기가 없습니다.`, `No fixtures in gameweek ${currentGw}.`)}
         </div>
@@ -378,7 +400,7 @@ export function FixturesPanel({
   return (
     <SidePanelLayout
       side={
-    <KpiGrid label={tr(`게임위크 ${currentGw} 경기 요약`, `Gameweek ${currentGw} fixtures summary`)}>
+    <KpiGrid label={tr(`게임위크 ${currentGw} 경기 요약`, `Gameweek ${currentGw} fixtures summary`)} columns={hasLeague ? 4 : 3}>
       <KpiCard
         label={tr("진행 중", "Live")}
         value={tr(`${statusCounts.live}경기`, String(statusCounts.live))}
@@ -394,11 +416,13 @@ export function FixturesPanel({
         value={tr(`${statusCounts.ended}경기`, String(statusCounts.ended))}
         sub={`GW ${currentGw}`}
       />
-      <KpiCard
-        label={tr("리그 보유 경기", "League-owned matches")}
-        value={`${heldFixtures}/${fixtures.length}`}
-        sub={tr("우리 리그 선수가 뛰는 경기", "Our players are involved")}
-      />
+      {hasLeague ? (
+        <KpiCard
+          label={tr("리그 보유 경기", "League-owned matches")}
+          value={`${heldFixtures}/${fixtures.length}`}
+          sub={tr("우리 리그 선수가 뛰는 경기", "Our players are involved")}
+        />
+      ) : null}
     </KpiGrid>
       }
     >
@@ -408,7 +432,8 @@ export function FixturesPanel({
           <div className="text-caption font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
             {tr(`게임위크 ${currentGw} 경기`, `Gameweek ${currentGw} fixtures`)}
           </div>
-          <JournalGwLink gw={currentGw} currentGw={currentGw} leagueEntryIds={leagueEntryIds} />
+          {hasLeague ? <JournalGwLink gw={currentGw} currentGw={currentGw} leagueEntryIds={leagueEntryIds} /> : null}
+          {headerExtra}
         </div>
         <div role="group" aria-label={tr("경기 상태 필터", "Fixture status filter")} className="flex flex-wrap gap-1.5">
           {STATUS_FILTERS.map((item) => (
@@ -446,7 +471,7 @@ export function FixturesPanel({
                 const owned = ownership.get(fixture.id);
                 const topOwned = owned?.players[0];
                 const countdown =
-                  isFixtureInPlay(fixture) || hasFixtureEnded(fixture)
+                  now === null || isFixtureInPlay(fixture) || hasFixtureEnded(fixture)
                     ? null
                     : countdownLabel(fixture.kickoffTime, now, locale);
 
@@ -469,7 +494,7 @@ export function FixturesPanel({
                     >
                       <div className="flex items-center justify-between gap-2 text-caption text-[var(--muted)]">
                         <span className="min-w-0 truncate">
-                          {kickoffDateTimeLabel(fixture.kickoffTime, tr, locale)}
+                          {kickoffDateTimeLabel(fixture.kickoffTime, tr, locale, timeZone)}
                           {countdown ? (
                             <span className="ml-1.5 font-semibold text-[var(--accent)]">{countdown}</span>
                           ) : null}
@@ -489,7 +514,7 @@ export function FixturesPanel({
 
                       <div className="mt-1.5 flex items-center gap-1 text-caption text-[var(--muted)]">
                         <span className="shrink-0">{isSelected ? <CaretDown /> : <CaretRight />}</span>
-                        {owned && owned.managerCount > 0 ? (
+                        {!hasLeague ? null : owned && owned.managerCount > 0 ? (
                           <span className="min-w-0 flex-1 truncate">
                             {tr("우리 리그", "Our league:")} <b className="font-semibold text-[var(--text)]">{tr(`${owned.managerCount}명`, String(owned.managerCount))}</b> {tr("보유", "own")}
                             {topOwned && topOwned.captains > 0 ? (

@@ -1,9 +1,9 @@
 import { getBootstrapStatic, getFixtures } from "@/lib/fpl-client";
 import { getCurrentGw } from "@/lib/gameweek";
-import { buildProvisionalBonusByElement } from "@/lib/league-aggregator";
+import { buildFixturesPayload, buildProvisionalBonusByElement } from "@/lib/league-aggregator";
 import { buildPlayerStat, buildTeamOutlook } from "@/lib/player-stats";
 import { buildPremierLeagueTable } from "@/lib/pl-table";
-import type { PlayerStat, PremierLeagueTableRow, TeamFixtureOutlook, TeamOutlookData } from "@/lib/types";
+import type { LeagueFixture, PlayerStat, PremierLeagueTableRow, TeamFixtureOutlook, TeamOutlookData } from "@/lib/types";
 
 /**
  * Premier League facts that belong to no mini-league: the table, the fixture list, the team fixture
@@ -13,27 +13,16 @@ import type { PlayerStat, PremierLeagueTableRow, TeamFixtureOutlook, TeamOutlook
 type Bootstrap = Awaited<ReturnType<typeof getBootstrapStatic>>;
 type Fixtures = Awaited<ReturnType<typeof getFixtures>>;
 
-/** Gameweeks listed on the fixtures page: the current one and the two after it. */
-const FIXTURE_WEEKS = 3;
-
-export type PublicFixtureSide = { name: string; shortName: string; code: number; score: number | null };
-
-export type PublicFixture = {
-  id: number;
-  gw: number;
-  kickoffTime: string | null;
-  home: PublicFixtureSide;
-  away: PublicFixtureSide;
-  state: "upcoming" | "live" | "finished";
-  minutes: number;
-};
-
-export type PublicFixtureWeek = { gw: number; fixtures: PublicFixture[] };
-
 export type PublicFootball = {
   currentGw: number;
+  /** The gameweek whose fixtures are listed: the requested one, else the current one. */
+  gw: number;
+  /** First and last gameweek that exist, for the previous/next buttons. */
+  firstGw: number;
+  lastGw: number;
   table: PremierLeagueTableRow[];
-  weeks: PublicFixtureWeek[];
+  /** Same shape as the league screen's fixtures, so the same card list draws them (issue #80). */
+  fixtures: LeagueFixture[];
   /** Feeds components/team-fixture-table. */
   teamOutlook: TeamOutlookData;
 };
@@ -54,60 +43,49 @@ export function publicCurrentGw(events: Bootstrap["events"]) {
   return started ? getCurrentGw(events) : (events[0]?.id ?? 1);
 }
 
-function fixtureState(fixture: Fixtures[number]): PublicFixture["state"] {
-  if (fixture.finished || fixture.finished_provisional) {
-    return "finished";
+/** A gameweek number from the address (?gw=12); anything that is not a whole 1-38 means "the current one". */
+export function parsePublicGw(raw: string | string[] | undefined): number | null {
+  const text = Array.isArray(raw) ? raw[0] : raw;
+  if (!text || !/^\d{1,2}$/.test(text)) {
+    return null;
   }
-  return fixture.started ? "live" : "upcoming";
+  const gw = Number(text);
+  return gw >= 1 && gw <= 38 ? gw : null;
 }
 
-function byKickoff(left: PublicFixture, right: PublicFixture) {
-  // A fixture with no date yet goes last.
-  if (left.kickoffTime === null || right.kickoffTime === null) {
-    return (left.kickoffTime === null ? 1 : 0) - (right.kickoffTime === null ? 1 : 0) || left.id - right.id;
-  }
-  return left.kickoffTime.localeCompare(right.kickoffTime) || left.id - right.id;
-}
-
-export function buildPublicFootball(bootstrap: Bootstrap, fixtures: Fixtures): PublicFootball {
+export function buildPublicFootball(bootstrap: Bootstrap, fixtures: Fixtures, requestedGw?: number | null): PublicFootball {
   const currentGw = publicCurrentGw(bootstrap.events);
-  const teamsById = new Map(bootstrap.teams.map((team) => [team.id, team]));
-  const side = (teamId: number, score: number | null): PublicFixtureSide => {
-    const team = teamsById.get(teamId);
-    return { name: team?.name ?? "-", shortName: team?.short_name ?? "-", code: team?.code ?? 0, score };
-  };
+  const ids = bootstrap.events.map((event) => event.id);
+  const firstGw = ids.length > 0 ? Math.min(...ids) : 1;
+  const lastGw = ids.length > 0 ? Math.max(...ids) : 38;
+  const gw = requestedGw && requestedGw >= firstGw && requestedGw <= lastGw ? requestedGw : currentGw;
 
-  const weeks: PublicFixtureWeek[] = [];
-  for (let gw = currentGw; gw < currentGw + FIXTURE_WEEKS; gw += 1) {
-    const inWeek = fixtures
-      .filter((fixture) => fixture.event === gw)
-      .map<PublicFixture>((fixture) => {
-        const state = fixtureState(fixture);
-        // A score before kickoff is not a result.
-        const scored = state !== "upcoming";
-        return {
-          id: fixture.id,
-          gw,
-          kickoffTime: fixture.kickoff_time,
-          home: side(fixture.team_h, scored ? fixture.team_h_score : null),
-          away: side(fixture.team_a, scored ? fixture.team_a_score : null),
-          state,
-          minutes: state === "live" ? fixture.minutes : 0
-        };
-      })
-      .sort(byKickoff);
-
-    if (inWeek.length > 0) {
-      weeks.push({ gw, fixtures: inWeek });
-    }
-  }
+  const teams = bootstrap.teams.map((team) => ({ id: team.id, name: team.name, shortName: team.short_name, code: team.code }));
+  const elements = bootstrap.elements.map((element) => ({
+    id: element.id,
+    webName: element.web_name,
+    teamId: element.team,
+    elementType: element.element_type,
+    photo: element.photo
+  }));
+  // A score before kickoff is a placeholder, not a result.
+  const leagueFixtures = buildFixturesPayload(
+    fixtures.filter((fixture) => fixture.event === gw),
+    new Map(teams.map((team) => [team.id, team])),
+    new Map(elements.map((element) => [element.id, element]))
+  ).map((fixture) =>
+    fixture.started || fixture.finished || fixture.finishedProvisional ? fixture : { ...fixture, homeScore: null, awayScore: null }
+  );
 
   const { outlook } = buildTeamOutlook(bootstrap.teams, fixtures, currentGw);
 
   return {
     currentGw,
+    gw,
+    firstGw,
+    lastGw,
     table: buildPremierLeagueTable(bootstrap.teams, fixtures),
-    weeks,
+    fixtures: leagueFixtures,
     teamOutlook: {
       league: { currentGw },
       players: bootstrap.teams.map((team) => ({ teamShortName: team.short_name, teamCode: team.code })),

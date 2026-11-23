@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { KpiCard, KpiGrid } from "@/components/kpi-card";
 import { SidePanelLayout } from "@/components/side-panel-layout";
@@ -65,9 +64,9 @@ function Section({
 }
 
 /**
- * `scope="public"` is the league-free players page (/players): no league data, so the league view and the
- * league-ownership figures are left out, and the views below are stacked on one page instead of tabbed so the
- * whole content is in the server-rendered HTML.
+ * `scope="public"` is the top-menu players page (/players, issue #80): the same sub-tabs, position filter, price
+ * table and summary as the league screen, minus what needs a league (the 우리 리그 sub-tab, league ownership).
+ * That page is drawn on the server, so both views are in its HTML and the inactive one is only hidden.
  */
 export function PlayerTrendsPanel({ data, scope = "league" }: { data: PlayerTrendsData; scope?: "league" | "public" }) {
   const { tr } = useLocale();
@@ -158,8 +157,7 @@ export function PlayerTrendsPanel({ data, scope = "league" }: { data: PlayerTren
     : tr(`GW${data.league.currentGw} 기준`, `As of GW${data.league.currentGw}`);
 
   const selectedPlayer = selected !== null ? playersById.get(selected) : undefined;
-  const showTransfers = isPublic || view === "transfers";
-  const showPerformance = isPublic || view === "performance";
+  const views = isPublic ? VIEWS.filter((item) => item.id !== "league") : VIEWS;
 
   return (
     <SidePanelLayout
@@ -203,13 +201,12 @@ export function PlayerTrendsPanel({ data, scope = "league" }: { data: PlayerTren
       }
     >
     <div className="flex flex-col gap-2">
-      {isPublic ? null : (
       <div
         role="tablist"
         aria-label={tr("선수 데이터 보기", "Player data views")}
         className="inline-flex w-full rounded-md border border-[var(--border)] bg-[var(--surface)] p-1 md:w-auto"
       >
-        {VIEWS.map((item) => {
+        {views.map((item) => {
           const active = view === item.id;
 
           return (
@@ -228,7 +225,6 @@ export function PlayerTrendsPanel({ data, scope = "league" }: { data: PlayerTren
           );
         })}
       </div>
-      )}
 
       <div role="group" aria-label={tr("포지션 필터", "Position filter")} className="flex flex-wrap gap-1.5">
         {POSITION_FILTERS.map((item) => (
@@ -248,8 +244,8 @@ export function PlayerTrendsPanel({ data, scope = "league" }: { data: PlayerTren
         ))}
       </div>
 
-      {showTransfers ? (
-        <>
+      {isPublic || view === "transfers" ? (
+        <div hidden={view !== "transfers"} className={view === "transfers" ? "flex flex-col gap-2" : "hidden"}>
           <Section
             title={tr("영입과 방출", "Transfers in and out")}
             hint={tr(`${transferWindowLabel} 이적 · 마감마다 초기화`, `Transfers ${transferWindowLabel} · reset each deadline`)}
@@ -274,26 +270,12 @@ export function PlayerTrendsPanel({ data, scope = "league" }: { data: PlayerTren
             </div>
           </Section>
 
-          {isPublic ? (
-            <Section
-              title={tr("가격 변동 예측", "Price change predictions")}
-              hint={tr("다음 갱신에 오를·내릴 선수는 전용 페이지에서 확인하세요.", "Who rises or falls at the next update is on its own page.")}
-            >
-              <Link
-                href="/price-changes"
-                className="inline-flex min-h-9 items-center rounded-md border border-[var(--border)] bg-[var(--bg)] px-3.5 text-meta font-semibold text-[var(--accent)] transition hover:border-[var(--accent)]"
-              >
-                {tr("가격 변동 예측 보기", "View price change predictions")}
-              </Link>
-            </Section>
-          ) : (
-            <PriceChangesSection onSelect={setSelected} />
-          )}
-        </>
+          <PriceChangesSection onSelect={setSelected} />
+        </div>
       ) : null}
 
-      {showPerformance ? (
-        <>
+      {isPublic || view === "performance" ? (
+        <div hidden={view !== "performance"} className={view === "performance" ? "flex flex-col gap-2" : "hidden"}>
           <Section
             title={tr("폼 × 소유율", "Form × ownership")}
             hint={
@@ -328,7 +310,7 @@ export function PlayerTrendsPanel({ data, scope = "league" }: { data: PlayerTren
           </Section>
 
           <PlayerTable players={players} fdr={data.fdr} ownedIds={ownedIds} onSelect={setSelected} />
-        </>
+        </div>
       ) : null}
 
       {!isPublic && view === "league" ? (

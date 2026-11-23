@@ -15,8 +15,8 @@ export default async function PlayersRoute() {
     <PublicPageFrame
       title={{ ko: "FPL 선수 통계", en: "FPL player stats" }}
       subtitle={{
-        ko: "시즌 점수와 폼, 이번 주 영입·방출 추이, 소유율이 낮은 차별화 후보를 포지션별로.",
-        en: "Season points and form, this week's transfers in and out, and low-owned differentials, by position."
+        ko: "이적 시장(영입·방출, 가격 변동 예측)과 선수 성과(폼·차별화 후보)를 포지션별로.",
+        en: "The transfer market (transfers in and out, price change predictions) and player performance (form, differentials), by position."
       }}
     >
       {data ? (
