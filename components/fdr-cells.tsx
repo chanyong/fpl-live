@@ -44,7 +44,7 @@ export function FdrCells({ player, horizon, className = "" }: { player: SquadPla
               >
                 {game.difficulty}
                 {horizon === 3 ? (
-                  <span data-fdr-opp className="hidden max-w-full truncate text-[10px] font-medium leading-none opacity-90 lg:block">
+                  <span data-fdr-opp className="hidden max-w-full truncate text-caption font-medium leading-none opacity-90 lg:block">
                     {game.opponent} {game.home ? "H" : "A"}
                   </span>
                 ) : null}
