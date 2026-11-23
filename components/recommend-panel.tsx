@@ -168,7 +168,7 @@ export function RecommendPanel({ entryId }: { entryId: number }) {
   }
 
   return (
-    <section aria-label={tr("추천", "Recommendations")} className="flex flex-col gap-3 rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-3">
+    <section aria-label={tr("추천", "Recommendations")} className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
         <h2 className="text-title font-semibold">{tr("추천: 선발·캡틴·이적", "Recommendations: lineup, captain, transfers")}</h2>
         <p role="note" className="rounded-md border border-[var(--info-border)] bg-[var(--info-soft)] px-3 py-2 text-meta leading-5">

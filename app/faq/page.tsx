@@ -136,7 +136,7 @@ const FAQ_JSON_LD = {
 
 export default function FaqPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col px-6 py-12">
+    <main className="page-shell [&>*]:max-w-3xl">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
       <SiteLogo />
       <h1 className="mt-6 text-3xl font-semibold leading-tight md:text-4xl">자주 묻는 질문</h1>

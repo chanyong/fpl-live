@@ -40,7 +40,7 @@ export function TeamEntryPage() {
   }, [router]);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col gap-3 px-2 py-3 md:px-4">
+    <main className="page-shell gap-3">
       <SiteHeader>
         <LocaleToggle />
       </SiteHeader>

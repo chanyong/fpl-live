@@ -16,7 +16,7 @@ const EMAIL = CONTACT_EMAIL;
 function Shell({ title, updated, children }: { title: string; updated: string; children: ReactNode }) {
   const { tr } = useLocale();
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col px-6 py-12">
+    <main className="page-shell [&>*]:max-w-3xl">
       <div className="flex items-center justify-between gap-3">
         <SiteLogo />
         <LocaleToggle />

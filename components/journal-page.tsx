@@ -100,7 +100,7 @@ export function JournalPage() {
   }, [load]);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-4xl flex-col px-4 py-10 sm:px-6 sm:py-12">
+    <main className="page-shell">
       <div className="flex items-center justify-between gap-3">
         <SiteLogo />
         <LocaleToggle />
