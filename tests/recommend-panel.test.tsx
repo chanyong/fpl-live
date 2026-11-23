@@ -243,7 +243,7 @@ describe("rules-based panel (AI off)", () => {
     const one = scenarios.find((scenario) => scenario.type === "one")!;
     const ids = recommend.players.map((player) => player.elementId).filter((id) => !one.out.includes(id));
     const all = [...ids, ...one.in];
-    const card = (id: number) => ({ webName: `Pitch${id}`, teamShortName: "ARS", position: "MID", status: "a", news: "", photoUrl: null, xpNext: 3.5, fixtures: [{ opponent: "CHE", home: true, difficulty: 3 }] });
+    const card = (id: number) => ({ webName: `Pitch${id}`, teamShortName: "ARS", position: "MID", status: "a", news: "", photoUrl: null, xpNext: 3.5, fixtures: [{ opponent: "CHE", home: true, difficulty: 3 }], outlook: [31, 32, 33, 34, 35].map((gw) => ({ gw, games: [{ opponent: "CHE", home: true, difficulty: 3 }] })) });
     const lineupPlayers = Object.fromEntries(all.map((id) => [String(id), card(id)]));
     const scenarioLineups = Object.fromEntries(
       scenarios.map((scenario) => [
@@ -275,6 +275,10 @@ describe("rules-based panel (AI off)", () => {
     expect(pitch.querySelectorAll('[data-new="true"]').length).toBe(1);
     expect(within(pitch as HTMLElement).getAllByText(/기대 3\.5/).length).toBe(15);
     expect(within(pitch as HTMLElement).getByText(/포메이션 4-4-2/)).toBeInTheDocument();
+    // Issue #76: the same FDR cells as the squad pitch, 3 games by default, 15 cards.
+    expect(pitch.querySelectorAll("[data-fdr-cells=\"3\"]").length).toBe(15);
+    await userEvent.click(within(pitch as HTMLElement).getByRole("button", { name: "5경기" }));
+    expect(pitch.querySelectorAll("[data-fdr-cells=\"5\"]").length).toBe(15);
   });
 
   it("explains why a chip is missing and warns about a thin budget and a recommended chip", async () => {

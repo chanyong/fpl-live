@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
-import { SiteLogo } from "@/components/site-logo";
+import { SiteHeader } from "@/components/site-header";
 import { CONTACT_EMAIL } from "@/lib/site";
 
 // Each page carries its own date. Both changed on 2026-11-03 when the contact address moved (#12);
@@ -17,10 +17,9 @@ function Shell({ title, updated, children }: { title: string; updated: string; c
   const { tr } = useLocale();
   return (
     <main className="page-shell [&>*]:max-w-3xl">
-      <div className="flex items-center justify-between gap-3">
-        <SiteLogo />
+      <SiteHeader>
         <LocaleToggle />
-      </div>
+      </SiteHeader>
       <h1 className="mt-6 text-3xl font-semibold leading-tight">{title}</h1>
       <p className="mt-2 text-body text-[var(--muted)]">
         {tr(`시행일·최종 갱신: ${updated} (초안 — 법률 검토 전)`, `Effective / last updated: ${updated} (draft, not yet legally reviewed)`)}

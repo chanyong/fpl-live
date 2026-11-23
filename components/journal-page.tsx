@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { JournalPitch, StepHeading } from "@/components/journal-pitch";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
-import { SiteLogo } from "@/components/site-logo";
+import { SiteHeader } from "@/components/site-header";
 import { TeamPicker, type ConfirmedTeam } from "@/components/team-picker";
 import { TeamRow } from "@/components/team-row";
 import { CONTACT_EMAIL } from "@/lib/site";
@@ -102,10 +102,9 @@ export function JournalPage() {
 
   return (
     <main className="page-shell">
-      <div className="flex items-center justify-between gap-3">
-        <SiteLogo />
+      <SiteHeader>
         <LocaleToggle />
-      </div>
+      </SiteHeader>
       <h1 className="mt-6 text-3xl font-semibold leading-tight">{tr("주간 경기 리뷰 일지", "Weekly review journal")}</h1>
       <p className="mt-2 text-body text-[var(--muted)]">
         {tr(

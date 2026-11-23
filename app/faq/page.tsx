@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { isValidElement, type ReactNode } from "react";
 import Link from "next/link";
-import { SiteLogo } from "@/components/site-logo";
+import { SiteHeader } from "@/components/site-header";
 
 const TITLE = "자주 묻는 질문 | FPL Live";
 const DESCRIPTION =
@@ -138,7 +138,7 @@ export default function FaqPage() {
   return (
     <main className="page-shell [&>*]:max-w-3xl">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_JSON_LD) }} />
-      <SiteLogo />
+      <SiteHeader />
       <h1 className="mt-6 text-3xl font-semibold leading-tight md:text-4xl">자주 묻는 질문</h1>
       <nav aria-label="질문 분류" className="mt-5 flex flex-wrap gap-2">
         {CATEGORIES.map((c) => (
