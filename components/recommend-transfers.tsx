@@ -369,6 +369,7 @@ export function TransferScenarios({
   scenarioLineups,
   lineupPlayers,
   chipExplanations,
+  squadStats,
   fdrHorizon = 3,
   onFdrHorizon
 }: {
@@ -379,6 +380,8 @@ export function TransferScenarios({
   scenarioLineups?: EntryRecommendPayload["scenarioLineups"];
   lineupPlayers?: EntryRecommendPayload["lineupPlayers"];
   chipExplanations?: EntryRecommendPayload["chipExplanations"];
+  /** Issue #83: next-GW xP and price (when known) of the current squad, to say what a signing gains over the player it replaces. */
+  squadStats?: Record<number, { xp: number; cost: number | null }>;
   /** Issue #76: the squad screen's 3/5-game FDR switch, shared with the scenario pitch. */
   fdrHorizon?: FdrHorizon;
   onFdrHorizon?: (next: FdrHorizon) => void;
@@ -393,6 +396,14 @@ export function TransferScenarios({
   const pitchReasons = selectedWhy
     ? Object.fromEntries(selectedWhy.picks.map((pick) => [pick.id, chipPickReason(pick, selectedWhy.mode, selectedWhy.horizon, locale, (id) => lookup(id).name)]))
     : undefined;
+  const movesOf = (scenario: TransferScenario | undefined) =>
+    scenario && !isChipType(scenario.type) && scenario.type !== "roll"
+      ? pairSwaps(scenario, lookup).flatMap((pair) =>
+          pair.in === null
+            ? []
+            : [{ inId: pair.in, outName: lookup(pair.out).name, outXp: squadStats?.[pair.out]?.xp ?? null, outCost: squadStats?.[pair.out]?.cost ?? null, inCost: lookup(pair.in).cost }]
+        )
+      : [];
   // Issue #78: an optional second scenario drawn beside the open one.
   const [comparePicked, setComparePicked] = useState<string | null>(null);
   const compareId = comparePicked && comparePicked !== selectedId && scenarioLineups?.[comparePicked] ? comparePicked : null;
@@ -417,6 +428,7 @@ export function TransferScenarios({
             isRoll={selectedScenario.type === "roll"}
             label={scenarioTitle(selectedScenario, lookup, tr, locale)}
             reasons={pitchReasons}
+            moves={movesOf(selectedScenario)}
             fdrHorizon={fdrHorizon}
             onFdrHorizon={onFdrHorizon}
           />
@@ -428,6 +440,7 @@ export function TransferScenarios({
                 isRoll={compareScenario.type === "roll"}
                 label={scenarioTitle(compareScenario, lookup, tr, locale)}
                 reasons={compareReasons}
+                moves={movesOf(compareScenario)}
                 fdrHorizon={fdrHorizon}
               />
               <button type="button" onClick={() => setComparePicked(null)} className="min-h-8 self-start rounded-md border border-[var(--border)] px-2 text-caption font-semibold">
