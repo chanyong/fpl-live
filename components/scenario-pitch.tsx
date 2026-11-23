@@ -54,7 +54,7 @@ export function ScenarioPitch({
   const newIds = new Set(lineup.incoming);
 
   return (
-    <div className="flex flex-col gap-1.5 lg:w-[calc(100%-320px-0.375rem)]" data-scenario-pitch>
+    <div className="flex flex-col gap-1.5" data-scenario-pitch>
       <p className="flex flex-wrap items-center gap-1.5 text-body">
         <span className="font-semibold">{tr(`${label} 기준 선발·벤치`, `XI and bench: ${label}`)}</span>
         <span className="tabular-nums">{tr(`포메이션 ${lineup.formation} · 선발 기대 점수 ${fmtXp(lineup.expectedPoints)}`, `Formation ${lineup.formation} · XI xP ${fmtXp(lineup.expectedPoints)}`)}</span>
