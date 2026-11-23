@@ -1,15 +1,16 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { difficultyStyle } from "@/components/fdr-strip";
+import { FdrCells } from "@/components/fdr-cells";
 import { useLocale } from "@/components/locale-provider";
 import { crestUrl, RemoteImage } from "@/components/remote-image";
 import { availability } from "@/lib/player-metrics";
-import { formatOpponent, metricText, type SquadMetric } from "@/lib/squad-view";
+import { formatOpponent, formatPriceChangeMoney, formatPriceChangePercent, metricLabel, metricText, priceChangeTone, type FdrHorizon, type SquadMetric } from "@/lib/squad-view";
 import type { EntrySquadPayload, SquadPlayer } from "@/lib/squad-types";
 
 /** The one value a card shows under the name. Opponent and FDR can be two lines (double gameweek). */
-export function MetricValue({ player, metric }: { player: SquadPlayer; metric: SquadMetric }) {
+export function MetricValue({ player, metric, horizon = 3 }: { player: SquadPlayer; metric: SquadMetric; horizon?: FdrHorizon }) {
+  const { locale } = useLocale();
   if (metric === "opponent") {
     return player.fixtures.length === 0 ? (
       <span>-</span>
@@ -25,19 +26,17 @@ export function MetricValue({ player, metric }: { player: SquadPlayer; metric: S
   }
 
   if (metric === "fdr") {
-    return player.fixtures.length === 0 ? (
-      <span>-</span>
-    ) : (
-      <span className="flex flex-col items-center gap-px">
-        {player.fixtures.map((fixture, index) => (
-          <span
-            key={index}
-            style={difficultyStyle(fixture.difficulty)}
-            className="inline-flex h-[18px] min-w-6 items-center justify-center rounded-[4px] px-1 text-caption font-semibold tabular-nums"
-          >
-            {fixture.difficulty}
-          </span>
-        ))}
+    return <FdrCells player={player} horizon={horizon} />;
+  }
+
+  if (metric === "change") {
+    const percent = formatPriceChangePercent(player);
+    return (
+      <span
+        className={`truncate rounded-[3px] bg-white px-1 tabular-nums ${priceChangeTone(player.costChangeStart) || "text-[var(--text)]"}`}
+        title={`${metricLabel(metric, locale)}: ${formatPriceChangeMoney(player.costChangeStart)}${percent ? ` (${percent})` : ""}`}
+      >
+        {formatPriceChangeMoney(player.costChangeStart)}
       </span>
     );
   }
@@ -48,7 +47,7 @@ export function MetricValue({ player, metric }: { player: SquadPlayer; metric: S
 /** Optional extras for the recommendation view (issue #61): which players just came in, and a line under the metric. */
 export type PitchExtras = { newIds?: ReadonlySet<number>; below?: (player: SquadPlayer) => ReactNode; /** Issue #69: short reason per incoming player, shown as a tooltip. */ reasons?: Readonly<Record<number, string>> };
 
-function Card({ player, metric, tag, extras }: { player: SquadPlayer; metric: SquadMetric; tag?: string; extras?: PitchExtras }) {
+function Card({ player, metric, horizon, tag, extras }: { player: SquadPlayer; metric: SquadMetric; horizon: FdrHorizon; tag?: string; extras?: PitchExtras }) {
   const { tr, locale } = useLocale();
   const flag = player.status !== "a" ? availability(player.status, locale) : null;
   const note = [extras?.reasons?.[player.elementId], flag?.label, player.news].filter(Boolean).join(" · ");
@@ -94,7 +93,7 @@ function Card({ player, metric, tag, extras }: { player: SquadPlayer; metric: Sq
         <span className="truncate text-caption font-semibold leading-5">{player.webName}</span>
       </div>
       <div className="flex min-h-[22px] w-full items-center justify-center rounded-b-sm bg-[var(--accent)] px-0.5 text-caption font-semibold leading-5 text-white">
-        <MetricValue player={player} metric={metric} />
+        <MetricValue player={player} metric={metric} horizon={horizon} />
       </div>
       {extras?.below ? <div className="mt-0.5 text-caption leading-tight tabular-nums text-[var(--muted)]">{extras.below(player)}</div> : null}
     </div>
@@ -102,7 +101,7 @@ function Card({ player, metric, tag, extras }: { player: SquadPlayer; metric: Sq
 }
 
 /** Pitch view: the XI by line (goalkeeper at the top), the bench in FPL's substitution order underneath. */
-export function SquadPitch({ squad, metric, extras }: { squad: EntrySquadPayload["squad"]; metric: SquadMetric; extras?: PitchExtras }) {
+export function SquadPitch({ squad, metric, horizon = 3, extras }: { squad: EntrySquadPayload["squad"]; metric: SquadMetric; horizon?: FdrHorizon; extras?: PitchExtras }) {
   const { tr } = useLocale();
   const starters = squad.filter((player) => player.isStarter);
   const bench = squad.filter((player) => !player.isStarter);
@@ -116,7 +115,7 @@ export function SquadPitch({ squad, metric, extras }: { squad: EntrySquadPayload
         {lines.map((line, index) => (
           <div key={index} className="flex items-start justify-around gap-1">
             {line.map((player) => (
-              <Card key={player.elementId} player={player} metric={metric} extras={extras} />
+              <Card key={player.elementId} player={player} metric={metric} horizon={horizon} extras={extras} />
             ))}
           </div>
         ))}
@@ -127,7 +126,7 @@ export function SquadPitch({ squad, metric, extras }: { squad: EntrySquadPayload
         </div>
         <div className="flex items-start justify-around gap-1">
           {bench.map((player, index) => (
-            <Card key={player.elementId} player={player} metric={metric} tag={index === 0 ? "GK" : String(index)} extras={extras} />
+            <Card key={player.elementId} player={player} metric={metric} horizon={horizon} tag={index === 0 ? "GK" : String(index)} extras={extras} />
           ))}
         </div>
       </div>

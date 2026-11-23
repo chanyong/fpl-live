@@ -16,7 +16,7 @@ import { POSITION_BY_TYPE } from "@/lib/player-metrics";
 import { getBase } from "@/lib/public-data";
 import { publicCurrentGw } from "@/lib/public-football";
 import { purchasePrices, sellingPrice } from "@/lib/selling-price";
-import type { EntrySquadPayload, SquadFixture, SquadPlayer } from "@/lib/squad-types";
+import type { EntrySquadPayload, SquadFixture, SquadOutlookWeek, SquadPlayer } from "@/lib/squad-types";
 
 type Bootstrap = Awaited<ReturnType<typeof getBootstrapStatic>>;
 type Fixtures = Awaited<ReturnType<typeof getFixtures>>;
@@ -74,22 +74,27 @@ export function buildEntrySquad(input: EntrySquadInputs): EntrySquadPayload {
   const freeHitEvents = new Set(history.chips.filter((chip) => chip.name === "freehit").map((chip) => chip.event));
   const bought = purchasePrices(transfers, freeHitEvents);
 
-  const fixturesByTeam = new Map<number, SquadFixture[]>();
-  if (nextGw !== null) {
-    for (const fixture of fixtures.filter((item) => item.event === nextGw)) {
-      for (const home of [true, false]) {
-        const teamId = home ? fixture.team_h : fixture.team_a;
-        const opponentId = home ? fixture.team_a : fixture.team_h;
-        const list = fixturesByTeam.get(teamId) ?? [];
-        list.push({
-          opponent: teamsById.get(opponentId)?.short_name ?? "-",
-          home,
-          difficulty: home ? fixture.team_h_difficulty : fixture.team_a_difficulty
-        });
-        fixturesByTeam.set(teamId, list);
-      }
+  // Issue #74: the next 5 gameweeks per team, so a card can show 3 or 5 fixtures. The first week is `fixtures`.
+  const outlookGws = nextGw === null ? [] : Array.from({ length: 5 }, (_, index) => nextGw + index).filter((gw) => gw <= 38);
+  const outlookByTeam = new Map<number, Map<number, SquadFixture[]>>();
+  for (const fixture of fixtures.filter((item) => outlookGws.includes(item.event as number))) {
+    const gw = fixture.event as number;
+    for (const home of [true, false]) {
+      const teamId = home ? fixture.team_h : fixture.team_a;
+      const opponentId = home ? fixture.team_a : fixture.team_h;
+      const weeks = outlookByTeam.get(teamId) ?? new Map<number, SquadFixture[]>();
+      const list = weeks.get(gw) ?? [];
+      list.push({
+        opponent: teamsById.get(opponentId)?.short_name ?? "-",
+        home,
+        difficulty: home ? fixture.team_h_difficulty : fixture.team_a_difficulty
+      });
+      weeks.set(gw, list);
+      outlookByTeam.set(teamId, weeks);
     }
   }
+  const outlookOf = (teamId: number): SquadOutlookWeek[] =>
+    outlookGws.map((gw) => ({ gw, games: outlookByTeam.get(teamId)?.get(gw) ?? [] }));
 
   const squad: SquadPlayer[] = (picks?.picks ?? [])
     .map((pick): SquadPlayer => {
@@ -127,7 +132,8 @@ export function buildEntrySquad(input: EntrySquadInputs): EntrySquadPayload {
           : squadGw === currentGw
             ? (element?.event_points ?? null)
             : null,
-        fixtures: fixturesByTeam.get(element?.team ?? 0) ?? []
+        fixtures: outlookOf(element?.team ?? 0)[0]?.games ?? [],
+        outlook: outlookOf(element?.team ?? 0)
       };
     })
     .sort((a, b) => a.pickPosition - b.pickPosition);

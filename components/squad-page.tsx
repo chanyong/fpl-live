@@ -17,10 +17,13 @@ import { fetchMember, registeredTeam } from "@/lib/journal/member-client";
 import { clearMyTeam, loadMyTeam, saveMyTeam, type MyTeam } from "@/lib/my-team";
 import type { EntrySquadPayload } from "@/lib/squad-types";
 import {
+  FDR_HORIZON_KEY,
   metricLabel,
+  parseFdrHorizon,
   parseSquadView,
   SQUAD_METRICS,
   SQUAD_VIEW_KEY,
+  type FdrHorizon,
   type SquadMetric,
   type SquadViewMode
 } from "@/lib/squad-view";
@@ -87,6 +90,7 @@ export function SquadPage({ entryId }: { entryId: number }) {
   const { tr, locale } = useLocale();
   const queryClient = useQueryClient();
   const [view, setView] = useState<{ mode: SquadViewMode; metric: SquadMetric }>({ mode: "pitch", metric: "opponent" });
+  const [horizon, setHorizon] = useState<FdrHorizon>(3);
   const [mine, setMine] = useState<MyTeam | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<number | null>(null);
@@ -113,6 +117,7 @@ export function SquadPage({ entryId }: { entryId: number }) {
   useEffect(() => {
     try {
       setView(parseSquadView(window.localStorage.getItem(SQUAD_VIEW_KEY)));
+      setHorizon(parseFdrHorizon(window.localStorage.getItem(FDR_HORIZON_KEY)));
     } catch {
       // Storage can be blocked; the default view then lasts for this visit.
     }
@@ -134,6 +139,15 @@ export function SquadPage({ entryId }: { entryId: number }) {
     setView(merged);
     try {
       window.localStorage.setItem(SQUAD_VIEW_KEY, JSON.stringify(merged));
+    } catch {
+      // See above.
+    }
+  }
+
+  function changeHorizon(next: FdrHorizon) {
+    setHorizon(next);
+    try {
+      window.localStorage.setItem(FDR_HORIZON_KEY, String(next));
     } catch {
       // See above.
     }
@@ -275,32 +289,51 @@ export function SquadPage({ entryId }: { entryId: number }) {
                       </button>
                     ))}
                   </div>
-                  {view.mode === "pitch" ? (
-                    <label className="flex items-center gap-2 text-meta lg:col-start-2 lg:row-start-1">
-                      <span className="text-[var(--muted)]">{tr("카드에 표시", "Card shows")}</span>
-                      <select
-                        value={view.metric}
-                        onChange={(event) => changeView({ metric: event.target.value as SquadMetric })}
-                        className="h-9 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 text-body-lg"
-                      >
-                        {SQUAD_METRICS.map((metric) => (
-                          <option key={metric} value={metric}>
-                            {metricLabel(metric, locale)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                  {view.mode === "pitch" || view.mode === "list" ? (
+                    <div className="flex flex-wrap items-center gap-2 text-meta lg:col-start-2 lg:row-start-1">
+                      {view.mode === "pitch" ? (
+                        <label className="flex items-center gap-2">
+                          <span className="text-[var(--muted)]">{tr("카드에 표시", "Card shows")}</span>
+                          <select
+                            value={view.metric}
+                            onChange={(event) => changeView({ metric: event.target.value as SquadMetric })}
+                            className="h-9 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2 text-body-lg"
+                          >
+                            {SQUAD_METRICS.map((metric) => (
+                              <option key={metric} value={metric}>
+                                {metricLabel(metric, locale)}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      ) : null}
+                      {view.mode === "list" || view.metric === "fdr" ? (
+                        <div role="group" aria-label={tr("FDR 경기 수", "FDR fixtures")} className="inline-flex overflow-hidden rounded-md border border-[var(--border)]">
+                          {([3, 5] as const).map((value) => (
+                            <button
+                              key={value}
+                              type="button"
+                              aria-pressed={horizon === value}
+                              onClick={() => changeHorizon(value)}
+                              className={`min-h-9 px-3 text-meta font-semibold ${horizon === value ? "bg-[var(--accent)] text-white" : "bg-[var(--surface)]"}`}
+                            >
+                              {tr(`${value}경기`, `${value} games`)}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
 
                 <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                  {view.mode === "pitch" ? <SquadPitch squad={data.squad} metric={view.metric} /> : <SquadList squad={data.squad} />}
+                  {view.mode === "pitch" ? <SquadPitch squad={data.squad} metric={view.metric} horizon={horizon} /> : <SquadList squad={data.squad} horizon={horizon} />}
                 </div>
 
                 <p className="text-caption text-[var(--muted)] lg:col-start-1">
                   {tr(
-                    `점수는 GW${data.gw} 선수 점수(주장 배수 제외), 상대·FDR은 ${data.nextGw ? `GW${data.nextGw}` : "다음 게임위크"} 기준, 가격 변동은 시즌 시작가 대비입니다. 판매가는 구매가 + 오른 폭의 절반(내림)으로 계산한 추정값입니다.`,
-                    `Points are each player's GW${data.gw} score (captain multiplier not applied); opponent and FDR are for ${data.nextGw ? `GW${data.nextGw}` : "the next gameweek"}; price change is since the season's opening price. Selling price is estimated as purchase price plus half of any rise, rounded down.`
+                    `점수는 GW${data.gw} 선수 점수(주장 배수 제외), 상대·FDR은 ${data.nextGw ? `GW${data.nextGw}부터` : "다음 게임위크부터"} 3경기 또는 5경기(경기 없는 주는 –, 더블은 두 칸), 가격 변동은 시즌 시작가 대비 금액(£m)이며 비율(%)은 보조입니다. 판매가는 구매가 + 오른 폭의 절반(내림)으로 계산한 추정값입니다.`,
+                    `Points are each player's GW${data.gw} score (captain multiplier not applied); opponent and FDR cover the next 3 or 5 gameweeks from ${data.nextGw ? `GW${data.nextGw}` : "the next gameweek"} (a blank week is –, a double shows two); price change is the amount in £m since the season's opening price, with the percentage as a secondary figure. Selling price is estimated as purchase price plus half of any rise, rounded down.`
                   )}
                 </p>
 
