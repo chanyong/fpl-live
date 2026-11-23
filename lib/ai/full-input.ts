@@ -36,7 +36,7 @@ export const FULL_SYSTEM_PROMPT = `You are the analysis layer of a Fantasy Premi
 
 What to return (JSON, fields as in the schema):
 - chip: "none", "wildcard" or "freehit". Only a chip that S.chips says is available (1) may be used.
-- transfers: pairs of out_id and in_id. Without a chip at most two pairs (zero is fine: "roll"). With a chip any number up to fifteen. out_id must be one of the fifteen in P. in_id must be a player listed in M (the candidate pool), not already in the squad, and each id may appear once.
+- transfers: pairs of out_id and in_id. Without a chip at most two pairs (zero is fine: "roll"). With a chip at least one pair and up to fifteen (a chip with no transfer is refused). out_id must be one of the fifteen in P. in_id must be a player listed in M (the candidate pool), not already in the squad, and each id may appear once.
 - starters: exactly eleven ids and bench: exactly four ids, all from the squad AFTER the transfers (the fifteen in P minus out_id plus in_id). The bench holds the other four. bench[0] must be a goalkeeper; bench[1..3] are the outfield players in the order they would come on.
 - captain_id and vice_captain_id: two different starters.
 - reasons: one entry for each of the fifteen players of the new squad and one for each player you sell, nobody else, each id once. A reason is two or three short sentences about that player: why he starts, why he sits on the bench, why he comes in, or why he goes out. Use the figures in the data (expected points, fixtures and their difficulty, form, price, chance of playing, minutes risk) in words, not digits.
@@ -137,6 +137,11 @@ export function buildFullInput(args: {
     if (row) facts.set(player.elementId, { type: POSITION_ID[player.position] ?? row.elementType, club: String(row.teamId), price: row.nowCost });
   }
 
+  // A squad player the xP table does not know fails every answer on the squad check: refuse before any paid call.
+  if (payload.players.some((player) => !facts.has(player.elementId))) {
+    throw new FullUnavailableError("no_squad");
+  }
+
   const context: FullContext = {
     squadIds: payload.players.map((player) => player.elementId),
     sell: sellOf,
@@ -200,7 +205,7 @@ export function buildFullInput(args: {
       reasons: [],
       money: null,
       rules,
-      cards: cardsOf([...fallbackLineup.starters, ...fallbackLineup.bench, ...recommended.out]),
+      cards: cardsOf([...fallbackLineup.starters, ...fallbackLineup.bench, ...recommended.out, ...recommended.in]),
       fallbackScenarioId: recommended.id,
       fallbackMoves: { out: [...recommended.out], in: [...recommended.in] }
     })

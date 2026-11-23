@@ -502,7 +502,10 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
   useEffect(() => {
     setFullBlockedByMonth(full.view.phase === "limit" && full.view.reason === "month");
   }, [full.view]);
-  const fullNearLimit = full.nearLimit;
+  // One condition for the box and for the button: a press asks for the full mode only while the box is ticked and
+  // not switched off. `full.nearLimit` is the same server flag read later (after a full run it can turn on alone).
+  const blockedNow = fullBlocked || full.nearLimit;
+  const fullCallable = fullOn && !blockedNow;
 
   function toggleFull(next: boolean) {
     setFullPref(next);
@@ -578,8 +581,9 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
     };
   }, [polling, entryId, locale]);
 
-  async function analyse(regenerate: boolean) {
-    if (fullOn) {
+  /** `rankingOnly`: the retry of a failed ranking analysis, which has no box beside it, never turns into a full run. */
+  async function analyse(regenerate: boolean, rankingOnly = false) {
+    if (fullCallable && !rankingOnly) {
       await full.analyse(fullShown !== null);
       return;
     }
@@ -604,7 +608,6 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
   }
 
   const shown = shownOf(view);
-  const blockedNow = fullBlocked || fullNearLimit;
   const analyseBusy = busy || full.busy;
   const fullToggle = (
     <div className="flex flex-col gap-0.5" data-full-toggle>
@@ -612,7 +615,7 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
         <input
           type="checkbox"
           className="h-5 w-5"
-          checked={fullOn}
+          checked={fullCallable}
           disabled={blockedNow || analyseBusy}
           onChange={(event) => toggleFull(event.target.checked)}
         />
@@ -653,7 +656,7 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
           </p>
           {fullToggle}
           <button type="button" disabled={analyseBusy} onClick={() => void analyse(false)} className={buttonClass}>
-            {analyseBusy ? tr("요청하는 중…", "Requesting…") : fullOn && fullShown ? tr("다시 분석", "Analyse again") : tr("AI 분석", "AI analysis")}
+            {analyseBusy ? tr("요청하는 중…", "Requesting…") : fullCallable && fullShown ? tr("다시 분석", "Analyse again") : tr("AI 분석", "AI analysis")}
           </button>
         </div>
       ) : null}
@@ -683,7 +686,7 @@ export function AiOpinionPanel({ entryId }: { entryId: number }) {
       {view.phase === "failed" ? (
         <div role="alert" className="flex flex-col items-start gap-1.5 rounded-md border border-[var(--border)] px-3 py-2">
           <p className="text-body">{tr("AI 분석을 만들지 못했습니다. 수치 기준 결과를 참고하세요.", "The AI analysis could not be made. Use the rules-based result above.")}</p>
-          <button type="button" disabled={busy} onClick={() => void analyse(shown !== null)} className={buttonClass}>
+          <button type="button" disabled={busy} onClick={() => void analyse(shown !== null, true)} className={buttonClass}>
             {busy ? tr("요청하는 중…", "Requesting…") : tr("다시 시도", "Try again")}
           </button>
         </div>

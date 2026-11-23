@@ -107,6 +107,19 @@ describe("the rule checker of a full-AI answer", () => {
     expect(code(three)).toBe("too_many_transfers");
   });
 
+  it("refuses a chip played with no transfer (the chip would be spent for nothing)", () => {
+    const idle = validFullAnswer({
+      chip: "wildcard",
+      transfers: [],
+      starters: [1, 11, 12, 13, 14, 22, 23, 24, 25, 31, 32],
+      bench: [2, 15, 21, 33],
+      captain_id: 22,
+      vice_captain_id: 25,
+      reasons: [1, 2, 11, 12, 13, 14, 15, 21, 22, 23, 24, 25, 31, 32, 33].map((id) => ({ player_id: id, reason: "Keeps his place this week." }))
+    });
+    expect(code(idle, { ...full.context, chips: { wildcard: true, freehit: true } })).toBe("chip_without_transfers");
+  });
+
   it("refuses transfers that do not make sense", () => {
     expect(code(validFullAnswer({ transfers: [{ out_id: 999, in_id: 42 }] }))).toBe("out_not_in_squad");
     expect(code(validFullAnswer({ transfers: [{ out_id: 21, in_id: 22 }] }))).toBe("in_already_in_squad");
@@ -343,6 +356,42 @@ describe("the full-AI flow", () => {
     const { deps } = makeDeps({ input: ranking, fullInput: full, client, store });
     expect(await askFull(deps)).toEqual({ status: "limit", reason: "month" });
     expect(client.calls).toBe(0);
+  });
+
+  it("refuses a new full call once 80% of the month's cap is counted, also when the request skips the screen; a stored answer still reads", async () => {
+    const client = new FakeClient([goodFull()]);
+    const store = new FakeStore();
+    const { deps, jobs } = makeDeps({ input: ranking, fullInput: full, client, store });
+    await askFull(deps);
+    await settle(jobs);
+    store.monthUsageOverride = 32;
+    // The same question: the stored answer, no call.
+    expect((await askFull(deps, true)).status).toBe("done");
+    // A changed input would need a new call: refused at 80% ($32 of $40), nothing reserved.
+    const changed: FullInput = { ...full, inputHash: "another-hash", basis: { ...full.basis, inputHash: "another-hash" } };
+    const second = makeDeps({ input: ranking, fullInput: changed, client, store });
+    expect(await askFull(second.deps, true)).toEqual({ status: "limit", reason: "month", previous: expect.objectContaining({ generation: 1 }) });
+    expect(client.calls).toBe(1);
+    expect(store.startCalls).toBe(1);
+    store.monthUsageOverride = 31.99;
+    expect((await askFull(second.deps, true)).status).toBe("pending");
+  });
+
+  it("answers failed, before any call, when a squad player is missing from the xP table", async () => {
+    const made = await makeFullInput();
+    const players = new Map(made.table.players);
+    players.delete(21);
+    const { buildFullInput } = await import("@/lib/ai/full-input");
+    const build = () =>
+      buildFullInput({
+        payload: made.payload,
+        table: { ...made.table, players },
+        meta: new Map(),
+        locale: "ko",
+        squad: made.payload.players.map((player) => ({ id: player.elementId, sellingPrice: 50, nowCost: 50 })),
+        cardOf: (id) => made.full.fallback("x").cards[String(id)]
+      });
+    expect(build).toThrowError(FullUnavailableError);
   });
 
   it("uses the same daily and monthly caps: a day with $5 spent leaves no room for another full call", async () => {

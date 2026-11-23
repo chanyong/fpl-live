@@ -3,7 +3,7 @@ import { maxCostFullCallUsd, withinFullInputCeiling } from "@/lib/ai/budget";
 import { AI_MODEL_ID, STALE_RUNNING_MS } from "@/lib/ai/config";
 import { FullUnavailableError, type FullInput } from "@/lib/ai/full-input";
 import { validateFullOutput, type FullAiResult } from "@/lib/ai/full-schema";
-import { aiGate, logCode, runJobSpec, withPrevious, type AiOutcomeOf, type AiDeps } from "@/lib/ai/recommend";
+import { aiGate, logCode, readBudgetNotice, runJobSpec, withPrevious, type AiOutcomeOf, type AiDeps } from "@/lib/ai/recommend";
 import { AiStoreError, type AiStore, type JobKey, type StoredJob } from "@/lib/ai/store";
 import type { Locale } from "@/lib/locale";
 
@@ -32,6 +32,11 @@ function toFullDone(job: StoredJob, targetGw: number): FullDonePayload | null {
   if (job.status !== "done" || job.result === null || job.result === undefined) {
     return null;
   }
+  // The screen reads these without checking: a row of another shape is "no answer", not a broken page.
+  const result = job.result as Partial<FullAiResult>;
+  if (result.mode !== "full" || !result.lineup || !result.cards || !Array.isArray(result.reasons) || !result.rules) {
+    return null;
+  }
   return {
     targetGw,
     generation: job.generation,
@@ -39,7 +44,7 @@ function toFullDone(job: StoredJob, targetGw: number): FullDonePayload | null {
     completedAt: job.completedAt,
     modelId: job.modelId,
     modelVersion: job.modelVersion,
-    result: job.result as FullAiResult
+    result: result as FullAiResult
   };
 }
 
@@ -109,6 +114,11 @@ export async function requestFullAi(request: { entryId: number; locale: Locale; 
     // "Analyse again" on an input that has not changed since a checked answer: that answer is the answer. No call, no cost.
     if (done && latest.done && done.result.verified && inputHashOf(latest.done) === input.inputHash) {
       return { status: "done", value: done };
+    }
+
+    // The box is switched off on screen once 80% of the month's cap is counted; a request sent anyway gets the same answer.
+    if ((await readBudgetNotice(deps)) === "near_limit") {
+      return { status: "limit", reason: "month", ...withPrevious(done) };
     }
 
     if (!withinFullInputCeiling(input.system, input.user, JSON.stringify(input.schema))) {

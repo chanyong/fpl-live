@@ -121,6 +121,8 @@ export function validateFullOutput(raw: unknown, ctx: FullContext): FullValidati
   if (data.chip === "wildcard" && !ctx.chips.wildcard) return bad("chip_unavailable");
   if (data.chip === "freehit" && !ctx.chips.freehit) return bad("chip_unavailable");
   if (data.chip === "none" && data.transfers.length > MAX_PLAIN_TRANSFERS) return bad("too_many_transfers");
+  // A chip with no transfer would spend the chip for nothing.
+  if (data.chip !== "none" && data.transfers.length === 0) return bad("chip_without_transfers");
 
   const squad = new Set(ctx.squadIds);
   const outs = data.transfers.map((transfer) => transfer.out_id);

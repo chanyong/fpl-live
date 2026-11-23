@@ -124,6 +124,35 @@ describe("the full-AI box", () => {
     expect(posts.every((call) => !("mode" in (call.body ?? {})))).toBe(true);
   });
 
+  it("is switched off, and the press goes the ranking way, when only the full status says the limit is near", async () => {
+    window.localStorage.setItem("fpl-ai-full", "1");
+    const calls = installFetch({
+      get: (isFull) => json(isFull ? { status: "none", budgetNotice: "near_limit" } : { status: "none", budgetNotice: null }),
+      post: () => json({ status: "pending", previous: null }, 202)
+    });
+    renderPanel();
+    const box = await screen.findByRole("checkbox", { name: "전체 AI 이용" });
+    await waitFor(() => expect(box).toBeDisabled());
+    expect(box).not.toBeChecked();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "AI 분석" }));
+    expect(calls.filter((call) => call.method === "POST").map((call) => call.body)).toEqual([{ entryId: TEAM, locale: "ko", regenerate: false }]);
+  });
+
+  it("the retry of a failed ranking analysis stays a ranking request while the box is ticked", async () => {
+    window.localStorage.setItem("fpl-ai-full", "1");
+    const calls = installFetch({
+      get: (isFull) => json(isFull ? { status: "none" } : { status: "failed", code: "api_timeout" }),
+      post: () => json({ status: "pending", previous: null }, 202)
+    });
+    renderPanel();
+    const user = userEvent.setup();
+    await waitFor(() => expect(calls.some((call) => call.url.includes("mode=full"))).toBe(true));
+    const retry = await screen.findAllByRole("button", { name: "다시 시도" });
+    await user.click(retry[0]);
+    expect(calls.filter((call) => call.method === "POST").map((call) => call.body)).toEqual([{ entryId: TEAM, locale: "ko", regenerate: false }]);
+  });
+
   it("is switched off when the server answers that the month's cap is reached", async () => {
     const user = userEvent.setup();
     installFetch({
