@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { useLocale } from "@/components/locale-provider";
 import { Badge, fmtMoney, fmtSigned, fmtXp, PlayerTag, type PlayerShown } from "@/components/recommend-parts";
 import type { FdrHorizon } from "@/lib/squad-view";
@@ -19,7 +19,7 @@ const VISIBLE_RUNNER_UPS = 2;
 type Tr = <T = string>(ko: T, en: T) => T;
 type Lookup = (id: number) => PlayerShown;
 /** Issue #61: lets a card or row pick the scenario the pitch shows (null when the response has no lineups). */
-type Selection = { selectedId: string; onSelect: (id: string) => void };
+type Selection = { selectedId: string; onSelect: (id: string) => void; compareId: string | null; onCompare: (id: string | null) => void };
 
 export function scenarioTypeLabel(type: ScenarioType, tr: Tr, locale: Locale) {
   if (type === "roll") return tr("넘기기 (이적 없음)", "Roll (no transfer)");
@@ -131,6 +131,23 @@ function ShowOnPitch({ id, onSelect, active }: { id: string; onSelect: (id: stri
   );
 }
 
+/** Issue #78: put this scenario's squad next to the one on the pitch (a second pitch, side by side on wide screens). */
+function CompareButton({ id, selection }: { id: string; selection: Selection }) {
+  const { tr } = useLocale();
+  if (id === selection.selectedId) return null;
+  const active = selection.compareId === id;
+  return (
+    <button
+      type="button"
+      onClick={() => selection.onCompare(active ? null : id)}
+      aria-pressed={active}
+      className={`min-h-8 rounded-md border px-2 text-caption font-semibold ${active ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-ink)]" : "border-[var(--border)] bg-[var(--surface)]"}`}
+    >
+      {tr("열린 안과 비교", "Compare with open")}
+    </button>
+  );
+}
+
 function ScenarioBadges({ scenario, recommended }: { scenario: TransferScenario; recommended: boolean }) {
   const { tr } = useLocale();
   return (
@@ -209,8 +226,9 @@ function ScenarioCard({
               <Swaps scenario={scenario} lookup={lookup} />
             )}
             {selection ? (
-              <div>
+              <div className="flex flex-wrap gap-1.5">
                 <ShowOnPitch id={scenario.id} onSelect={selection.onSelect} active={selection.selectedId === scenario.id} />
+                <CompareButton id={scenario.id} selection={selection} />
               </div>
             ) : null}
           </div>
@@ -261,6 +279,7 @@ function CompactRow({ scenario, best, recommended, lookup, selection }: { scenar
         </span>
         <ScenarioBadges scenario={scenario} recommended={recommended} />
         {selection ? <ShowOnPitch id={scenario.id} onSelect={selection.onSelect} active={selection.selectedId === scenario.id} /> : null}
+        {selection ? <CompareButton id={scenario.id} selection={selection} /> : null}
       </div>
     </li>
   );
@@ -374,7 +393,54 @@ export function TransferScenarios({
   const pitchReasons = selectedWhy
     ? Object.fromEntries(selectedWhy.picks.map((pick) => [pick.id, chipPickReason(pick, selectedWhy.mode, selectedWhy.horizon, locale, (id) => lookup(id).name)]))
     : undefined;
-  const selection: Selection | null = scenarioLineups && lineupPlayers ? { selectedId, onSelect: setPickedId } : null;
+  // Issue #78: an optional second scenario drawn beside the open one.
+  const [comparePicked, setComparePicked] = useState<string | null>(null);
+  const compareId = comparePicked && comparePicked !== selectedId && scenarioLineups?.[comparePicked] ? comparePicked : null;
+  const compareScenario = compareId ? result.scenarios.find((scenario) => scenario.id === compareId) : undefined;
+  const compareLineup = compareId ? scenarioLineups?.[compareId] : undefined;
+  const compareWhy = compareId ? chipExplanations?.[compareId] : undefined;
+  const compareReasons = compareWhy
+    ? Object.fromEntries(compareWhy.picks.map((pick) => [pick.id, chipPickReason(pick, compareWhy.mode, compareWhy.horizon, locale, (id) => lookup(id).name)]))
+    : undefined;
+  const selection: Selection | null = scenarioLineups && lineupPlayers ? { selectedId, onSelect: setPickedId, compareId, onCompare: setComparePicked } : null;
+
+  // Issue #78: the pitch opens right under the card that was pressed (a sibling row, full width inside a wide grid).
+  const pitchRow = (id: string) => {
+    if (id !== selectedId || !selectedLineup || !selectedScenario || !lineupPlayers) return null;
+    const showCompare = compareLineup && compareScenario;
+    return (
+      <li key={`${id}-pitch`} className="list-none lg:col-span-2" data-pitch-slot={id}>
+        <div className={`grid min-w-0 gap-3 rounded-md border border-[var(--border)] bg-[var(--surface)] p-2 ${showCompare ? "lg:grid-cols-2" : ""}`} data-compare={showCompare ? "on" : "off"}>
+          <ScenarioPitch
+            lineup={selectedLineup}
+            cards={lineupPlayers}
+            isRoll={selectedScenario.type === "roll"}
+            label={scenarioTitle(selectedScenario, lookup, tr, locale)}
+            reasons={pitchReasons}
+            fdrHorizon={fdrHorizon}
+            onFdrHorizon={onFdrHorizon}
+          />
+          {showCompare ? (
+            <div className="flex min-w-0 flex-col gap-1.5 border-t border-[var(--border)] pt-3 lg:border-l lg:border-t-0 lg:pl-3 lg:pt-0" data-compare-pane={compareId}>
+              <ScenarioPitch
+                lineup={compareLineup}
+                cards={lineupPlayers}
+                isRoll={compareScenario.type === "roll"}
+                label={scenarioTitle(compareScenario, lookup, tr, locale)}
+                reasons={compareReasons}
+                fdrHorizon={fdrHorizon}
+              />
+              <button type="button" onClick={() => setComparePicked(null)} className="min-h-8 self-start rounded-md border border-[var(--border)] px-2 text-caption font-semibold">
+                {tr("비교 닫기", "Close comparison")}
+              </button>
+            </div>
+          ) : (
+            <p className="text-caption text-[var(--muted)]">{tr("다른 안의 '열린 안과 비교'를 누르면 두 경우를 나란히 봅니다.", "Press “Compare with open” on another option to see both side by side.")}</p>
+          )}
+        </div>
+      </li>
+    );
+  };
 
   const groups = TYPE_ORDER.map((type) => ({
     type,
@@ -391,7 +457,10 @@ export function TransferScenarios({
     const visible = recommendedInRest && !shown.includes(recommendedInRest) ? [...shown, recommendedInRest] : shown;
     const hidden = rest.filter((scenario) => !visible.includes(scenario));
     const row = (scenario: TransferScenario) => (
-      <CompactRow key={scenario.id} scenario={scenario} best={best} recommended={scenario.id === result.recommendedId} lookup={lookup} selection={selection} />
+      <Fragment key={scenario.id}>
+        <CompactRow scenario={scenario} best={best} recommended={scenario.id === result.recommendedId} lookup={lookup} selection={selection} />
+        {pitchRow(scenario.id)}
+      </Fragment>
     );
     const isChipGroup = isChipType(group.type);
     const label = scenarioTypeLabel(group.type, tr, locale);
@@ -425,6 +494,7 @@ export function TransferScenarios({
             selection={selection}
             explanation={chipExplanations?.[best.id]}
           />
+          {pitchRow(best.id)}
           {visible.length > 0 ? (
             <li className="list-none">
               <ul className="grid list-none gap-1 p-0 lg:grid-cols-2">{visible.map(row)}</ul>
@@ -485,18 +555,6 @@ export function TransferScenarios({
         selectedId={selectedId}
         onSelect={setPickedId}
       />
-
-      {selectedLineup && selectedScenario && lineupPlayers ? (
-        <ScenarioPitch
-          lineup={selectedLineup}
-          cards={lineupPlayers}
-          isRoll={selectedScenario.type === "roll"}
-          label={scenarioTitle(selectedScenario, lookup, tr, locale)}
-          reasons={pitchReasons}
-          fdrHorizon={fdrHorizon}
-          onFdrHorizon={onFdrHorizon}
-        />
-      ) : null}
 
       {moveGroups.map(renderGroup)}
 

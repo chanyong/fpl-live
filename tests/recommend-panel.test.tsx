@@ -279,6 +279,16 @@ describe("rules-based panel (AI off)", () => {
     expect(pitch.querySelectorAll("[data-fdr-cells=\"3\"]").length).toBe(15);
     await userEvent.click(within(pitch as HTMLElement).getByRole("button", { name: "5경기" }));
     expect(pitch.querySelectorAll("[data-fdr-cells=\"5\"]").length).toBe(15);
+
+    // Issue #78: the pitch opens under the pressed card, and a second scenario can sit beside it.
+    const slot = pitch.closest("[data-pitch-slot]")!;
+    expect(slot.previousElementSibling).toHaveAttribute("data-scenario", one.id);
+    expect(panel.querySelectorAll("[data-scenario-pitch]").length).toBe(1);
+    await userEvent.click(within(panel).getAllByRole("button", { name: "열린 안과 비교" })[0]);
+    expect(panel.querySelectorAll("[data-scenario-pitch]").length).toBe(2);
+    expect(panel.querySelector("[data-compare-pane]")).not.toBeNull();
+    await userEvent.click(within(panel).getByRole("button", { name: "비교 닫기" }));
+    expect(panel.querySelectorAll("[data-scenario-pitch]").length).toBe(1);
   });
 
   it("explains why a chip is missing and warns about a thin budget and a recommended chip", async () => {
