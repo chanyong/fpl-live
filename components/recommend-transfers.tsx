@@ -286,16 +286,20 @@ export function TransferScenarios({
     );
     const isChipGroup = isChipType(group.type);
     const label = scenarioTypeLabel(group.type, tr, locale);
+    // 이적 시나리오(h3) 아래 묶음은 h4, 칩 구역(h4) 아래 묶음은 h5
+    const Heading = isChipGroup ? "h5" : "h4";
     return (
       <section key={group.type} aria-label={label} className="overflow-hidden rounded-md border border-[var(--border)]" data-group={group.type}>
         <header className="flex flex-wrap items-baseline gap-x-3 gap-y-0 border-l-4 border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1.5">
-          <h3 className="text-title-lg font-bold text-[var(--accent-ink)]">{label}</h3>
-          <p className="text-meta font-semibold tabular-nums text-[var(--accent-ink)]">
-            {tr(
-              `최선 ${fmtSigned(best.netGain)}${rest.length > 0 ? ` · 대안 ${rest.length}` : ""}`,
-              `best ${fmtSigned(best.netGain)}${rest.length > 0 ? ` · ${rest.length} alt.` : ""}`
-            )}
-          </p>
+          <Heading className="text-title-lg font-bold text-[var(--accent-ink)]">{label}</Heading>
+          {group.type === "roll" ? null : (
+            <p className="text-meta font-semibold tabular-nums text-[var(--accent-ink)]">
+              {tr(
+                `최선 ${fmtSigned(best.netGain)}${rest.length > 0 ? ` · 대안 ${rest.length}` : ""}`,
+                `best ${fmtSigned(best.netGain)}${rest.length > 0 ? ` · ${rest.length} alt.` : ""}`
+              )}
+            </p>
+          )}
         </header>
         <ul className="flex list-none flex-col gap-1 p-1 sm:p-1.5">
           <ScenarioCard
@@ -365,7 +369,7 @@ export function TransferScenarios({
 
       {chipGroups.length > 0 ? (
         <div className="flex flex-col gap-1.5">
-          <h3 className="border-b-2 border-[var(--accent)] pb-0.5 text-title-lg font-bold">{tr("칩 (시즌에 한 번뿐)", "Chips (once per season)")}</h3>
+          <h4 className="border-b-2 border-[var(--accent)] pb-0.5 text-title-lg font-bold">{tr("칩 (시즌에 한 번뿐)", "Chips (once per season)")}</h4>
           {chipGroups.map(renderGroup)}
         </div>
       ) : null}
