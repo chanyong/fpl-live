@@ -179,7 +179,7 @@ export function LeagueDashboard({ leagueId, buildId }: { leagueId: string; build
       : query.isLoading;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-1.5 py-1.5 sm:px-2 md:px-3 md:py-2">
+    <main className="page-shell">
       <SiteHeader className="mb-1">
         <ShareButton leagueName={query.data?.league.name} />
         <LocaleToggle />

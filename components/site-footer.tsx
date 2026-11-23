@@ -9,7 +9,7 @@ export function SiteFooter() {
 
   return (
     <footer className="mt-4 w-full">
-      <div className="mx-auto w-full max-w-[1440px] px-3 pb-6 pt-4 text-center text-caption leading-relaxed text-[var(--muted)]">
+      <div className="mx-auto w-full max-w-[1440px] px-1.5 sm:px-2 md:px-3 pb-6 pt-4 text-center text-caption leading-relaxed text-[var(--muted)]">
         <p>
           {tr(
             "FPL Live는 비공식 팬 서비스이며 Premier League 및 Fantasy Premier League와 제휴 관계가 없습니다.",

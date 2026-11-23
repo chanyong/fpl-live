@@ -155,7 +155,7 @@ export function SquadPage({ entryId }: { entryId: number }) {
   const isMine = mine?.id === entryId;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col gap-2 px-2 py-2 md:px-4 md:py-3">
+    <main className="page-shell gap-2">
       <SiteHeader>
         <LocaleToggle />
       </SiteHeader>
