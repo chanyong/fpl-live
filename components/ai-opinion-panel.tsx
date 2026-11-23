@@ -136,7 +136,11 @@ function ScenarioFigures({ scenario, tr }: { scenario: TransferScenario; tr: Tr 
   );
 }
 
-function SideBySide({ title, numericLabel, aiLabel, rows }: { title: string; numericLabel: string; aiLabel: string; rows: Array<{ key: string; numeric: ReactNode; ai: ReactNode }> }) {
+type SideRow = { key: string; numeric: ReactNode; ai: ReactNode; /** Both rankings put the same item here: one cell instead of two. */ merged?: ReactNode };
+
+function SideBySide({ title, numericLabel, aiLabel, rows }: { title: string; numericLabel: string; aiLabel: string; rows: SideRow[] }) {
+  const { tr } = useLocale();
+  const cell = "min-w-0 rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-meta";
   return (
     <div className="flex flex-col gap-1.5">
       <SubHeading>{title}</SubHeading>
@@ -145,18 +149,29 @@ function SideBySide({ title, numericLabel, aiLabel, rows }: { title: string; num
         <span>{aiLabel}</span>
       </div>
       <ul className="flex list-none flex-col gap-1.5 p-0">
-        {rows.map((row) => (
-          <li key={row.key} className="grid min-w-0 gap-2 md:grid-cols-2">
-            <div className="min-w-0 rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-meta">
-              <p className="text-caption font-semibold text-[var(--muted)] md:hidden">{numericLabel}</p>
-              {row.numeric}
-            </div>
-            <div className="min-w-0 rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-meta">
-              <p className="text-caption font-semibold text-[var(--muted)] md:hidden">{aiLabel}</p>
-              {row.ai}
-            </div>
-          </li>
-        ))}
+        {rows.map((row) =>
+          row.merged ? (
+            <li key={row.key} className="min-w-0">
+              <div className={cell}>
+                <p className="mb-0.5">
+                  <Badge tone="accent">{tr("수치·AI 순위 같음", "Same in both")}</Badge>
+                </p>
+                {row.merged}
+              </div>
+            </li>
+          ) : (
+            <li key={row.key} className="grid min-w-0 gap-2 md:grid-cols-2">
+              <div className={cell}>
+                <p className="text-caption font-semibold text-[var(--muted)] md:hidden">{numericLabel}</p>
+                {row.numeric}
+              </div>
+              <div className={cell}>
+                <p className="text-caption font-semibold text-[var(--muted)] md:hidden">{aiLabel}</p>
+                {row.ai}
+              </div>
+            </li>
+          )
+        )}
       </ul>
     </div>
   );
@@ -192,6 +207,8 @@ function AiResultView({ done }: { done: DonePayload }) {
   const topicLabel = { captain: tr("캡틴", "Captain"), lineup: tr("선발", "Lineup"), transfer: tr("이적", "Transfer") };
 
   const none = tr("해당 없음", "n/a");
+  // When the rules-based pick is a chip, the chip note is read beside it (the two can disagree).
+  const chipPick = basis.scenarios.find((scenario) => scenario.id === basis.recommendedId && (scenario.type === "wildcard" || scenario.type === "freehit"));
 
   return (
     <div className="flex flex-col gap-3">
@@ -228,8 +245,20 @@ function AiResultView({ done }: { done: DonePayload }) {
           const numeric = basis.captains[index];
           const ai = result.captain[index];
           const aiNumbers = ai ? basis.captains.find((captain) => captain.id === ai.player_id) : undefined;
+          const same = Boolean(numeric && ai && numeric.id === ai.player_id);
           return {
             key: `c${index}`,
+            merged:
+              same && numeric && ai ? (
+                <>
+                  <p className="font-semibold">{`${ai.rank}. ${name(ai.player_id)}`}</p>
+                  <p className="text-caption tabular-nums text-[var(--muted)]">
+                    {tr(`기대 점수 ${fmtXp(numeric.xp)} · 추천 비중 ${numeric.weightPct}%`, `xP ${fmtXp(numeric.xp)} · weight ${numeric.weightPct}%`)}
+                  </p>
+                  <p className="mt-1 break-words">{ai.reason}</p>
+                  <p className="mt-1 break-words text-[var(--muted)]">{tr("위험", "Risk")}: {ai.risk}</p>
+                </>
+              ) : undefined,
             numeric: numeric ? (
               <>
                 <p className="font-semibold">{`${index + 1}. ${name(numeric.id)}`}</p>
@@ -270,8 +299,24 @@ function AiResultView({ done }: { done: DonePayload }) {
             const numeric = numericScenarios[index];
             const ai = result.transfers[index];
             const aiScenario = ai ? scenarioById.get(ai.scenario_id) : undefined;
+            const same = Boolean(numeric && ai && numeric.id === ai.scenario_id);
             return {
               key: `t${index}`,
+              merged:
+                same && numeric && ai ? (
+                  <>
+                    <p className="font-semibold">
+                      {`${ai.priority}. ${scenarioName(numeric)}`}
+                      {numeric.id === basis.recommendedId ? ` (${tr("수치 기준 권장", "rules-based pick")})` : ""}
+                    </p>
+                    <p className="text-caption text-[var(--muted)]">
+                      <ScenarioFigures scenario={numeric} tr={tr} />
+                    </p>
+                    <p className="mt-1 break-words">{ai.reason}</p>
+                    <p className="mt-1 break-words text-[var(--muted)]">{tr("위험", "Risk")}: {ai.risk}</p>
+                    <p className="mt-1 text-caption text-[var(--muted)]">{tr(`신뢰도 ${confidence[ai.confidence]}`, `Confidence ${confidence[ai.confidence]}`)}</p>
+                  </>
+                ) : undefined,
               numeric: numeric ? (
                 <>
                   <p className="font-semibold">
@@ -311,6 +356,15 @@ function AiResultView({ done }: { done: DonePayload }) {
       {result.chip_note ? (
         <div className="rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-2">
           <SubHeading>{tr("칩 메모", "Chip note")}</SubHeading>
+          {chipPick ? (
+            <p className="mt-1 text-meta tabular-nums">
+              <span className="font-semibold">{tr("수치 기준", "Numbers")}</span>
+              {`: ${scenarioTypeLabel(chipPick.type, tr, locale)} ${fmtSigned(chipPick.netGain)}`}
+              <span className="mx-1 text-[var(--muted)]">/</span>
+              <span className="font-semibold">AI</span>
+              {`: ${tr("아래 메모 참고", "see the note below")}`}
+            </p>
+          ) : null}
           <p className="mt-1 break-words text-body">{result.chip_note}</p>
         </div>
       ) : null}
