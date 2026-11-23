@@ -7,7 +7,53 @@ import { SquadPitch } from "@/components/squad-pitch";
 import type { FplPosition } from "@/lib/types";
 import type { FdrHorizon } from "@/lib/squad-view";
 import type { SquadPlayer } from "@/lib/squad-types";
+import { buildLineupReasons, type LineupMove, type LineupReason } from "@/lib/xp/lineup-reasons";
 import type { EntryRecommendPayload, ScenarioLineup } from "@/lib/xp/recommend";
+
+const POSITIONS = ["GKP", "DEF", "MID", "FWD"] as const;
+
+/** Issue #83: the "why starts / sits" list, grouped by position; the roll pitch and the "recommended XI" section share it. */
+export function LineupReasonList({ reasons }: { reasons: LineupReason[] }) {
+  const { tr } = useLocale();
+  if (reasons.length === 0) return null;
+  const armband = reasons.filter((reason) => reason.kind === "captain" || reason.kind === "vice");
+  const moves = reasons.filter((reason) => reason.kind === "in");
+  return (
+    <details className="rounded-md border border-[var(--border)] bg-[var(--bg)] px-2 py-1" data-lineup-reasons>
+      <summary className="cursor-pointer text-meta font-semibold">{tr("선발·벤치 이유", "Why these starters and bench")}</summary>
+      <div className="mt-1 flex flex-col gap-1.5 text-caption leading-snug">
+        {moves.length > 0 ? (
+          <ul className="flex list-none flex-col gap-0.5 p-0" data-reason-group="in">
+            {moves.map((reason) => (
+              <li key={`in-${reason.id}`} className="break-words">{reason.text}</li>
+            ))}
+          </ul>
+        ) : null}
+        {armband.length > 0 ? (
+          <ul className="flex list-none flex-col gap-0.5 p-0" data-reason-group="captain">
+            {armband.map((reason) => (
+              <li key={`${reason.kind}-${reason.id}`} className="break-words">{reason.text}</li>
+            ))}
+          </ul>
+        ) : null}
+        {POSITIONS.map((position) => {
+          const rows = reasons.filter((reason) => (reason.kind === "starter" || reason.kind === "bench") && reason.position === position);
+          if (rows.length === 0) return null;
+          return (
+            <div key={position} data-reason-group={position}>
+              <p className="font-semibold">{position}</p>
+              <ul className="flex list-none flex-col gap-0.5 p-0">
+                {rows.map((reason) => (
+                  <li key={`${reason.kind}-${reason.id}`} className="break-words" data-reason-kind={reason.kind}>{reason.text}</li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+    </details>
+  );
+}
 
 /** Issue #61: the squad as one transfer scenario leaves it, drawn with the "my squad" pitch. */
 export function scenarioSquad(lineup: ScenarioLineup, cards: NonNullable<EntryRecommendPayload["lineupPlayers"]>): SquadPlayer[] {
@@ -47,6 +93,7 @@ export function ScenarioPitch({
   label,
   isRoll,
   reasons,
+  moves,
   fdrHorizon = 3,
   onFdrHorizon
 }: {
@@ -55,12 +102,26 @@ export function ScenarioPitch({
   label: string;
   isRoll: boolean;
   reasons?: Record<number, string>;
+  /** Issue #83: who each signing replaces (transfer scenarios; the chips use `reasons`). */
+  moves?: LineupMove[];
   fdrHorizon?: FdrHorizon;
   onFdrHorizon?: (next: FdrHorizon) => void;
 }) {
-  const { tr } = useLocale();
+  const { tr, locale } = useLocale();
   const squad = scenarioSquad(lineup, cards);
   const newIds = new Set(lineup.incoming);
+  const lineupReasons = buildLineupReasons(lineup, cards, locale, moves);
+  // Chip scenarios already carry a per-signing line (issue #69): it replaces the generic IN line.
+  const shownReasons = reasons
+    ? [...lineupReasons.filter((reason) => !(reason.kind === "in" && reasons[reason.id])), ...lineup.incoming.filter((id) => reasons[id]).map((id) => ({ id, kind: "in" as const, position: cards[String(id)]?.position ?? "MID", text: `${cards[String(id)]?.webName ?? `#${id}`} IN — ${reasons[id]}` }))]
+    : lineupReasons;
+  const tip: Record<number, string> = {};
+  for (const reason of shownReasons) {
+    if (reason.kind === "starter" || reason.kind === "bench") tip[reason.id] = reason.text;
+  }
+  for (const reason of shownReasons) {
+    if (reason.kind === "in") tip[reason.id] = [reasons?.[reason.id] ?? reason.text, tip[reason.id]].filter(Boolean).join(" · ");
+  }
 
   return (
     <div className="flex flex-col gap-1.5" data-scenario-pitch>
@@ -79,8 +140,9 @@ export function ScenarioPitch({
         squad={squad}
         metric="fdr"
         horizon={fdrHorizon}
-        extras={{ newIds, reasons, below: (player) => tr(`기대 ${fmtXp(cards[String(player.elementId)]?.xpNext ?? 0)}`, `xP ${fmtXp(cards[String(player.elementId)]?.xpNext ?? 0)}`) }}
+        extras={{ newIds, reasons: tip, below: (player) => tr(`기대 ${fmtXp(cards[String(player.elementId)]?.xpNext ?? 0)}`, `xP ${fmtXp(cards[String(player.elementId)]?.xpNext ?? 0)}`) }}
       />
+      <LineupReasonList reasons={shownReasons} />
     </div>
   );
 }

@@ -8,10 +8,12 @@ import { MemberOnlyNotice } from "@/components/member-only-notice";
 import { RecommendLogPanel } from "@/components/recommend-log-panel";
 import { Badge, fmtSigned, fmtTime, fmtXp, FixtureText, playerLookup, PlayerTag, SubHeading, type PlayerShown } from "@/components/recommend-parts";
 import type { FdrHorizon } from "@/lib/squad-view";
+import { LineupReasonList } from "@/components/scenario-pitch";
 import { TransferScenarios } from "@/components/recommend-transfers";
 import { isAllowedEntry } from "@/lib/ai/allowed-entry";
 import { assumptionText } from "@/lib/recommend-text";
 import type { LineupCandidate } from "@/lib/xp/lineup";
+import { buildLineupReasons } from "@/lib/xp/lineup-reasons";
 import type { EntryRecommendPayload } from "@/lib/xp/recommend";
 
 /**
@@ -54,11 +56,12 @@ function LineupChanges({ lineup, lookup, xpOf }: { lineup: LineupCandidate; look
 }
 
 function LineupSection({ payload }: { payload: EntryRecommendPayload }) {
-  const { tr } = useLocale();
+  const { tr, locale } = useLocale();
   const lookup = playerLookup(payload);
   const xp = new Map(payload.players.map((player) => [player.elementId, player.xpNext]));
   const xpOf = (id: number) => xp.get(id) ?? 0;
   const [best, ...others] = payload.lineups;
+  const rollLineup = payload.scenarioLineups?.roll;
   if (!best) return null;
 
   return (
@@ -86,6 +89,11 @@ function LineupSection({ payload }: { payload: EntryRecommendPayload }) {
             </span>
           ))}
         </p>
+        {rollLineup && payload.lineupPlayers ? (
+          <div className="mt-1.5">
+            <LineupReasonList reasons={buildLineupReasons(rollLineup, payload.lineupPlayers, locale)} />
+          </div>
+        ) : null}
       </div>
 
       {others.length > 0 ? (
@@ -235,6 +243,7 @@ export function RecommendPanel({ entryId, fdrHorizon = 3, onFdrHorizon }: { entr
                 scenarioLineups={data.scenarioLineups}
                 lineupPlayers={data.lineupPlayers}
                 chipExplanations={data.chipExplanations}
+                squadStats={Object.fromEntries(data.players.map((player) => [player.elementId, { xp: player.xpNext, cost: null }]))}
               />
             ) : (
               <p className="text-meta text-[var(--muted)]">

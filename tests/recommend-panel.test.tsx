@@ -273,7 +273,12 @@ describe("rules-based panel (AI off)", () => {
     await userEvent.click(panel.querySelector(`[data-summary-row="${one.id}"]`) ?? panel.querySelector("[data-summary-row]")!);
     const pitch = panel.querySelector("[data-scenario-pitch]")!;
     expect(pitch.querySelectorAll('[data-new="true"]').length).toBe(1);
-    expect(within(pitch as HTMLElement).getAllByText(/기대 3\.5/).length).toBe(15);
+    expect(within(pitch as HTMLElement).getAllByText(/기대 3\.5/).filter((node) => !node.closest("[data-lineup-reasons]")).length).toBe(15);
+    // Issue #83: the "why" list is there, folded, with the starters and bench of the 15.
+    const why = pitch.querySelector("[data-lineup-reasons]")!;
+    expect(why).not.toBeNull();
+    expect(why.querySelectorAll("[data-reason-kind]").length).toBe(15);
+    expect(why.querySelector('[data-reason-group="captain"]')).not.toBeNull();
     expect(within(pitch as HTMLElement).getByText(/포메이션 4-4-2/)).toBeInTheDocument();
     // Issue #76: the same FDR cells as the squad pitch, 3 games by default, 15 cards.
     expect(pitch.querySelectorAll("[data-fdr-cells=\"3\"]").length).toBe(15);
