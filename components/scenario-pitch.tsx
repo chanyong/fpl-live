@@ -1,9 +1,11 @@
 "use client";
 
+import { FdrHorizonToggle } from "@/components/fdr-cells";
 import { useLocale } from "@/components/locale-provider";
 import { Badge, fmtXp } from "@/components/recommend-parts";
 import { SquadPitch } from "@/components/squad-pitch";
 import type { FplPosition } from "@/lib/types";
+import type { FdrHorizon } from "@/lib/squad-view";
 import type { SquadPlayer } from "@/lib/squad-types";
 import type { EntryRecommendPayload, ScenarioLineup } from "@/lib/xp/recommend";
 
@@ -33,7 +35,8 @@ export function scenarioSquad(lineup: ScenarioLineup, cards: NonNullable<EntryRe
       form: 0,
       selectedByPercent: 0,
       eventPoints: null,
-      fixtures: card?.fixtures ?? []
+      fixtures: card?.fixtures ?? [],
+      outlook: card?.outlook
     };
   });
 }
@@ -43,13 +46,17 @@ export function ScenarioPitch({
   cards,
   label,
   isRoll,
-  reasons
+  reasons,
+  fdrHorizon = 3,
+  onFdrHorizon
 }: {
   lineup: ScenarioLineup;
   cards: NonNullable<EntryRecommendPayload["lineupPlayers"]>;
   label: string;
   isRoll: boolean;
   reasons?: Record<number, string>;
+  fdrHorizon?: FdrHorizon;
+  onFdrHorizon?: (next: FdrHorizon) => void;
 }) {
   const { tr } = useLocale();
   const squad = scenarioSquad(lineup, cards);
@@ -62,9 +69,16 @@ export function ScenarioPitch({
         <span className="tabular-nums">{tr(`포메이션 ${lineup.formation} · 선발 기대 점수 ${fmtXp(lineup.expectedPoints)}`, `Formation ${lineup.formation} · XI xP ${fmtXp(lineup.expectedPoints)}`)}</span>
         {isRoll ? null : <Badge tone="accent">{tr("IN = 새로 영입", "IN = new signing")}</Badge>}
       </p>
+      {onFdrHorizon ? (
+        <div className="flex items-center gap-2 text-meta text-[var(--muted)]">
+          <span>{tr("상대 난이도(FDR)", "Opponent difficulty (FDR)")}</span>
+          <FdrHorizonToggle horizon={fdrHorizon} onChange={onFdrHorizon} />
+        </div>
+      ) : null}
       <SquadPitch
         squad={squad}
-        metric="opponent"
+        metric="fdr"
+        horizon={fdrHorizon}
         extras={{ newIds, reasons, below: (player) => tr(`기대 ${fmtXp(cards[String(player.elementId)]?.xpNext ?? 0)}`, `xP ${fmtXp(cards[String(player.elementId)]?.xpNext ?? 0)}`) }}
       />
     </div>

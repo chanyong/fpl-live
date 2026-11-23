@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
 import { MemberOnlyNotice } from "@/components/member-only-notice";
+import { FdrHorizonToggle } from "@/components/fdr-cells";
 import { RecommendPanel } from "@/components/recommend-panel";
 import { SiteHeader } from "@/components/site-header";
 import { SquadList } from "@/components/squad-list";
@@ -308,19 +309,7 @@ export function SquadPage({ entryId }: { entryId: number }) {
                         </label>
                       ) : null}
                       {view.mode === "list" || view.metric === "fdr" ? (
-                        <div role="group" aria-label={tr("FDR 경기 수", "FDR fixtures")} className="inline-flex overflow-hidden rounded-md border border-[var(--border)]">
-                          {([3, 5] as const).map((value) => (
-                            <button
-                              key={value}
-                              type="button"
-                              aria-pressed={horizon === value}
-                              onClick={() => changeHorizon(value)}
-                              className={`min-h-9 px-3 text-meta font-semibold ${horizon === value ? "bg-[var(--accent)] text-white" : "bg-[var(--surface)]"}`}
-                            >
-                              {tr(`${value}경기`, `${value} games`)}
-                            </button>
-                          ))}
-                        </div>
+                        <FdrHorizonToggle horizon={horizon} onChange={changeHorizon} />
                       ) : null}
                     </div>
                   ) : null}
@@ -341,7 +330,7 @@ export function SquadPage({ entryId }: { entryId: number }) {
 
               {/* Issue #47: lineup, captain and transfer analysis only for the member who registered this team (the server checks it too). Everyone else sees one quiet line and no extra request; nothing is drawn until we know who is looking. */}
               {member.isPending ? null : (
-                  <div className="min-w-0 lg:col-start-1">{ownsTeam ? <RecommendPanel entryId={entryId} /> : <MemberOnlyNotice />}</div>
+                  <div className="min-w-0 lg:col-start-1">{ownsTeam ? <RecommendPanel entryId={entryId} fdrHorizon={horizon} onFdrHorizon={changeHorizon} /> : <MemberOnlyNotice />}</div>
                 )}
               </div>
             </>

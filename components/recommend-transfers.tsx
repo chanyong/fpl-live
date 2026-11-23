@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { useLocale } from "@/components/locale-provider";
 import { Badge, fmtMoney, fmtSigned, fmtXp, PlayerTag, type PlayerShown } from "@/components/recommend-parts";
+import type { FdrHorizon } from "@/lib/squad-view";
 import { ScenarioPitch } from "@/components/scenario-pitch";
 import { chipLabel } from "@/lib/chips";
 import type { Locale } from "@/lib/locale";
@@ -348,7 +349,9 @@ export function TransferScenarios({
   onHorizon,
   scenarioLineups,
   lineupPlayers,
-  chipExplanations
+  chipExplanations,
+  fdrHorizon = 3,
+  onFdrHorizon
 }: {
   result: TransferSearchResult;
   lookup: Lookup;
@@ -357,6 +360,9 @@ export function TransferScenarios({
   scenarioLineups?: EntryRecommendPayload["scenarioLineups"];
   lineupPlayers?: EntryRecommendPayload["lineupPlayers"];
   chipExplanations?: EntryRecommendPayload["chipExplanations"];
+  /** Issue #76: the squad screen's 3/5-game FDR switch, shared with the scenario pitch. */
+  fdrHorizon?: FdrHorizon;
+  onFdrHorizon?: (next: FdrHorizon) => void;
 }) {
   const { tr, locale } = useLocale();
   // Issue #61: the scenario whose XI and bench the pitch shows; the recommended one until the reader picks another.
@@ -487,6 +493,8 @@ export function TransferScenarios({
           isRoll={selectedScenario.type === "roll"}
           label={scenarioTitle(selectedScenario, lookup, tr, locale)}
           reasons={pitchReasons}
+          fdrHorizon={fdrHorizon}
+          onFdrHorizon={onFdrHorizon}
         />
       ) : null}
 

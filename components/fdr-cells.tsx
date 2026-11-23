@@ -5,6 +5,26 @@ import { useLocale } from "@/components/locale-provider";
 import { outlookWeeks, type FdrHorizon } from "@/lib/squad-view";
 import type { SquadPlayer } from "@/lib/squad-types";
 
+/** The 3 / 5 games switch shared by the squad pitch and the scenario pitch (issue #76). */
+export function FdrHorizonToggle({ horizon, onChange }: { horizon: FdrHorizon; onChange: (next: FdrHorizon) => void }) {
+  const { tr } = useLocale();
+  return (
+    <div role="group" aria-label={tr("FDR 경기 수", "FDR fixtures")} className="inline-flex overflow-hidden rounded-md border border-[var(--border)]">
+      {([3, 5] as const).map((value) => (
+        <button
+          key={value}
+          type="button"
+          aria-pressed={horizon === value}
+          onClick={() => onChange(value)}
+          className={`min-h-9 px-3 text-meta font-semibold ${horizon === value ? "bg-[var(--accent)] text-white" : "bg-[var(--surface)]"}`}
+        >
+          {tr(`${value}경기`, `${value} games`)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /**
  * Issue #74: a player's next 3 or 5 gameweeks as small FPL-coloured cells (1-2 green, 3 grey, 4 pink, 5 maroon).
  * A double week stacks two games in one cell; a blank week is an empty "–" cell. The opponent and H/A show only

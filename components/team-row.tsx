@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useLocale } from "@/components/locale-provider";
 import { TeamPicker, type ConfirmedTeam } from "@/components/team-picker";
@@ -96,17 +97,24 @@ export function TeamRow({ teamId, nextChangeAt, onChanged }: { teamId: number | 
           <span className="font-semibold">{name ? `${name} (#${teamId})` : `#${teamId ?? "-"}`}</span>
         </span>
         {!open && (
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(true);
-              setMessage(null);
-            }}
-            disabled={waitUntil !== null}
-            className="font-semibold text-[var(--accent)] underline disabled:no-underline disabled:opacity-60"
-          >
-            {tr("팀 바꾸기", "Change team")}
-          </button>
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            {teamId !== null && (
+              <Link href={`/team/${teamId}`} className="font-semibold text-[var(--accent)] underline">
+                {tr("내 팀 보기 (스쿼드·추천)", "Open my team (squad & picks)")}
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(true);
+                setMessage(null);
+              }}
+              disabled={waitUntil !== null}
+              className="font-semibold text-[var(--accent)] underline disabled:no-underline disabled:opacity-60"
+            >
+              {tr("팀 바꾸기", "Change team")}
+            </button>
+          </span>
         )}
       </div>
       {waitUntil !== null && (

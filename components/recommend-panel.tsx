@@ -7,6 +7,7 @@ import { useLocale } from "@/components/locale-provider";
 import { MemberOnlyNotice } from "@/components/member-only-notice";
 import { RecommendLogPanel } from "@/components/recommend-log-panel";
 import { Badge, fmtSigned, fmtTime, fmtXp, FixtureText, playerLookup, PlayerTag, SubHeading, type PlayerShown } from "@/components/recommend-parts";
+import type { FdrHorizon } from "@/lib/squad-view";
 import { TransferScenarios } from "@/components/recommend-transfers";
 import { isAllowedEntry } from "@/lib/ai/allowed-entry";
 import { assumptionText } from "@/lib/recommend-text";
@@ -148,7 +149,7 @@ function CaptainSection({ payload }: { payload: EntryRecommendPayload }) {
   );
 }
 
-export function RecommendPanel({ entryId }: { entryId: number }) {
+export function RecommendPanel({ entryId, fdrHorizon = 3, onFdrHorizon }: { entryId: number; fdrHorizon?: FdrHorizon; onFdrHorizon?: (next: FdrHorizon) => void }) {
   const { tr, locale } = useLocale();
   const [horizon, setHorizon] = useState<3 | 5>(3);
 
@@ -229,6 +230,8 @@ export function RecommendPanel({ entryId }: { entryId: number }) {
                 lookup={lookup}
                 horizon={horizon}
                 onHorizon={setHorizon}
+                fdrHorizon={fdrHorizon}
+                onFdrHorizon={onFdrHorizon}
                 scenarioLineups={data.scenarioLineups}
                 lineupPlayers={data.lineupPlayers}
                 chipExplanations={data.chipExplanations}

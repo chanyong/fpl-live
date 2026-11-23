@@ -92,6 +92,8 @@ export type LineupPlayerCard = {
   photoUrl: string | null;
   xpNext: number;
   fixtures: Array<{ opponent: string; home: boolean; difficulty: number }>;
+  /** Issue #76: the next gameweeks' games, for the same FDR cells the squad pitch draws. */
+  outlook?: Array<{ gw: number; games: Array<{ opponent: string; home: boolean; difficulty: number }> }>;
 };
 
 export const ASSUMPTIONS: RecommendAssumption[] = [
@@ -218,7 +220,10 @@ export async function buildScenarioLineups(
       news: mine?.news ?? element?.news ?? "",
       photoUrl: mine ? mine.photoUrl : element?.photo ? photoUrl(element.photo) : null,
       xpNext: row?.next ?? 0,
-      fixtures: (row?.weeks[0]?.games ?? []).map((game) => ({ opponent: game.opponent, home: game.home, difficulty: game.difficulty }))
+      fixtures: (row?.weeks[0]?.games ?? []).map((game) => ({ opponent: game.opponent, home: game.home, difficulty: game.difficulty })),
+      outlook: row
+        ? row.weeks.slice(0, 5).map((week) => ({ gw: week.gw, games: week.games.map((game) => ({ opponent: game.opponent, home: game.home, difficulty: game.difficulty })) }))
+        : mine?.outlook
     };
   };
 
