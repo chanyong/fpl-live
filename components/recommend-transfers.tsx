@@ -410,7 +410,7 @@ export function TransferScenarios({
     const showCompare = compareLineup && compareScenario;
     return (
       <li key={`${id}-pitch`} className="list-none lg:col-span-2" data-pitch-slot={id}>
-        <div className={`grid min-w-0 gap-3 rounded-md border border-[var(--border)] bg-[var(--surface)] p-2 ${showCompare ? "lg:grid-cols-2" : ""}`} data-compare={showCompare ? "on" : "off"}>
+        <div className={`grid min-w-0 gap-3 rounded-md border border-[var(--border)] bg-[var(--surface)] p-2 ${showCompare ? "xl:grid-cols-2" : ""}`} data-compare={showCompare ? "on" : "off"}>
           <ScenarioPitch
             lineup={selectedLineup}
             cards={lineupPlayers}
@@ -421,7 +421,7 @@ export function TransferScenarios({
             onFdrHorizon={onFdrHorizon}
           />
           {showCompare ? (
-            <div className="flex min-w-0 flex-col gap-1.5 border-t border-[var(--border)] pt-3 lg:border-l lg:border-t-0 lg:pl-3 lg:pt-0" data-compare-pane={compareId}>
+            <div className="flex min-w-0 flex-col gap-1.5 border-t border-[var(--border)] pt-3 xl:border-l xl:border-t-0 xl:pl-3 xl:pt-0" data-compare-pane={compareId}>
               <ScenarioPitch
                 lineup={compareLineup}
                 cards={lineupPlayers}
@@ -502,7 +502,8 @@ export function TransferScenarios({
           ) : null}
           {hidden.length > 0 ? (
             <li className="list-none">
-              <details>
+              {/* Issue #78: open the fold when the scenario on the pitch is inside it (e.g. picked from the summary table). */}
+              <details open={hidden.some((scenario) => scenario.id === selectedId) || undefined}>
                 <summary className="cursor-pointer px-1 text-meta text-[var(--muted)]">
                   {tr(`${label} 나머지 ${hidden.length}개`, `${hidden.length} more: ${label}`)}
                 </summary>
