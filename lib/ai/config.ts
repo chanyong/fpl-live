@@ -40,6 +40,15 @@ export const AI_EFFORT = "medium" as const;
  */
 export const INPUT_TOKEN_CEILING = 28_000;
 
+/**
+ * "Full AI" mode (issue #85): the model picks the lineup and the transfers itself and explains every player, so
+ * its input is a little larger (selling prices, chip state) and its answer much larger than the ranking mode's.
+ * Only a call made with the "full AI" box ticked uses these two values; they set a SEPARATE, larger reservation
+ * (see `maxCostFullCallUsd`). The monthly and daily caps above are unchanged.
+ */
+export const FULL_INPUT_TOKEN_CEILING = 36_000;
+export const FULL_MAX_TOKENS = 20_000;
+
 /** Caps, enforced inside the database (db/migrations/0002). Every call counts: trials, failures, truncations, retries. */
 export const MONTHLY_CAP_USD = 40;
 export const DAILY_CAP_USD = 5;
