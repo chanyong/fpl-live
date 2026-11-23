@@ -42,7 +42,7 @@ export type EntrySquadInputs = {
   now: number;
 };
 
-function photoUrl(photo: string) {
+export function photoUrl(photo: string) {
   return photo
     ? `https://resources.premierleague.com/premierleague/photos/players/110x140/p${photo.replace(".jpg", "")}.png`
     : null;

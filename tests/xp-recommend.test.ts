@@ -20,7 +20,7 @@ import { resetEntryRequestLimits } from "@/lib/entry-request-limit";
 import { EntryBusyError, EntryNotFoundError, FplUnavailableError } from "@/lib/entry-squad";
 import type { EntrySquadPayload, SquadPlayer } from "@/lib/squad-types";
 import { buildXpTable, type XpBootstrap, type XpElement, type XpFixtureRow } from "@/lib/xp/model";
-import { buildEntryRecommend, buildScenarioPlayerInfo } from "@/lib/xp/recommend";
+import { buildEntryRecommend, buildScenarioLineups, buildScenarioPlayerInfo } from "@/lib/xp/recommend";
 import type { TransferSearchResult } from "@/lib/xp/transfer-search";
 import { getXpTable, resetXpTableCache } from "@/lib/xp/xp-table";
 
@@ -205,8 +205,8 @@ describe("GET /api/entry-recommend", () => {
     expect(body.lineups[0].starters).toHaveLength(11);
     expect(body.captains).toHaveLength(5);
     expect(getEntrySquad).toHaveBeenCalledWith(5, false);
-    // getBase is the memoised bootstrap read: the xP table and the scenario names share it, neither calls FPL itself.
-    expect(getBase.mock.calls.length).toBeLessThanOrEqual(2);
+    // getBase is the memoised bootstrap read: the xP table and the scenario names share it, none of the three readers (xP table, scenario names, scenario lineups) calls FPL itself.
+    expect(getBase.mock.calls.length).toBeLessThanOrEqual(3);
   });
 
   it("passes refresh=1 on as a forced refresh of the squad", async () => {
@@ -279,5 +279,74 @@ describe("buildScenarioPlayerInfo", () => {
     expect(await buildScenarioPlayerInfo(null, table)).toEqual({});
     getBase.mockResolvedValue(null);
     expect(await buildScenarioPlayerInfo(transfers, table)).toEqual({});
+  });
+});
+
+describe("buildScenarioLineups (issue #61)", () => {
+  const table = buildXpTable(xpBootstrap, fixtures, NOW)!;
+  const squadIds = [1, 2, 11, 12, 13, 14, 15, 21, 22, 23, 24, 25, 31, 32, 33];
+  const squad = {
+    entryId: 5,
+    gw: 11,
+    fetchedAt: NOW,
+    squad: squadIds.map((id, index) => ({
+      elementId: id,
+      webName: `Own${id}`,
+      teamShortName: "ARS",
+      teamCode: 0,
+      position: ({ 1: "GKP", 2: "DEF", 3: "MID", 4: "FWD" } as const)[table.players.get(id)!.elementType as 1 | 2 | 3 | 4],
+      isStarter: index < 11,
+      status: "a",
+      news: "",
+      photoUrl: null
+    }))
+  } as unknown as EntrySquadPayload;
+  const transfers = {
+    scenarios: [
+      { id: "roll", type: "roll", out: [], in: [] },
+      { id: "one:25>21x", type: "one", out: [25], in: [] }
+    ]
+  } as unknown as TransferSearchResult;
+
+  beforeEach(() => {
+    getBase.mockReset().mockResolvedValue({ bootstrap: { ...xpBootstrap, elements }, fixtures });
+  });
+
+  it("roll equals the recommended lineup and captain of the current squad", async () => {
+    const { scenarioLineups } = await buildScenarioLineups(squad, transfers, table);
+    const base = buildEntryRecommend(squad, table);
+    expect(scenarioLineups.roll.starters).toEqual(base.lineups[0].starters);
+    expect(scenarioLineups.roll.bench).toEqual(base.lineups[0].bench);
+    expect(scenarioLineups.roll.formation).toBe(base.lineups[0].formation);
+    expect(scenarioLineups.roll.captainId).toBe(base.captains[0].id);
+    expect(scenarioLineups.roll.viceCaptainId).toBe(base.captains[1].id);
+  });
+
+  it("keeps 11 starters, 4 bench, legal positions and no outgoing player for a transfer", async () => {
+    // A 16th player (id 41, MID, owned by nobody) comes in for defender 13.
+    const extra = { ...xpBootstrap, elements: [...elements, el(41, 1, 3, 10, 10, { web_name: "Newman", photo: "99.jpg" } as Partial<XpElement>)] };
+    const bigTable = buildXpTable(extra, fixtures, NOW)!;
+    getBase.mockResolvedValue({ bootstrap: extra, fixtures });
+    const swap = { scenarios: [{ id: "one:13>41", type: "one", out: [13], in: [41] }] } as unknown as TransferSearchResult;
+    const { scenarioLineups, lineupPlayers } = await buildScenarioLineups(squad, swap, bigTable);
+    const lineup = scenarioLineups["one:13>41"];
+    expect(lineup.starters).toHaveLength(11);
+    expect(lineup.bench).toHaveLength(4);
+    expect([...lineup.starters, ...lineup.bench]).not.toContain(13);
+    expect(new Set([...lineup.starters, ...lineup.bench]).size).toBe(15);
+    expect(lineup.incoming).toEqual([41]);
+    const types = lineup.starters.map((id) => bigTable.players.get(id)!.elementType);
+    expect(types.filter((type) => type === 1)).toHaveLength(1);
+    expect(types.filter((type) => type === 2).length).toBeGreaterThanOrEqual(3);
+    expect(types.filter((type) => type === 3).length).toBeGreaterThanOrEqual(2);
+    expect(types.filter((type) => type === 4).length).toBeGreaterThanOrEqual(1);
+    expect(lineup.starters).toContain(41);
+    expect(lineup.starters).toContain(lineup.captainId);
+    expect(lineupPlayers["41"].fixtures.length).toBeGreaterThan(0);
+    expect(lineupPlayers["41"].photoUrl).toContain("p99.png");
+  });
+
+  it("is empty without scenarios", async () => {
+    expect(await buildScenarioLineups(squad, null, table)).toEqual({ scenarioLineups: {}, lineupPlayers: {} });
   });
 });

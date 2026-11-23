@@ -1,11 +1,13 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useLocale } from "@/components/locale-provider";
 import { Badge, fmtMoney, fmtSigned, fmtXp, PlayerTag, type PlayerShown } from "@/components/recommend-parts";
+import { ScenarioPitch } from "@/components/scenario-pitch";
 import { chipLabel } from "@/lib/chips";
 import type { Locale } from "@/lib/locale";
 import { chipReasonText } from "@/lib/recommend-text";
+import type { EntryRecommendPayload } from "@/lib/xp/recommend";
 import type { ScenarioType, TransferScenario, TransferSearchResult } from "@/lib/xp/transfer-search";
 
 const TYPE_ORDER: ScenarioType[] = ["roll", "one", "two", "wildcard", "freehit"];
@@ -14,6 +16,8 @@ const VISIBLE_RUNNER_UPS = 2;
 
 type Tr = <T = string>(ko: T, en: T) => T;
 type Lookup = (id: number) => PlayerShown;
+/** Issue #61: lets a card or row pick the scenario the pitch shows (null when the response has no lineups). */
+type Selection = { selectedId: string; onSelect: (id: string) => void };
 
 export function scenarioTypeLabel(type: ScenarioType, tr: Tr, locale: Locale) {
   if (type === "roll") return tr("넘기기 (이적 없음)", "Roll (no transfer)");
@@ -71,6 +75,29 @@ function bankChange(scenario: TransferScenario, bank: number) {
   return `${diff > 0 ? "+" : "-"}${fmtMoney(Math.abs(diff))}`;
 }
 
+/** "넘기기", "Diop → Hill" ...: the name the pitch heading uses. */
+function scenarioTitle(scenario: TransferScenario, lookup: Lookup, tr: Tr, locale: Locale) {
+  if (scenario.type === "one" || scenario.type === "two") {
+    const pairs = pairSwaps(scenario, lookup).map((pair) => `${lookup(pair.out).name}→${pair.in !== null ? lookup(pair.in).name : "?"}`);
+    return pairs.join(", ");
+  }
+  return scenarioTypeLabel(scenario.type, tr, locale);
+}
+
+function ShowOnPitch({ id, onSelect, active }: { id: string; onSelect: (id: string) => void; active: boolean }) {
+  const { tr } = useLocale();
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(id)}
+      aria-pressed={active}
+      className={`min-h-8 rounded-md border px-2 text-caption font-semibold ${active ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border)] bg-[var(--surface)]"}`}
+    >
+      {tr("피치로 보기", "Show on pitch")}
+    </button>
+  );
+}
+
 function ScenarioBadges({ scenario, recommended }: { scenario: TransferScenario; recommended: boolean }) {
   const { tr } = useLocale();
   return (
@@ -94,13 +121,15 @@ function ScenarioCard({
   recommended,
   horizon,
   bank,
-  lookup
+  lookup,
+  selection
 }: {
   scenario: TransferScenario;
   recommended: boolean;
   horizon: number;
   bank: number;
   lookup: Lookup;
+  selection: Selection | null;
 }) {
   const { tr } = useLocale();
   const isChip = isChipType(scenario.type);
@@ -143,6 +172,11 @@ function ScenarioCard({
             ) : (
               <Swaps scenario={scenario} lookup={lookup} />
             )}
+            {selection ? (
+              <div>
+                <ShowOnPitch id={scenario.id} onSelect={selection.onSelect} active={selection.selectedId === scenario.id} />
+              </div>
+            ) : null}
           </div>
           <dl className="flex flex-wrap gap-x-4 gap-y-0.5 lg:shrink-0">
             <Figure label={tr("다음 GW 기대 점수", "Next GW xP")}>{fmtXp(scenario.nextGwXp)}</Figure>
@@ -170,7 +204,7 @@ function ScenarioCard({
 }
 
 /** A runner-up in the same group, folded to a short row: who for whom, and the gap to the best one. */
-function CompactRow({ scenario, best, recommended, lookup }: { scenario: TransferScenario; best: TransferScenario; recommended: boolean; lookup: Lookup }) {
+function CompactRow({ scenario, best, recommended, lookup, selection }: { scenario: TransferScenario; best: TransferScenario; recommended: boolean; lookup: Lookup; selection: Selection | null }) {
   const { tr } = useLocale();
   const gap = scenario.netGain - best.netGain;
   return (
@@ -190,6 +224,7 @@ function CompactRow({ scenario, best, recommended, lookup }: { scenario: Transfe
           {scenario.transferCost > 0 ? tr(` · 이적 비용 -${scenario.transferCost}점`, ` · cost -${scenario.transferCost} pts`) : ""}
         </span>
         <ScenarioBadges scenario={scenario} recommended={recommended} />
+        {selection ? <ShowOnPitch id={scenario.id} onSelect={selection.onSelect} active={selection.selectedId === scenario.id} /> : null}
       </div>
     </li>
   );
@@ -204,7 +239,7 @@ const SUMMARY_LABEL: Record<ScenarioType, [string, string]> = {
 };
 
 /** One screen to compare the options: a row per kind (its best scenario), the net gain drawn as a bar. */
-function SummaryTable({ rows, horizon, recommendedId }: { rows: TransferScenario[]; horizon: number; recommendedId: string }) {
+function SummaryTable({ rows, horizon, recommendedId, selectedId, onSelect }: { rows: TransferScenario[]; horizon: number; recommendedId: string; selectedId: string; onSelect: (id: string) => void }) {
   const { tr } = useLocale();
   const maxGain = Math.max(0.1, ...rows.map((row) => row.netGain));
   const showCost = rows.some((row) => row.transferCost > 0);
@@ -237,9 +272,17 @@ function SummaryTable({ rows, horizon, recommendedId }: { rows: TransferScenario
             const label = SUMMARY_LABEL[row.type];
             const width = row.type === "roll" ? 0 : Math.max(0, (row.netGain / maxGain) * 100);
             return (
-              <tr key={row.id} className={`border-t border-[var(--border)] tabular-nums ${picked ? "bg-[var(--accent-soft)] font-semibold" : ""}`}>
+              <tr
+                key={row.id}
+                onClick={() => onSelect(row.id)}
+                aria-selected={row.id === selectedId}
+                data-summary-row={row.id}
+                className={`cursor-pointer border-t border-[var(--border)] tabular-nums ${picked ? "bg-[var(--accent-soft)] font-semibold" : ""} ${row.id === selectedId ? "outline outline-2 -outline-offset-2 outline-[var(--accent)]" : ""}`}
+              >
                 <th scope="row" className="whitespace-nowrap px-1 py-1.5 text-left align-middle text-caption font-semibold sm:text-meta">
-                  {tr(label[0], label[1])}
+                  <button type="button" onClick={() => onSelect(row.id)} aria-pressed={row.id === selectedId} className="text-left font-semibold underline decoration-dotted underline-offset-2">
+                    {tr(label[0], label[1])}
+                  </button>
                   {picked ? <span className="block text-caption text-[var(--accent-ink)]">{tr("★ 권장", "★ Pick")}</span> : null}
                 </th>
                 <td className="px-1 py-1.5 align-middle">
@@ -267,14 +310,24 @@ export function TransferScenarios({
   result,
   lookup,
   horizon,
-  onHorizon
+  onHorizon,
+  scenarioLineups,
+  lineupPlayers
 }: {
   result: TransferSearchResult;
   lookup: Lookup;
   horizon: 3 | 5;
   onHorizon: (horizon: 3 | 5) => void;
+  scenarioLineups?: EntryRecommendPayload["scenarioLineups"];
+  lineupPlayers?: EntryRecommendPayload["lineupPlayers"];
 }) {
   const { tr, locale } = useLocale();
+  // Issue #61: the scenario whose XI and bench the pitch shows; the recommended one until the reader picks another.
+  const [pickedId, setPickedId] = useState<string | null>(null);
+  const selectedId = pickedId && scenarioLineups?.[pickedId] ? pickedId : result.recommendedId;
+  const selectedScenario = result.scenarios.find((scenario) => scenario.id === selectedId);
+  const selectedLineup = scenarioLineups?.[selectedId];
+  const selection: Selection | null = scenarioLineups && lineupPlayers ? { selectedId, onSelect: setPickedId } : null;
 
   const groups = TYPE_ORDER.map((type) => ({
     type,
@@ -291,7 +344,7 @@ export function TransferScenarios({
     const visible = recommendedInRest && !shown.includes(recommendedInRest) ? [...shown, recommendedInRest] : shown;
     const hidden = rest.filter((scenario) => !visible.includes(scenario));
     const row = (scenario: TransferScenario) => (
-      <CompactRow key={scenario.id} scenario={scenario} best={best} recommended={scenario.id === result.recommendedId} lookup={lookup} />
+      <CompactRow key={scenario.id} scenario={scenario} best={best} recommended={scenario.id === result.recommendedId} lookup={lookup} selection={selection} />
     );
     const isChipGroup = isChipType(group.type);
     const label = scenarioTypeLabel(group.type, tr, locale);
@@ -322,6 +375,7 @@ export function TransferScenarios({
             horizon={result.gws.length}
             bank={result.bank}
             lookup={lookup}
+            selection={selection}
           />
           {visible.length > 0 ? (
             <li className="list-none">
@@ -376,7 +430,22 @@ export function TransferScenarios({
         </p>
       ) : null}
 
-      <SummaryTable rows={groups.map((group) => group.scenarios[0])} horizon={result.gws.length} recommendedId={result.recommendedId} />
+      <SummaryTable
+        rows={groups.map((group) => group.scenarios[0])}
+        horizon={result.gws.length}
+        recommendedId={result.recommendedId}
+        selectedId={selectedId}
+        onSelect={setPickedId}
+      />
+
+      {selectedLineup && selectedScenario && lineupPlayers ? (
+        <ScenarioPitch
+          lineup={selectedLineup}
+          cards={lineupPlayers}
+          isRoll={selectedScenario.type === "roll"}
+          label={scenarioTitle(selectedScenario, lookup, tr, locale)}
+        />
+      ) : null}
 
       {moveGroups.map(renderGroup)}
 

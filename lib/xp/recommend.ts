@@ -1,6 +1,8 @@
 import { loadPlayerMeta } from "@/lib/ai/players";
-import { EntryNotFoundError, EntryBusyError, FplUnavailableError, getEntrySquad } from "@/lib/entry-squad";
+import { EntryNotFoundError, EntryBusyError, FplUnavailableError, getEntrySquad, photoUrl } from "@/lib/entry-squad";
+import { getBase } from "@/lib/public-data";
 import type { EntrySquadPayload } from "@/lib/squad-types";
+import type { FplPosition } from "@/lib/types";
 import { buildCaptainCandidates, type CaptainCandidate } from "@/lib/xp/captain";
 import { buildLineups, type LineupCandidate } from "@/lib/xp/lineup";
 import { XP_MODEL_VERSION, type XpPlayer, type XpTable } from "@/lib/xp/model";
@@ -57,6 +59,36 @@ export type ScenarioPlayerInfo = { webName: string; teamShortName: string; posit
 export type EntryRecommendPayload = EntryRecommendBase & {
   transfers: TransferSearchResult | null;
   playerInfo: Record<string, ScenarioPlayerInfo>;
+  /** Issue #61: per scenario ID, the XI, bench and captains after the move (absent in older logged payloads). */
+  scenarioLineups?: Record<string, ScenarioLineup>;
+  /** Issue #61: what a pitch card needs for every player any scenario lineup uses, keyed by player ID. */
+  lineupPlayers?: Record<string, LineupPlayerCard>;
+};
+
+/** The recommended XI, bench order and captains of the squad as it is after one transfer scenario. */
+export type ScenarioLineup = {
+  formation: string;
+  /** Eleven IDs, goalkeeper first, then DEF, MID, FWD. */
+  starters: number[];
+  /** Bench in FPL order: the spare goalkeeper, then three outfield players. */
+  bench: number[];
+  captainId: number | null;
+  viceCaptainId: number | null;
+  /** Sum of the starters' xP for the target gameweek. */
+  expectedPoints: number;
+  /** Players the scenario brings in (they get the "new" mark). */
+  incoming: number[];
+};
+
+export type LineupPlayerCard = {
+  webName: string;
+  teamShortName: string;
+  position: string;
+  status: string;
+  news: string;
+  photoUrl: string | null;
+  xpNext: number;
+  fixtures: Array<{ opponent: string; home: boolean; difficulty: number }>;
 };
 
 export const ASSUMPTIONS: RecommendAssumption[] = [
@@ -106,6 +138,8 @@ function toRecommendPlayer(player: EntrySquadPayload["squad"][number], xp: XpPla
   };
 }
 
+const ELEMENT_TYPE_BY_POSITION: Record<FplPosition, number> = { GKP: 1, DEF: 2, MID: 3, FWD: 4 };
+
 /** Pure assembly of the recommendation from one team's squad and the shared xP table. */
 export function buildEntryRecommend(squad: EntrySquadPayload, table: XpTable): EntryRecommendBase {
   const squadPlayers = squad.squad;
@@ -114,7 +148,7 @@ export function buildEntryRecommend(squad: EntrySquadPayload, table: XpTable): E
   const lineups = buildLineups(
     squadPlayers.map((player) => ({
       id: player.elementId,
-      elementType: { GKP: 1, DEF: 2, MID: 3, FWD: 4 }[player.position],
+      elementType: ELEMENT_TYPE_BY_POSITION[player.position],
       xp: table.players.get(player.elementId)?.next ?? 0,
       isStarter: player.isStarter
     }))
@@ -148,6 +182,80 @@ export function buildEntryRecommend(squad: EntrySquadPayload, table: XpTable): E
     captains,
     assumptions: ASSUMPTIONS
   };
+}
+
+/**
+ * Issue #61: for every scenario, the best XI / bench / captain of the squad after its transfers, by the same
+ * lineup and captain rules as the "roll" recommendation (so roll equals the lineups[0] and captains above).
+ * The card info of everyone involved comes from the squad, else the shared bootstrap (names and photos only).
+ */
+export async function buildScenarioLineups(
+  squad: EntrySquadPayload,
+  transfers: TransferSearchResult | null,
+  table: XpTable
+): Promise<{ scenarioLineups: Record<string, ScenarioLineup>; lineupPlayers: Record<string, LineupPlayerCard> }> {
+  if (!transfers) {
+    return { scenarioLineups: {}, lineupPlayers: {} };
+  }
+  const base = await getBase().catch(() => null);
+  const elements = new Map((base?.bootstrap.elements ?? []).map((element) => [element.id, element]));
+  const teams = new Map((base?.bootstrap.teams ?? []).map((team) => [team.id, team.short_name]));
+  const own = new Map(squad.squad.map((player) => [player.elementId, player]));
+
+  const cards: Record<string, LineupPlayerCard> = {};
+  const cardOf = (id: number) => {
+    const row = table.players.get(id);
+    const mine = own.get(id);
+    const element = elements.get(id);
+    cards[String(id)] = {
+      webName: mine?.webName ?? element?.web_name ?? `#${id}`,
+      teamShortName: mine?.teamShortName ?? teams.get(row?.teamId ?? 0) ?? "-",
+      position: mine?.position ?? POSITION_BY_TYPE[row?.elementType ?? 3] ?? "MID",
+      status: mine?.status ?? row?.status ?? "a",
+      news: mine?.news ?? element?.news ?? "",
+      photoUrl: mine ? mine.photoUrl : element?.photo ? photoUrl(element.photo) : null,
+      xpNext: row?.next ?? 0,
+      fixtures: (row?.weeks[0]?.games ?? []).map((game) => ({ opponent: game.opponent, home: game.home, difficulty: game.difficulty }))
+    };
+  };
+
+  const scenarioLineups: Record<string, ScenarioLineup> = {};
+  for (const scenario of transfers.scenarios) {
+    const gone = new Set(scenario.out);
+    const ids = [...squad.squad.map((player) => player.elementId).filter((id) => !gone.has(id)), ...scenario.in];
+    const best = buildLineups(
+      ids.map((id) => {
+        // Same position source as buildEntryRecommend for squad players, so roll matches lineups[0] even when the
+        // xP table lacks a player.
+        const mine = own.get(id);
+        const elementType = mine ? ELEMENT_TYPE_BY_POSITION[mine.position] : (table.players.get(id)?.elementType ?? 3);
+        return { id, elementType, xp: table.players.get(id)?.next ?? 0, isStarter: false };
+      }),
+      1
+    )[0];
+    if (!best) continue;
+    const captains = buildCaptainCandidates(
+      best.starters.map((id) => ({
+        id,
+        xp: table.players.get(id)?.next ?? 0,
+        fixtures: (table.players.get(id)?.weeks[0]?.games ?? []).map((game) => ({ opponent: game.opponent, home: game.home })),
+        selectedByPercent: table.players.get(id)?.selectedByPercent ?? 0
+      }))
+    );
+    scenarioLineups[scenario.id] = {
+      formation: best.formation,
+      starters: best.starters,
+      bench: best.bench,
+      captainId: captains[0]?.id ?? null,
+      viceCaptainId: captains[1]?.id ?? null,
+      expectedPoints: best.expectedPoints,
+      incoming: [...scenario.in]
+    };
+    for (const id of [...best.starters, ...best.bench]) {
+      if (!cards[String(id)]) cardOf(id);
+    }
+  }
+  return { scenarioLineups, lineupPlayers: cards };
 }
 
 const POSITION_BY_TYPE: Record<number, string> = { 1: "GKP", 2: "DEF", 3: "MID", 4: "FWD" };
@@ -203,5 +311,6 @@ export async function getEntryRecommend(
   }
   const base = buildEntryRecommend(squad, table);
   const transfers = await getTransfers(squad, table, horizon);
-  return { ...base, transfers, playerInfo: await buildScenarioPlayerInfo(transfers, table) };
+  const [playerInfo, lineups] = await Promise.all([buildScenarioPlayerInfo(transfers, table), buildScenarioLineups(squad, transfers, table)]);
+  return { ...base, transfers, playerInfo, ...lineups };
 }
