@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPublicFootball, buildPublicPlayers, publicCurrentGw } from "@/lib/public-football";
+import { buildPublicFootball, buildPublicPlayers, parsePublicGw, publicCurrentGw } from "@/lib/public-football";
 import { bootstrapFixture, fixturesFixture } from "./helpers/public-fpl";
 
 // Issue #33 stage 2: league-free data for /premier-league, /fixtures and /players.
@@ -43,20 +43,32 @@ describe("buildPublicFootball", () => {
     ]);
   });
 
-  it("lists the current gameweek and the next two that have fixtures, skipping empty ones and unscheduled matches", () => {
-    expect(data.weeks.map((week) => week.gw)).toEqual([10, 11]);
+  it("lists the current gameweek's fixtures in the league screen's shape, ordered by kickoff with undated matches last", () => {
+    expect(data.gw).toBe(10);
+    expect(data.fixtures.map((fixture) => fixture.id)).toEqual([2, 3, 4]);
+    expect(data.fixtures[0]).toMatchObject({ homeShortName: "ARS", awayShortName: "LIV", homeScore: 1, awayScore: 1, started: true, minutes: 63 });
   });
 
-  it("orders a gameweek by kickoff with undated matches last", () => {
-    expect(data.weeks[0].fixtures.map((fixture) => fixture.id)).toEqual([2, 3, 4]);
+  it("lists another gameweek on request, clamped to the season, and tells where the season starts and ends", () => {
+    const next = buildPublicFootball(bootstrapFixture(EVENTS), FIXTURES, 11);
+    expect(next.gw).toBe(11);
+    expect(next.fixtures.map((fixture) => fixture.id)).toEqual([5]);
+    expect([next.firstGw, next.lastGw, next.currentGw]).toEqual([9, 13, 10]);
+    expect(buildPublicFootball(bootstrapFixture(EVENTS), FIXTURES, 30).gw).toBe(10);
   });
 
-  it("marks live and upcoming matches and drops the score of one that has not started", () => {
-    const [live, upcoming] = data.weeks[0].fixtures;
-    expect(live).toMatchObject({ state: "live", minutes: 63, home: { shortName: "ARS", score: 1 }, away: { shortName: "LIV", score: 1 } });
-    expect(upcoming).toMatchObject({ state: "upcoming", minutes: 0, home: { score: null }, away: { score: null } });
+  it("reads the gameweek from the address only when it is a whole number from 1 to 38", () => {
+    expect(parsePublicGw("12")).toBe(12);
+    expect(parsePublicGw(["7", "8"])).toBe(7);
+    for (const bad of [undefined, "", "0", "39", "abc", "1.5", "-3"]) {
+      expect(parsePublicGw(bad)).toBeNull();
+    }
+  });
+
+  it("drops the score of a match that has not started", () => {
     // A placeholder score before kickoff must not read as a result.
-    expect(data.weeks[1].fixtures[0].home.score).toBeNull();
+    const upcoming = buildPublicFootball(bootstrapFixture(EVENTS), FIXTURES, 11).fixtures[0];
+    expect(upcoming).toMatchObject({ started: false, homeScore: null, awayScore: null });
   });
 
   it("feeds the team fixture table: current gameweek, one crest code per team and the upcoming fixtures", () => {

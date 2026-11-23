@@ -247,7 +247,7 @@ function buildFixtureStats(
     .filter((stat) => stat.home.length > 0 || stat.away.length > 0);
 }
 
-function buildFixturesPayload(
+export function buildFixturesPayload(
   fixtures: FixtureWithStats[],
   teamsById: Map<number, TeamSummary>,
   elementsById: Map<number, ElementSummary>

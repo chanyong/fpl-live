@@ -66,9 +66,9 @@ export async function getBase(): Promise<FplBase | null> {
   return cache && Date.now() - cache.fetchedAt < STALE_MAX_MS ? cache.base : null;
 }
 
-export async function getPublicFootball(): Promise<PublicFootball | null> {
+export async function getPublicFootball(gw?: number | null): Promise<PublicFootball | null> {
   const base = await getBase();
-  return base ? buildPublicFootball(base.bootstrap, base.fixtures) : null;
+  return base ? buildPublicFootball(base.bootstrap, base.fixtures, gw) : null;
 }
 
 export async function getPublicPlayers(): Promise<PublicPlayers | null> {

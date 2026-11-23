@@ -18,23 +18,23 @@ export const PUBLIC_PAGES: Record<PublicPageKey, PublicPage> = {
   "premier-league": {
     path: "/premier-league",
     label: { ko: "EPL 순위표", en: "EPL table" },
-    title: "프리미어리그 순위표 — 승점·득실차·최근 5경기 | FPL Live",
+    title: "프리미어리그 순위표·팀별 일정 난이도(FDR) | FPL Live",
     description:
-      "프리미어리그 20개 팀의 현재 순위와 승점, 득실차, 최근 5경기 흐름을 확인하세요. 진행 중인 경기는 현재 스코어까지 반영합니다."
+      "프리미어리그 20개 팀의 현재 순위·승점·최근 5경기와 팀별 향후 일정 난이도(FDR)를 확인하세요. 진행 중인 경기는 현재 스코어까지 반영합니다."
   },
   fixtures: {
     path: "/fixtures",
     label: { ko: "경기 일정", en: "Fixtures" },
-    title: "프리미어리그 경기 일정·결과와 팀별 일정 난이도 | FPL Live",
+    title: "프리미어리그 경기 일정·결과·보너스 점수 | FPL Live",
     description:
-      "이번 게임위크와 다음 두 게임위크의 프리미어리그 경기 일정과 결과, 팀별 향후 7경기 FPL 난이도를 리그 ID 없이 확인하세요."
+      "게임위크별 프리미어리그 경기 일정과 결과, 진행 중·예정·종료 필터, 경기별 보너스 점수를 받는 선수를 리그 ID 없이 확인하세요."
   },
   players: {
     path: "/players",
     label: { ko: "선수 통계", en: "Players" },
-    title: "FPL 선수 통계 — 폼·득점·영입 추이·차별화 선수 | FPL Live",
+    title: "FPL 선수 통계 — 이적 시장·가격 변동·선수 성과 | FPL Live",
     description:
-      "FPL 선수들의 시즌 점수와 폼, 이번 주 영입·방출 추이, 소유율이 낮은 차별화 후보를 포지션별로 확인하세요. 공식 FPL 데이터를 씁니다."
+      "FPL 선수들의 영입·방출 추이, 가격 변동 예측, 시즌 점수와 폼, 소유율이 낮은 차별화 후보를 포지션별로 확인하세요. 공식 FPL 데이터."
   },
   "price-changes": {
     path: "/price-changes",
