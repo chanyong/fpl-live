@@ -90,13 +90,15 @@ function ScenarioCard({
   recommended,
   horizon,
   bank,
-  lookup
+  lookup,
+  showTitle
 }: {
   scenario: TransferScenario;
   recommended: boolean;
   horizon: number;
   bank: number;
   lookup: Lookup;
+  showTitle: boolean;
 }) {
   const { tr, locale } = useLocale();
   const isChip = isChipType(scenario.type);
@@ -104,12 +106,12 @@ function ScenarioCard({
 
   return (
     <li
-      className={`flex min-w-0 flex-col gap-1.5 rounded-md border px-3 py-2 ${recommended ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface)]"}`}
+      className={`flex min-w-0 flex-col gap-1.5 rounded-md border px-2.5 py-1.5 sm:px-3 ${recommended ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface)]"}`}
       data-scenario={scenario.id}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          <span className="text-body font-semibold">{scenarioTypeLabel(scenario.type, tr, locale)}</span>
+          {showTitle ? <span className="text-body font-semibold">{scenarioTypeLabel(scenario.type, tr, locale)}</span> : null}
           <ScenarioBadges scenario={scenario} recommended={recommended} />
         </div>
         <div className="shrink-0 text-right">
@@ -163,7 +165,7 @@ function CompactRow({ scenario, best, recommended, lookup }: { scenario: Transfe
   const { tr } = useLocale();
   const gap = scenario.netGain - best.netGain;
   return (
-    <li className="flex min-w-0 flex-col gap-0.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5" data-scenario={scenario.id}>
+    <li className="flex min-w-0 flex-col gap-0.5 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 sm:px-3" data-scenario={scenario.id}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Swaps scenario={scenario} lookup={lookup} />
@@ -282,35 +284,50 @@ export function TransferScenarios({
     const row = (scenario: TransferScenario) => (
       <CompactRow key={scenario.id} scenario={scenario} best={best} recommended={scenario.id === result.recommendedId} lookup={lookup} />
     );
+    const isChipGroup = isChipType(group.type);
+    const label = scenarioTypeLabel(group.type, tr, locale);
     return (
-      <ul key={group.type} className="flex list-none flex-col gap-1.5 p-0">
-        <ScenarioCard
-          scenario={best}
-          recommended={best.id === result.recommendedId}
-          horizon={result.gws.length}
-          bank={result.bank}
-          lookup={lookup}
-        />
-        {visible.map(row)}
-        {hidden.length > 0 ? (
-          <li className="list-none">
-            <details>
-              <summary className="cursor-pointer text-meta text-[var(--muted)]">
-                {tr(
-                  `${scenarioTypeLabel(group.type, tr, locale)} 나머지 ${hidden.length}개`,
-                  `${hidden.length} more: ${scenarioTypeLabel(group.type, tr, locale)}`
-                )}
-              </summary>
-              <ul className="mt-1.5 flex list-none flex-col gap-1.5 p-0">{hidden.map(row)}</ul>
-            </details>
-          </li>
-        ) : null}
-      </ul>
+      <section key={group.type} aria-label={label} className="overflow-hidden rounded-md border border-[var(--border)]" data-group={group.type}>
+        <header className="flex flex-wrap items-baseline gap-x-3 gap-y-0 border-l-4 border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1.5">
+          <h3 className="text-title-lg font-bold text-[var(--accent-ink)]">{label}</h3>
+          <p className="text-meta font-semibold tabular-nums text-[var(--accent-ink)]">
+            {tr(
+              `최선 ${fmtSigned(best.netGain)}${rest.length > 0 ? ` · 대안 ${rest.length}` : ""}`,
+              `best ${fmtSigned(best.netGain)}${rest.length > 0 ? ` · ${rest.length} alt.` : ""}`
+            )}
+          </p>
+        </header>
+        <ul className="flex list-none flex-col gap-1 p-1 sm:p-1.5">
+          <ScenarioCard
+            scenario={best}
+            recommended={best.id === result.recommendedId}
+            horizon={result.gws.length}
+            bank={result.bank}
+            lookup={lookup}
+            showTitle={isChipGroup}
+          />
+          {visible.length > 0 ? (
+            <li className="list-none">
+              <ul className="grid list-none gap-1 p-0 lg:grid-cols-2">{visible.map(row)}</ul>
+            </li>
+          ) : null}
+          {hidden.length > 0 ? (
+            <li className="list-none">
+              <details>
+                <summary className="cursor-pointer px-1 text-meta text-[var(--muted)]">
+                  {tr(`${label} 나머지 ${hidden.length}개`, `${hidden.length} more: ${label}`)}
+                </summary>
+                <ul className="mt-1 grid list-none gap-1 p-0 lg:grid-cols-2">{hidden.map(row)}</ul>
+              </details>
+            </li>
+          ) : null}
+        </ul>
+      </section>
     );
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="min-w-0 text-meta text-[var(--muted)]">
           {tr(
@@ -348,7 +365,7 @@ export function TransferScenarios({
 
       {chipGroups.length > 0 ? (
         <div className="flex flex-col gap-1.5">
-          <h4 className="mt-1 text-body font-semibold">{tr("칩 (시즌에 한 번뿐)", "Chips (once per season)")}</h4>
+          <h3 className="border-b-2 border-[var(--accent)] pb-0.5 text-title-lg font-bold">{tr("칩 (시즌에 한 번뿐)", "Chips (once per season)")}</h3>
           {chipGroups.map(renderGroup)}
         </div>
       ) : null}
