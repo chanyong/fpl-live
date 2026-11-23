@@ -55,3 +55,49 @@ describe("journal auth form", () => {
     expect(body).not.toHaveProperty("passwordConfirm");
   });
 });
+
+describe("journal login: save ID", () => {
+  const KEY = "fpl-live:saved-login-id";
+  afterEach(() => localStorage.clear());
+  const loginWith = async (ok: boolean) => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok, status: ok ? 200 : 401, json: async () => (ok ? {} : { error: "login_failed" }) })));
+    const onDone = vi.fn();
+    render(<AuthForms onDone={onDone} />);
+    return onDone;
+  };
+
+  it("saves the email only after a successful login with the box checked, never the password", async () => {
+    const onDone = await loginWith(true);
+    fireEvent.change(screen.getByLabelText("이메일"), { target: { value: "a@b.co" } });
+    fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: "secret-pw" } });
+    fireEvent.click(screen.getByLabelText("아이디 저장"));
+    expect(localStorage.getItem(KEY)).toBeNull();
+    fireEvent.submit(screen.getByRole("form", { hidden: true }));
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    expect(localStorage.getItem(KEY)).toBe("a@b.co");
+    expect(JSON.stringify({ ...localStorage })).not.toContain("secret-pw");
+  });
+
+  it("does not save when login fails", async () => {
+    await loginWith(false);
+    fireEvent.change(screen.getByLabelText("이메일"), { target: { value: "a@b.co" } });
+    fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: "bad" } });
+    fireEvent.click(screen.getByLabelText("아이디 저장"));
+    fireEvent.submit(screen.getByRole("form", { hidden: true }));
+    await screen.findByRole("status");
+    expect(localStorage.getItem(KEY)).toBeNull();
+  });
+
+  it("restores the saved email, checks the box, focuses the password, and clears it when unchecked on success", async () => {
+    localStorage.setItem(KEY, "saved@b.co");
+    const onDone = await loginWith(true);
+    await waitFor(() => expect((screen.getByLabelText("이메일") as HTMLInputElement).value).toBe("saved@b.co"));
+    expect((screen.getByLabelText("아이디 저장") as HTMLInputElement).checked).toBe(true);
+    expect(document.activeElement).toBe(screen.getByLabelText("비밀번호"));
+    fireEvent.change(screen.getByLabelText("비밀번호"), { target: { value: "pw" } });
+    fireEvent.click(screen.getByLabelText("아이디 저장"));
+    fireEvent.submit(screen.getByRole("form", { hidden: true }));
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    expect(localStorage.getItem(KEY)).toBeNull();
+  });
+});
