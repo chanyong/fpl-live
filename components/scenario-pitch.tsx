@@ -7,10 +7,9 @@ import { SquadPitch } from "@/components/squad-pitch";
 import type { FplPosition } from "@/lib/types";
 import type { FdrHorizon } from "@/lib/squad-view";
 import type { SquadPlayer } from "@/lib/squad-types";
+import { POSITION_ORDER } from "@/lib/xp/chip-explain";
 import { buildLineupReasons, type LineupMove, type LineupReason } from "@/lib/xp/lineup-reasons";
 import type { EntryRecommendPayload, ScenarioLineup } from "@/lib/xp/recommend";
-
-const POSITIONS = ["GKP", "DEF", "MID", "FWD"] as const;
 
 /** Issue #83: the "why starts / sits" list, grouped by position; the roll pitch and the "recommended XI" section share it. */
 export function LineupReasonList({ reasons }: { reasons: LineupReason[] }) {
@@ -36,7 +35,7 @@ export function LineupReasonList({ reasons }: { reasons: LineupReason[] }) {
             ))}
           </ul>
         ) : null}
-        {POSITIONS.map((position) => {
+        {POSITION_ORDER.map((position) => {
           const rows = reasons.filter((reason) => (reason.kind === "starter" || reason.kind === "bench") && reason.position === position);
           if (rows.length === 0) return null;
           return (

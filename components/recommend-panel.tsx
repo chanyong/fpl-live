@@ -243,7 +243,7 @@ export function RecommendPanel({ entryId, fdrHorizon = 3, onFdrHorizon }: { entr
                 scenarioLineups={data.scenarioLineups}
                 lineupPlayers={data.lineupPlayers}
                 chipExplanations={data.chipExplanations}
-                squadStats={Object.fromEntries(data.players.map((player) => [player.elementId, { xp: player.xpNext, cost: null }]))}
+                squadStats={Object.fromEntries(data.players.map((player) => [player.elementId, { xp: player.xpNext, cost: data.playerInfo?.[String(player.elementId)]?.nowCost ?? null }]))}
               />
             ) : (
               <p className="text-meta text-[var(--muted)]">

@@ -14,8 +14,6 @@ export type LineupReason = { id: number; kind: LineupReasonKind; position: strin
 /** What the IN line needs about the player a signing replaces (the search does not say who replaces whom; the screen pairs by position). */
 export type LineupMove = { inId: number; outName: string; outXp: number | null; outCost: number | null; inCost: number | null };
 
-export const POSITION_ORDER = ["GKP", "DEF", "MID", "FWD"] as const;
-
 const fmt = (value: number) => value.toFixed(1);
 const signed = (value: number) => `${value >= 0 ? "+" : "-"}${Math.abs(value).toFixed(1)}`;
 
@@ -57,8 +55,9 @@ export function buildLineupReasons(
     const position = pos(id);
     const n = slots(position);
     const rival = benchedBest(position);
+    // A tie (0.0) is not a reason: say it only when the starter is really ahead.
     const vsRival =
-      rival !== undefined
+      rival !== undefined && xp(id) - xp(rival) >= 0.05
         ? en
           ? `, ${fmt(xp(id) - xp(rival))} above bench ${name(rival)}`
           : `, 벤치 ${name(rival)}보다 ${fmt(xp(id) - xp(rival))} 높음`
@@ -105,7 +104,9 @@ export function buildLineupReasons(
         : en
           ? `. Comes in number ${index} on the bench`
           : `. 교체 순서 ${index}번째`;
-    out.push({ id, kind: "bench", position, text: en ? `${name(id)} bench ${index}: ${why}${order}` : `${name(id)} 벤치 ${index} — ${why}${order}` });
+    // The spare goalkeeper has no place in the substitution order (bench[0]), so it gets "GK" instead of a number.
+    const seat = isKeeper ? "GK" : String(index);
+    out.push({ id, kind: "bench", position, text: en ? `${name(id)} bench ${seat}: ${why}${order}` : `${name(id)} 벤치 ${seat} — ${why}${order}` });
   });
 
   const armband = (id: number | null, kind: "captain" | "vice") => {
@@ -133,20 +134,11 @@ export function buildLineupReasons(
     else parts.push(en ? `instead of ${move.outName}` : `${move.outName} 대신`);
     if (move.inCost !== null && move.outCost !== null) {
       const money = move.inCost - move.outCost;
-      parts.push(money === 0 ? (en ? "same price" : "가격 같음") : `${money > 0 ? "+" : "-"}${formatMoney(Math.abs(money))}`);
+      parts.push(money === 0 ? (en ? "same price" : "가격 같음") : `${en ? "price" : "가격"} ${money > 0 ? "+" : "-"}${formatMoney(Math.abs(money))}`);
     } else if (move.inCost !== null) {
       parts.push(en ? `price ${formatMoney(move.inCost)}` : `가격 ${formatMoney(move.inCost)}`);
     }
     out.push({ id: move.inId, kind: "in", position: pos(move.inId), text: `${name(move.inId)} IN — ${parts.join(", ")}` });
   }
   return out;
-}
-
-/** The short one-line note for a pitch card tooltip. */
-export function reasonByPlayer(reasons: LineupReason[]): Record<number, string> {
-  const map: Record<number, string> = {};
-  for (const reason of reasons) {
-    if (reason.kind === "starter" || reason.kind === "bench") map[reason.id] = reason.text;
-  }
-  return map;
 }

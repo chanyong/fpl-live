@@ -55,13 +55,13 @@ describe("buildLineupReasons (issue #83)", () => {
   it("bench line: formation-bound player says the slots are full; order text for the first outfield bench", () => {
     expect(text(6, "bench")).toBe("D4 벤치 1 — DEF 4명 중 4위 기대 3.7(선발 3명보다 낮음), COV(H) FDR 5. 선발이 빠지면 가장 먼저 들어옴");
     expect(text(15, "bench")).toBe("F4 벤치 3 — 기대 4.4지만 포메이션 3-4-3의 FWD 3자리가 이미 참(선발 최저 4.6), COV(H) FDR 3. 교체 순서 3번째");
-    expect(text(2, "bench")).toContain("후보 골키퍼 기대 3.0");
+    expect(text(2, "bench")).toBe("Gk2 벤치 GK — 후보 골키퍼 기대 3.0, 선발 GK가 못 뛸 때만 들어옴");
   });
 
   it("captain, vice-captain and the signing's IN line", () => {
     expect(text(7, "captain")).toContain("캡틴 M1 — 선발 중 기대 6.0(1위)");
     expect(text(8, "vice")).toContain("부캡틴 M2 — 선발 중 기대 5.5(2위)");
-    expect(text(11, "in")).toBe("F1 IN — Old 대비 기대 +2.0, +£0.5m");
+    expect(text(11, "in")).toBe("F1 IN — Old 대비 기대 +2.0, 가격 +£0.5m");
   });
 
   it("English text uses the same numbers", () => {
