@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useContext, useEffect, useRef, useState, type FormEvent } from "react";
+import { QueryClientContext } from "@tanstack/react-query";
 import { JournalPitch, StepHeading } from "@/components/journal-pitch";
 import { LocaleToggle, useLocale } from "@/components/locale-provider";
 import { SiteHeader } from "@/components/site-header";
@@ -65,19 +66,26 @@ export function JournalPage() {
   const [notice, setNotice] = useState<string | null>(null);
   // /journal?gw=12 (from the league page) opens that week; it is read after mount so the server render stays the same.
   const [focusGw, setFocusGw] = useState<number | null>(null);
+  // Keep the account button in the top band (issue #82) in step with logging in and out on this page.
+  const queryClient = useContext(QueryClientContext);
 
   const load = useCallback(async () => {
     try {
       const response = await fetch("/api/journal/entries", { cache: "no-store" });
-      if (response.status === 401) return setState("guest");
+      if (response.status === 401) {
+        queryClient?.setQueryData(["journal-me"], { member: false });
+        return setState("guest");
+      }
       if (response.status === 502) return setState("failed");
       if (!response.ok) return setState("unavailable");
-      setEntries((await response.json()) as Entries);
+      const data = (await response.json()) as Entries;
+      queryClient?.setQueryData(["journal-me"], { member: true, teamId: data.teamId, nextTeamChangeAt: data.nextTeamChangeAt ?? null });
+      setEntries(data);
       setState("ready");
     } catch {
       setState("unavailable");
     }
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     setFocusGw(parseJournalGw(window.location.search));
@@ -149,6 +157,7 @@ export function JournalPage() {
           focusGw={focusGw}
           onReload={load}
           onLogout={() => {
+            queryClient?.setQueryData(["journal-me"], { member: false });
             setEntries(null);
             setState("guest");
           }}

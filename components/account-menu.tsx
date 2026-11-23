@@ -83,6 +83,8 @@ function AccountMenuInner({ tone }: { tone: Tone }) {
     } finally {
       queryClient.setQueryData(["journal-me"], { member: false });
       await queryClient.invalidateQueries({ queryKey: ["journal-access"] });
+      // The journal page keeps its own signed-in state; start it over so it shows the login form.
+      if (window.location.pathname.startsWith("/journal")) window.location.reload();
     }
   }
 
