@@ -284,7 +284,7 @@ export function AuthForms({ onDone, initialMessage = null }: { onDone: () => voi
   }
 
   return (
-    <form onSubmit={submit} className="mt-8 space-y-4" aria-label={mode}>
+    <form onSubmit={submit} className="mt-8 w-full max-w-md space-y-4" aria-label={mode}>
       <div role="tablist" aria-label={tr("로그인 또는 가입 선택", "Choose log in or sign up")} className="grid grid-cols-2 border-b border-[var(--border)]">
         {(
           [
@@ -454,7 +454,7 @@ export function ResetPasswordForm({ token, onDone, onExpired }: { token: string;
   }
 
   return (
-    <form onSubmit={submit} className="mt-8 space-y-4" aria-label="reset-password">
+    <form onSubmit={submit} className="mt-8 w-full max-w-md space-y-4" aria-label="reset-password">
       <h2 className="text-lg font-semibold">{tr("새 비밀번호 정하기", "Choose a new password")}</h2>
       <label className="block text-body">
         {tr("새 비밀번호", "New password")}
